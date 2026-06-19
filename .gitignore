@@ -2,3 +2,6 @@ node_modules/
 *.log
 .DS_Store
 .vitest/
+
+# 머신-로컬 dev 마커(추적 금지 — 배포 메타는 별도 파일)
+.soksak.json
