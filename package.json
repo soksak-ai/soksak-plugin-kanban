@@ -1,0 +1,26 @@
+{
+  "name": "soksak-plugin-kanban",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "soksak 칸반 플러그인 — 트리(아웃라이너) 기반 멀티뷰 이슈 추적",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.24.2",
+    "typescript": "~5.9.3",
+    "vitest": "^2.1.8"
+  }
+}

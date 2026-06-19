@@ -1,0 +1,55 @@
+{
+  "spec": "soksak-spec-plugin@0.0.1",
+  "id": "soksak-plugin-kanban",
+  "name": {
+    "ko": "칸반",
+    "en": "Kanban"
+  },
+  "version": "0.0.1",
+  "repo": "https://github.com/soksak-ai/soksak-plugin-kanban.git",
+  "description": "트리(아웃라이너) 기반 이슈 추적 — 한 트리를 칸반·간트·타임라인·트리·테이블·캘린더 여섯 뷰로. 노드는 parentId+order 로 무한 깊이. CLI/MCP 로 조작.",
+  "entry": "main.js",
+  "permissions": [
+    "data",
+    "commands",
+    "ui",
+    "notify"
+  ],
+  "contributes": {
+    "views": [
+      {
+        "id": "kanban",
+        "title": {
+          "ko": "칸반",
+          "en": "Kanban"
+        },
+        "icon": "▦",
+        "placements": [
+          "content"
+        ],
+        "defaultPlacement": "content"
+      }
+    ],
+    "commands": [
+      {
+        "name": "ping",
+        "title": "플러그인 적재/버전 확인(E2E)"
+      }
+    ],
+    "programs": [
+      {
+        "id": "kanban",
+        "title": {
+          "ko": "칸반",
+          "en": "Kanban"
+        },
+        "path": {
+          "ko": "유틸리티",
+          "en": "Utility"
+        },
+        "kind": "view",
+        "view": "kanban"
+      }
+    ]
+  }
+}
