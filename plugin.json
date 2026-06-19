@@ -46,7 +46,8 @@
       },
       {
         "name": "node.remove",
-        "title": "노드 삭제"
+        "title": "노드 삭제",
+        "danger": "destructive"
       },
       {
         "name": "node.get",
@@ -110,7 +111,8 @@
       },
       {
         "name": "reset",
-        "title": "전체 삭제"
+        "title": "전체 삭제",
+        "danger": "destructive"
       },
       {
         "name": "breadcrumb",
