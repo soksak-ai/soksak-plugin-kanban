@@ -13,6 +13,11 @@ import { useNodes } from "@/view/useStore";
 import { rootStyle } from "@/view/ui";
 import Outline from "@/view/Outline";
 import Board from "@/view/Board";
+import Tree from "@/view/Tree";
+import Gantt from "@/view/Gantt";
+import Timeline from "@/view/Timeline";
+import Table from "@/view/Table";
+import Calendar from "@/view/Calendar";
 import Modal, { type Draft, type ModalMode } from "@/view/Modal";
 
 type Disp = { dispose(): void } | (() => void);
@@ -145,9 +150,11 @@ export default function App({ store, app }: AppProps) {
       <main style={{ flex: 1, minHeight: 0, position: "relative" }}>
         {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} setView={setView} onOpen={openDetail} />}
         {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} setView={setView} onOpen={openDetail} onCreate={openCreate} />}
-        {view !== "outline" && view !== "board" && (
-          <div style={{ padding: 40, color: "var(--text-3)", fontSize: 13 }}>{TABS.find((t) => t[0] === view)?.[2]} 뷰 — 준비 중 (M4)</div>
-        )}
+        {view === "tree" && <Tree nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
+        {view === "gantt" && <Gantt nodes={nodes} onOpen={openDetail} />}
+        {view === "timeline" && <Timeline nodes={nodes} onOpen={openDetail} />}
+        {view === "table" && <Table nodes={nodes} onOpen={openDetail} />}
+        {view === "calendar" && <Calendar nodes={nodes} onOpen={openDetail} />}
       </main>
 
       {modalOpen && <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} />}
