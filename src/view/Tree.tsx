@@ -4,6 +4,7 @@ import type { Node } from "@/types";
 import { byId } from "@/core/tree";
 import { toOutlineRows, breadcrumb } from "@/core/projections";
 import { avatar, initials, statusChip, sMeta, typeBadge, typeLetter } from "@/view/ui";
+import ScopeStat from "@/view/ScopeStat";
 
 interface Props {
   nodes: Node[];
@@ -31,6 +32,7 @@ export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
             <button onClick={() => setFocusId(c.id)} style={crumbStyle(i === crumbs.length - 1)}>{c.label}</button>
           </span>
         ))}
+        <ScopeStat nodes={nodes} focusId={focusId} />
       </div>
       <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600 }}>트리 구조 · Structure</h3>
       <p style={{ margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }}>행을 클릭하면 그 노드로 들어가(재구성), 상위로는 ↑ 또는 브레드크럼.</p>

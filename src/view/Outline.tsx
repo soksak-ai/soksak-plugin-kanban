@@ -10,6 +10,7 @@ import { insertNode, indent, outdent, removeNode, setStatus } from "@/core/algeb
 import { toOutlineRows, breadcrumb } from "@/core/projections";
 import { STATUS_IDS } from "@/refs";
 import { avatar, initials, statusChip, sMeta, hexA } from "@/view/ui";
+import ScopeStat from "@/view/ScopeStat";
 
 interface Props {
   store: KanbanStore;
@@ -155,6 +156,7 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen }: P
             <button onClick={() => setFocusId(c.id)} style={crumbStyle(i === crumbs.length - 1)}>{c.label}</button>
           </span>
         ))}
+        <ScopeStat nodes={nodes} focusId={focusId} />
       </div>
 
       <div ref={containerRef} style={{ maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }}>
