@@ -5,6 +5,8 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import App from "@/view/App";
 import { GLOBAL_CSS } from "@/styles";
+import { createStore, type KanbanStore } from "@/store";
+import { registerCommands } from "@/commands";
 
 class ErrBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
   state: { err: Error | null } = { err: null };
@@ -27,6 +29,7 @@ class ErrBoundary extends Component<{ children: ReactNode }, { err: Error | null
 }
 
 const mounts = new WeakMap<HTMLElement, { root: Root; shadow: ShadowRoot }>();
+let store: KanbanStore | null = null;
 
 function mountApp(container: HTMLElement) {
   unmountApp(container);
@@ -48,7 +51,7 @@ function mountApp(container: HTMLElement) {
   const root = createRoot(host);
   root.render(
     <ErrBoundary>
-      <App />
+      <App store={store} />
     </ErrBoundary>,
   );
   mounts.set(container, { root, shadow });
@@ -64,6 +67,11 @@ function unmountApp(container: HTMLElement) {
 export default {
   activate(ctx: any) {
     const app = ctx.app;
+
+    // 단일 진실 스토어 — app.data 하이드레이트 + cross-window watch.
+    store = createStore(app);
+    void store.init().catch((e) => console.error("[kanban] store init 실패:", e));
+    ctx.subscriptions.push({ dispose: () => store?.dispose() });
 
     ctx.subscriptions.push(
       app.ui.registerView("kanban", {
@@ -84,11 +92,17 @@ export default {
             ok: true,
             plugin: "soksak-plugin-kanban",
             version: "0.1.0",
-            phase: "M0",
+            phase: "M2",
           }),
         }),
       );
     }
+
+    // 전체 명령 표면(node/outline/board/focus/view/수명주기) 등록.
+    registerCommands(ctx, store);
   },
-  deactivate() {},
+  deactivate() {
+    store?.dispose();
+    store = null;
+  },
 };
