@@ -20,7 +20,7 @@ export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
     const n = byId(nodes, focusId);
     setFocusId(n ? n.parentId : null);
   };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "전체 워크스페이스";
+  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "전체";
 
   return (
     <div style={{ padding: "14px 22px 20px", height: "100%", overflow: "auto" }}>
