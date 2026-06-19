@@ -30,9 +30,14 @@ class ErrBoundary extends Component<{ children: ReactNode }, { err: Error | null
 
 const mounts = new WeakMap<HTMLElement, { root: Root; shadow: ShadowRoot }>();
 let store: KanbanStore | null = null;
+let pluginApp: unknown = null;
 
 function mountApp(container: HTMLElement) {
   unmountApp(container);
+  // 컨테이너를 위치 기준으로 — host 를 absolute inset:0 로 채워 컨테이너 높이가 indefinite
+  // (예: 터미널과 한 패널 공유)여도 패널 박스를 꽉 채운다.
+  container.style.position = "relative";
+
   // Shadow DOM 격리 — soksak chrome 전역 스타일 오염 방지. attachShadow 는 요소당 1회.
   const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
   shadow.replaceChildren();
@@ -43,18 +48,26 @@ function mountApp(container: HTMLElement) {
 
   const host = document.createElement("div");
   host.className = "kanban-root";
-  host.style.width = "100%";
-  host.style.height = "100%";
+  host.style.position = "absolute";
+  host.style.inset = "0";
   host.style.overflow = "hidden";
   shadow.appendChild(host);
 
-  const root = createRoot(host);
-  root.render(
-    <ErrBoundary>
-      <App store={store} />
-    </ErrBoundary>,
-  );
-  mounts.set(container, { root, shadow });
+  try {
+    const root = createRoot(host);
+    root.render(
+      <ErrBoundary>
+        <App store={store} app={pluginApp as never} />
+      </ErrBoundary>,
+    );
+    mounts.set(container, { root, shadow });
+  } catch (e) {
+    host.textContent = "[kanban] mount 실패: " + (e instanceof Error ? e.message : String(e));
+    host.style.color = "#f88";
+    host.style.padding = "16px";
+    host.style.font = "13px system-ui";
+    console.error("[kanban] mount 실패:", e);
+  }
 }
 
 function unmountApp(container: HTMLElement) {
@@ -69,6 +82,7 @@ export default {
     const app = ctx.app;
 
     // 단일 진실 스토어 — app.data 하이드레이트 + cross-window watch.
+    pluginApp = app;
     store = createStore(app);
     void store.init().catch((e) => console.error("[kanban] store init 실패:", e));
     ctx.subscriptions.push({ dispose: () => store?.dispose() });

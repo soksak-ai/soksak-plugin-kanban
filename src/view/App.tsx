@@ -1,22 +1,158 @@
-// M0/M2 스캐폴드 플레이스홀더 — M3 에서 반응 셸 + Outline/Board, M4 에서 나머지 뷰로 교체.
+// 반응 셸 — 헤더(뷰 탭·검색·테마) + stats strip(스킨·진행률·병목) + 뷰 스위치 + 모달.
+// UI 상태(view·theme·skin·focus·search·modal)는 창-로컬. 데이터는 store(useNodes) 단일 진실.
+// 편집은 store.apply(순수 op) — 명령과 같은 데이터 경로 → 교차뷰 일관성.
+import { useState, useEffect } from "react";
+import type { CSSProperties } from "react";
+import type { Node, StatusId, ViewId } from "@/types";
 import type { KanbanStore } from "@/store";
+import { TODAY, RANGE_END } from "@/refs";
+import { byId } from "@/core/tree";
+import { insertNode, removeNode } from "@/core/algebra";
+import { stats } from "@/core/projections";
+import { useNodes } from "@/view/useStore";
+import { rootStyle } from "@/view/ui";
+import Outline from "@/view/Outline";
+import Board from "@/view/Board";
+import Modal, { type Draft, type ModalMode } from "@/view/Modal";
 
-export default function App({ store }: { store: KanbanStore | null }) {
-  const count = store?.get().length ?? 0;
+type Disp = { dispose(): void } | (() => void);
+interface AppProps {
+  store: KanbanStore | null;
+  // 테마는 플랫폼 CSS 변수 상속으로 자동 — app 은 focus/view 네비 버스에만 사용.
+  app?: { bus?: { on?: (topic: string, cb: (p: { focusId: string | null; view?: ViewId }) => void) => Disp } };
+}
+
+const dispose = (d: Disp | undefined) => {
+  if (typeof d === "function") d();
+  else d?.dispose?.();
+};
+
+const TABS: [ViewId, string, string][] = [
+  ["outline", "Outliner", "아웃라이너"],
+  ["board", "Kanban", "칸반"],
+  ["gantt", "Gantt", "간트"],
+  ["timeline", "Timeline", "타임라인"],
+  ["tree", "Tree", "트리"],
+  ["table", "Table", "테이블"],
+  ["calendar", "Calendar", "캘린더"],
+];
+const blankDraft = (): Draft => ({ title: "", body: "", type: "task", status: "todo", assignee: "me", priority: "medium", points: 3, start: TODAY, due: RANGE_END });
+
+export default function App({ store, app }: AppProps) {
+  const nodes = useNodes(store);
+  const [view, setView] = useState<ViewId>("outline");
+  const [search, setSearch] = useState("");
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [scope, setScope] = useState<"direct" | "all">("direct");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [mode, setMode] = useState<ModalMode>("create");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Draft>(blankDraft);
+
+  // 명령 focus.set → GUI 관점(focus)·뷰 이동.
+  useEffect(() => {
+    const d = app?.bus?.on?.("kanban:nav", (p) => {
+      setFocusId(p?.focusId ?? null);
+      if (p?.view) setView(p.view);
+    });
+    return () => dispose(d);
+  }, [app]);
+
+  if (!store) return <div style={{ padding: 24, color: "#888" }}>store 준비 중…</div>;
+  const apply = (fn: (ns: Node[]) => Node[]) => void store.apply(fn);
+  const editing = editingId ? byId(nodes, editingId) : null;
+  const st = stats(nodes);
+
+  const setField = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
+  const openCreate = (status: StatusId) => {
+    setDraft({ ...blankDraft(), status });
+    setMode("create");
+    setEditingId(null);
+    setModalOpen(true);
+  };
+  const openDetail = (id: string) => {
+    const n = byId(nodes, id);
+    if (!n) return;
+    setDraft({ title: n.title, body: n.body, type: n.type, status: n.status, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due });
+    setEditingId(id);
+    setMode("view");
+    setModalOpen(true);
+  };
+  const enterEdit = () => editing && (setDraft({ title: editing.title, body: editing.body, type: editing.type, status: editing.status, assignee: editing.assignee, priority: editing.priority, points: editing.points, start: editing.start, due: editing.due }), setMode("edit"));
+  const createIssue = () => {
+    if (!draft.title.trim()) return;
+    const now = Date.now();
+    const node: Node = { id: store.genId(), key: store.nextKey(), parentId: focusId, order: 0, title: draft.title.trim(), body: draft.body.trim(), type: draft.type, status: draft.status, assignee: draft.assignee, priority: draft.priority, points: draft.points, start: draft.start, due: draft.due, collapsed: false, history: [], created: now, updated: now };
+    apply((ns) => insertNode(ns, node));
+    setModalOpen(false);
+  };
+  const saveEdit = () => {
+    if (!editingId || !draft.title.trim()) return;
+    const id = editingId;
+    apply((ns) =>
+      ns.map((n) => {
+        if (n.id !== id) return n;
+        const history = draft.status !== n.status ? [...n.history, { from: n.status, to: draft.status, by: "me", at: TODAY }] : n.history;
+        return { ...n, title: draft.title.trim(), body: draft.body.trim(), type: draft.type, status: draft.status, assignee: draft.assignee, priority: draft.priority, points: draft.points, start: draft.start, due: draft.due, history, updated: Date.now() };
+      }),
+    );
+    setMode("view");
+  };
+  const del = () => {
+    if (editingId) apply((ns) => removeNode(ns, editingId));
+    setModalOpen(false);
+  };
+
   return (
-    <div
-      style={{
-        padding: 24,
-        fontFamily: "system-ui, sans-serif",
-        color: "var(--text-2)",
-        background: "var(--bg)",
-        height: "100%",
-      }}
-    >
-      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>칸반 · Kanban</div>
-      <div style={{ fontSize: 12, marginTop: 6 }}>
-        반응 셸/뷰 준비 중 (M2) — 노드 {count}개. 명령은 CLI/MCP 로 동작합니다.
+    <div className="kanban-root" style={rootStyle()}>
+      {/* TOP BAR */}
+      <header style={{ display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }}>
+        <nav style={{ display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }}>
+          {TABS.map(([id, lbl]) => (
+            <button key={id} onClick={() => setView(id)} style={tabStyle(view === id)}>
+              <span style={{ width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" }} />
+              <span>{lbl}</span>
+            </button>
+          ))}
+        </nav>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
+          <button onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> 새 이슈</button>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="검색 · search" style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
+        </div>
+      </header>
+
+      {/* STATS STRIP */}
+      <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "11px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "none" }}>
+          <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Sprint 진행률</span>
+          <div style={{ width: 160, height: 7, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${st.progress}%`, background: "linear-gradient(90deg,var(--accent),#22c55e)", borderRadius: 99, transition: "width .3s" }} />
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)" }}>{st.progress}%</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flex: "none", fontSize: 12.5 }}>
+          <span style={{ color: "var(--text-2)" }}>완료 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.done}</b>/{st.total}</span>
+          <span style={{ color: "var(--text-2)" }}>진행 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.inProgress}</b></span>
+          <span style={{ color: "var(--text-2)" }}>포인트 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.donePts}</b>/{st.totalPts} SP</span>
+        </div>
+        <div style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 10px" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" }} />
+          병목 {st.bottlenecks} · 지연 {st.stale}
+        </div>
       </div>
+
+      {/* MAIN */}
+      <main style={{ flex: 1, minHeight: 0, position: "relative" }}>
+        {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} setView={setView} onOpen={openDetail} />}
+        {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} setView={setView} onOpen={openDetail} onCreate={openCreate} />}
+        {view !== "outline" && view !== "board" && (
+          <div style={{ padding: 40, color: "var(--text-3)", fontSize: 13 }}>{TABS.find((t) => t[0] === view)?.[2]} 뷰 — 준비 중 (M4)</div>
+        )}
+      </main>
+
+      {modalOpen && <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} />}
     </div>
   );
 }
+
+const tabStyle = (active: boolean): CSSProperties => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });

@@ -12751,179 +12751,11 @@ var require_jsx_runtime = __commonJS({
 });
 
 // src/plugin-entry.tsx
-var import_react = __toESM(require_react(), 1);
+var import_react5 = __toESM(require_react(), 1);
 var import_client = __toESM(require_client(), 1);
 
 // src/view/App.tsx
-var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
-function App({ store: store2 }) {
-  const count = store2?.get().length ?? 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-    "div",
-    {
-      style: {
-        padding: 24,
-        fontFamily: "system-ui, sans-serif",
-        color: "var(--text-2)",
-        background: "var(--bg)",
-        height: "100%"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 15, fontWeight: 700, color: "var(--text)" }, children: "\uCE78\uBC18 \xB7 Kanban" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, marginTop: 6 }, children: [
-          "\uBC18\uC751 \uC178/\uBDF0 \uC900\uBE44 \uC911 (M2) \u2014 \uB178\uB4DC ",
-          count,
-          "\uAC1C. \uBA85\uB839\uC740 CLI/MCP \uB85C \uB3D9\uC791\uD569\uB2C8\uB2E4."
-        ] })
-      ]
-    }
-  );
-}
-
-// src/styles.ts
-var GLOBAL_CSS = `
-:root{
-  --bg:#f1f3f6;--surface:#ffffff;--surface-2:#e9ecf1;--surface-3:#e1e5ec;
-  --border:#e3e7ee;--border-2:#d3d9e3;--text:#161a23;--text-2:#5a6373;--text-3:#8a93a4;
-  --accent:#5b5bf0;--accent-soft:rgba(91,91,240,.10);--shadow:0 1px 2px rgba(20,24,38,.05);
-  --shadow-lg:0 12px 40px rgba(20,24,38,.16);--grid:rgba(20,24,38,.05);
-  --mono:'IBM Plex Mono',monospace;--r-card:10px;--r-col:13px;
-}
-[data-theme="dark"]{
-  --bg:#0d0f14;--surface:#171a21;--surface-2:#13161c;--surface-3:#1d212a;
-  --border:#262b35;--border-2:#323845;--text:#e7eaf0;--text-2:#9aa3b2;--text-3:#69707e;
-  --accent:#7d7dff;--accent-soft:rgba(125,125,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4);
-  --shadow-lg:0 16px 48px rgba(0,0,0,.5);--grid:rgba(255,255,255,.05);
-}
-*{box-sizing:border-box}
-.kanban-root{margin:0}
-input{font-family:inherit}
-::-webkit-scrollbar{height:10px;width:10px}
-::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:8px;border:2px solid transparent;background-clip:content-box}
-::-webkit-scrollbar-track{background:transparent}
-@keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}50%{box-shadow:0 0 0 4px rgba(245,158,11,.22)}}
-@keyframes drawerIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-`;
-
-// src/store.ts
-var COLL = "nodes";
-var VALID_STATUS = ["backlog", "todo", "inprogress", "review", "done"];
-var VALID_TYPE = ["epic", "story", "task", "bug"];
-var VALID_PRIORITY = ["highest", "high", "medium", "low"];
-function asStr(v, d = "") {
-  return typeof v === "string" ? v : d;
-}
-function asNum(v, d = 0) {
-  return typeof v === "number" && Number.isFinite(v) ? v : d;
-}
-function rowToNode(raw) {
-  if (!raw || typeof raw !== "object") return null;
-  const r = raw;
-  if (typeof r.id !== "string") return null;
-  const type = VALID_TYPE.includes(r.type) ? r.type : "task";
-  const status = VALID_STATUS.includes(r.status) ? r.status : "todo";
-  const priority = VALID_PRIORITY.includes(r.priority) ? r.priority : "medium";
-  return {
-    id: r.id,
-    key: asStr(r.key, r.id),
-    parentId: typeof r.parentId === "string" ? r.parentId : null,
-    order: asNum(r.order, 0),
-    title: asStr(r.title),
-    body: asStr(r.body),
-    type,
-    status,
-    assignee: asStr(r.assignee, "me"),
-    priority,
-    points: asNum(r.points, 0),
-    start: asStr(r.start, "2026-06-01"),
-    due: asStr(r.due, "2026-06-02"),
-    collapsed: r.collapsed === true,
-    history: Array.isArray(r.history) ? r.history : [],
-    created: asNum(r.created, 0),
-    updated: asNum(r.updated, 0)
-  };
-}
-function disposeOf(d) {
-  if (typeof d === "function") d();
-  else if (d && typeof d.dispose === "function") d.dispose();
-}
-function createStore(app) {
-  const data = app.data;
-  const scope = app.project?.current?.()?.id ?? "default";
-  let nodes = [];
-  let writing = 0;
-  const subs = /* @__PURE__ */ new Set();
-  let watchSub = null;
-  const notify = () => {
-    for (const cb of subs) cb();
-  };
-  async function hydrate() {
-    if (!data) return;
-    const rows = await data.query(COLL, { scope, limit: 1e5 });
-    nodes = rows.map(rowToNode).filter((n) => n != null);
-    notify();
-  }
-  async function persist(prev, next) {
-    if (!data) return;
-    const prevMap = new Map(prev.map((n) => [n.id, n]));
-    const nextIds = new Set(next.map((n) => n.id));
-    writing++;
-    try {
-      for (const n of next) {
-        const p = prevMap.get(n.id);
-        if (!p || JSON.stringify(p) !== JSON.stringify(n)) {
-          await data.put(COLL, n, { scope, id: n.id });
-        }
-      }
-      for (const p of prev) if (!nextIds.has(p.id)) await data.delete(COLL, p.id, { scope });
-    } finally {
-      writing--;
-    }
-  }
-  return {
-    get: () => nodes,
-    async apply(fn) {
-      const prev = nodes;
-      const next = fn(prev);
-      if (next === prev) return;
-      nodes = next;
-      notify();
-      await persist(prev, next);
-    },
-    subscribe(cb) {
-      subs.add(cb);
-      return () => subs.delete(cb);
-    },
-    nextKey() {
-      const nums = nodes.map((n) => parseInt(n.key.split("-")[1], 10) || 0);
-      return "WMP-" + (Math.max(0, ...nums) + 1);
-    },
-    genId() {
-      try {
-        return crypto.randomUUID();
-      } catch {
-        return "n-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e9).toString(36);
-      }
-    },
-    async init() {
-      if (!data) return;
-      await data.define(COLL, {
-        indexes: ["parentId", "order", "status", "assignee", "priority", "due", "type"],
-        fts: ["key", "title", "body"]
-      });
-      await hydrate();
-      watchSub = data.watch(COLL, { scope }, () => {
-        if (writing === 0) void hydrate();
-      });
-    },
-    dispose() {
-      if (watchSub) disposeOf(watchSub);
-      watchSub = null;
-      subs.clear();
-    }
-  };
-}
+var import_react4 = __toESM(require_react(), 1);
 
 // src/refs.ts
 var STATUSES = [
@@ -12933,11 +12765,26 @@ var STATUSES = [
   { id: "review", label: "In Review", kr: "\uB9AC\uBDF0", color: "#8b5cf6", wip: 3 },
   { id: "done", label: "Done", kr: "\uC644\uB8CC", color: "#10b981" }
 ];
+var USERS = {
+  JH: { name: "\uAE40\uC9C0\uD6C8", initials: "JH", color: "#5b5bf0" },
+  SP: { name: "Sarah Park", initials: "SP", color: "#ec4899" },
+  DY: { name: "\uC774\uB3C4\uC724", initials: "DY", color: "#14b8a6" },
+  AK: { name: "Alex Kim", initials: "AK", color: "#f59e0b" },
+  SY: { name: "\uBC15\uC11C\uC5F0", initials: "SY", color: "#8b5cf6" },
+  TL: { name: "Tom Lee", initials: "TL", color: "#ef4444" },
+  me: { name: "\uB098 (You)", initials: "ME", color: "#0ea5e9" }
+};
 var PRIORITY = {
   highest: { kr: "\uCD5C\uC0C1", label: "Highest", color: "#dc2626", rank: 4 },
   high: { kr: "\uB192\uC74C", label: "High", color: "#f97316", rank: 3 },
   medium: { kr: "\uBCF4\uD1B5", label: "Medium", color: "#eab308", rank: 2 },
   low: { kr: "\uB0AE\uC74C", label: "Low", color: "#3b82f6", rank: 1 }
+};
+var TYPES = {
+  epic: { letter: "E", color: "#8b5cf6" },
+  story: { letter: "S", color: "#22c55e" },
+  task: { letter: "T", color: "#3b82f6" },
+  bug: { letter: "B", color: "#ef4444" }
 };
 var RANGE_START = "2026-06-01";
 var RANGE_END = "2026-06-28";
@@ -12952,6 +12799,9 @@ function byId(nodes, id) {
 }
 function childrenOf(nodes, parentId) {
   return nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.order - b.order || a.created - b.created);
+}
+function hasChildren(nodes, id) {
+  return nodes.some((n) => n.parentId === id);
 }
 function depthOf(nodes, id) {
   let d = 0;
@@ -13417,6 +13267,869 @@ function projectView(nodes, view, focusId = null, opts = {}) {
   }
 }
 
+// src/view/useStore.ts
+var import_react = __toESM(require_react(), 1);
+var EMPTY = [];
+function useNodes(store2) {
+  const subscribe = (0, import_react.useCallback)((cb) => store2 ? store2.subscribe(cb) : () => {
+  }, [store2]);
+  const getSnapshot = (0, import_react.useCallback)(() => store2 ? store2.get() : EMPTY, [store2]);
+  return (0, import_react.useSyncExternalStore)(subscribe, getSnapshot);
+}
+
+// src/view/ui.ts
+function hexA(h2, a) {
+  const n = parseInt(h2.slice(1), 16);
+  return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+}
+var sMeta = (id) => STATUSES.find((s) => s.id === id);
+var userMeta = (id) => USERS[id] ?? { name: id, initials: (id || "?").slice(0, 2).toUpperCase(), color: "#8a93a4" };
+function avatar(uid, size = 22) {
+  const u = userMeta(uid);
+  return {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    background: u.color,
+    color: "#fff",
+    fontSize: size * 0.42,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "none",
+    fontFamily: "var(--mono)"
+  };
+}
+function typeBadge(type) {
+  const t = TYPES[type];
+  return {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    background: t.color,
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "none"
+  };
+}
+function statusChip(id) {
+  const m = sMeta(id);
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "2px 9px",
+    borderRadius: 99,
+    fontSize: 11,
+    fontWeight: 600,
+    background: hexA(m.color, 0.14),
+    color: m.color,
+    flex: "none"
+  };
+}
+function prDot(p) {
+  return { width: 8, height: 8, borderRadius: 2, background: PRIORITY[p].color, flex: "none", transform: "rotate(45deg)" };
+}
+function ptsBadge() {
+  return {
+    marginLeft: "auto",
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: "var(--mono)",
+    color: "var(--text-2)",
+    background: "var(--surface-3)",
+    borderRadius: 6,
+    padding: "1px 7px",
+    flex: "none"
+  };
+}
+var initials = (uid) => userMeta(uid).initials;
+var userName = (uid) => userMeta(uid).name;
+var typeLetter = (type) => TYPES[type].letter;
+function rootStyle() {
+  return {
+    background: "var(--bg)",
+    color: "var(--text)",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    letterSpacing: "-.01em"
+  };
+}
+
+// src/view/Outline.tsx
+var import_react2 = __toESM(require_react(), 1);
+var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+var kbd = (label2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { style: { fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, padding: "1px 5px", border: "1px solid var(--border-2)", borderRadius: 5, background: "var(--surface-2)", color: "var(--text-2)" }, children: label2 });
+function Outline({ store: store2, nodes, focusId, setFocusId, setView, onOpen }) {
+  const rows = toOutlineRows(nodes, focusId);
+  const crumbs = breadcrumb(nodes, focusId);
+  const containerRef = (0, import_react2.useRef)(null);
+  const pendingFocus = (0, import_react2.useRef)(null);
+  (0, import_react2.useLayoutEffect)(() => {
+    const pf = pendingFocus.current;
+    if (!pf || !containerRef.current) return;
+    pendingFocus.current = null;
+    const el = containerRef.current.querySelector(`[data-outline-id="${pf.id}"]`);
+    if (el) {
+      el.focus();
+      const p = pf.caret == null ? el.value.length : pf.caret;
+      try {
+        el.setSelectionRange(p, p);
+      } catch {
+      }
+    }
+  });
+  const apply = (fn) => void store2.apply(fn);
+  const commit = (ns, id, title) => ns.map((n) => n.id === id ? { ...n, title } : n);
+  const addChild = (parentId) => {
+    const now = Date.now();
+    const node = {
+      id: store2.genId(),
+      key: store2.nextKey(),
+      parentId,
+      order: 0,
+      title: "",
+      body: "",
+      type: parentId == null ? "epic" : "task",
+      status: "todo",
+      assignee: "me",
+      priority: "medium",
+      points: parentId == null ? 0 : 3,
+      start: TODAY,
+      due: RANGE_END,
+      collapsed: false,
+      history: [],
+      created: now,
+      updated: now
+    };
+    pendingFocus.current = { id: node.id, caret: 0 };
+    apply((ns) => insertNode(ns, node));
+  };
+  const cycleStatus = (id) => {
+    const n = byId(nodes, id);
+    if (!n) return;
+    const next = STATUS_IDS[(STATUS_IDS.indexOf(n.status) + 1) % STATUS_IDS.length];
+    apply((ns) => setStatus(ns, id, next, "me", TODAY));
+  };
+  const onKey = (e, id) => {
+    const real = byId(nodes, id);
+    if (!real) return;
+    const val = e.currentTarget.value;
+    const caret = e.currentTarget.selectionStart ?? null;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const now = Date.now();
+      const node = {
+        id: store2.genId(),
+        key: store2.nextKey(),
+        parentId: real.parentId,
+        order: 0,
+        title: "",
+        body: "",
+        type: "task",
+        status: real.status,
+        assignee: real.assignee,
+        priority: "medium",
+        points: 3,
+        start: TODAY,
+        due: RANGE_END,
+        collapsed: false,
+        history: [],
+        created: now,
+        updated: now
+      };
+      pendingFocus.current = { id: node.id, caret: 0 };
+      apply((ns) => insertNode(commit(ns, id, val), node, id));
+    } else if (e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      pendingFocus.current = { id, caret };
+      apply((ns) => indent(commit(ns, id, val), id));
+    } else if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      if (real.parentId != null) {
+        pendingFocus.current = { id, caret };
+        apply((ns) => outdent(commit(ns, id, val), id));
+      }
+    } else if (e.key === "Backspace" && val === "") {
+      if (hasChildren(nodes, id)) return;
+      e.preventDefault();
+      const i = rows.findIndex((r) => r.id === id);
+      const prev = rows[i - 1];
+      if (prev) pendingFocus.current = { id: prev.id, caret: null };
+      apply((ns) => removeNode(ns, id));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const i = rows.findIndex((r) => r.id === id);
+      if (rows[i - 1]) focusInput(rows[i - 1].id);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const i = rows.findIndex((r) => r.id === id);
+      if (rows[i + 1]) focusInput(rows[i + 1].id);
+    }
+  };
+  const focusInput = (id) => {
+    const el = containerRef.current?.querySelector(`[data-outline-id="${id}"]`);
+    el?.focus();
+  };
+  const goUp = () => {
+    if (!focusId) return;
+    const n = byId(nodes, focusId);
+    setFocusId(n ? n.parentId : null);
+  };
+  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4";
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 10 }, children: [
+      crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
+        i > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--text-3)", fontSize: 12, margin: "0 1px" }, children: "/" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFocusId(c.id), style: crumbStyle(i === crumbs.length - 1), children: c.label })
+      ] }, i)),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setView("board"), style: { marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\u25A6 \uC774 \uB178\uB4DC \uBCF4\uB4DC\uB85C \u2192" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 6 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { style: { margin: 0, fontSize: 14, fontWeight: 600 }, children: "\uD2B8\uB9AC \uC544\uC6C3\uB77C\uC774\uB108 \xB7 Outliner" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 11, fontSize: 11, color: "var(--text-3)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+          kbd("Tab"),
+          " \uB4E4\uC5EC\uC4F0\uAE30"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+          kbd("\u21E7Tab"),
+          " \uB0B4\uC5B4\uC4F0\uAE30"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+          kbd("Enter"),
+          " \uC0C8 \uC904"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+          kbd("\u232B"),
+          " \uC0AD\uC81C"
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { style: { margin: "0 0 16px", fontSize: 12, color: "var(--text-3)", maxWidth: 760, lineHeight: 1.5 }, children: [
+      "\uC784\uC758 \uAE4A\uC774\uB85C \uD2B8\uB9AC\uB97C \uC801\uC73C\uC138\uC694. \uAC01 \uC904\uC758 ",
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { style: { color: "var(--text-2)" }, children: "\u25A6" }),
+      " \uB97C \uB204\uB974\uBA74 \uADF8 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00(focus) \uD558\uC704\uAC00 \uBCF4\uB4DC/\uC544\uC6C3\uB77C\uC774\uB108\uB85C \uC7AC\uAD6C\uC131\uB429\uB2C8\uB2E4."
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { ref: containerRef, style: { maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }, children: [
+      focusId && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { onClick: goUp, style: { display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", marginBottom: 4, borderRadius: 9, cursor: "pointer", color: "var(--text-2)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: upIcon, children: "\u2191" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 13, fontWeight: 600 }, children: "\uC0C1\uC704\uB85C" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 11, color: "var(--text-3)" }, children: [
+          "\xB7 ",
+          upParentLabel
+        ] })
+      ] }),
+      rows.map((row) => {
+        const m = sMeta(row.status);
+        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
+          Array.from({ length: row.depth }).map((_, k) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 22, flex: "none", alignSelf: "stretch", borderRight: "1.5px solid var(--border)" } }, k)),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 9, padding: "0 10px 0 8px" }, children: [
+            row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => setFocusId(row.id), title: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30", style: { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }, children: "E" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFocusId(row.id), title: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30", style: { width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 } }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "input",
+              {
+                defaultValue: row.title,
+                placeholder: row.isEpic ? "\uC81C\uBAA9 \uC785\uB825\u2026" : "\uD560 \uC77C \uC81C\uBAA9 \uC785\uB825\u2026",
+                "data-outline-id": row.id,
+                onBlur: (e) => apply((ns) => commit(ns, row.id, e.target.value)),
+                onKeyDown: (e) => onKey(e, row.id),
+                style: { flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: row.isEpic ? 14 : 13, fontWeight: row.isEpic ? 700 : 500, color: "var(--text)", padding: "4px 0", letterSpacing: "-.01em" }
+              },
+              row.id
+            ),
+            !row.isEpic && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => cycleStatus(row.id), title: "\uC0C1\uD0DC \uBCC0\uACBD", style: { cursor: "pointer", ...statusChip(row.status) }, children: m.kr }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFocusId(row.id), title: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30", style: drillStyle, children: row.hasChildren ? `\u25A6 ${row.doneCount}/${row.childCount}` : "\u25A6 \uBCF4\uB4DC" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => onOpen(row.id), style: { fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }, children: row.key }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: avatar(row.assignee, 20), children: initials(row.assignee) })
+          ] })
+        ] }, row.id);
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => addChild(focusId), style: { display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "9px 10px", marginTop: 4, border: "none", background: "transparent", color: "var(--text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8 }, children: "+ \uD56D\uBAA9 \uCD94\uAC00" })
+    ] })
+  ] });
+}
+var crumbStyle = (cur) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "3px 9px",
+  borderRadius: 7,
+  border: "none",
+  background: cur ? "var(--accent-soft)" : "transparent",
+  color: cur ? "var(--accent)" : "var(--text-2)",
+  fontSize: 12.5,
+  fontWeight: cur ? 700 : 600,
+  cursor: cur ? "default" : "pointer",
+  fontFamily: "inherit",
+  whiteSpace: "nowrap"
+});
+var upIcon = { width: 20, height: 20, borderRadius: 6, border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flex: "none" };
+var drillStyle = { display: "inline-flex", alignItems: "center", gap: 4, height: 22, padding: "0 8px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--surface-2)", color: "var(--text-2)", fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", flex: "none" };
+
+// src/view/Board.tsx
+var import_react3 = __toESM(require_react(), 1);
+var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
+function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, search, setView, onOpen, onCreate }) {
+  const board = toBoard(nodes, focusId, scope, search);
+  const [dragId, setDragId] = (0, import_react3.useState)(null);
+  const [overStatus, setOverStatus] = (0, import_react3.useState)(null);
+  const drop = (status) => {
+    if (dragId != null) void store2.apply((ns) => setStatus(ns, dragId, status, "me", TODAY));
+    setDragId(null);
+    setOverStatus(null);
+  };
+  const goUp = () => {
+    if (!focusId) return;
+    const n = byId(nodes, focusId);
+    setFocusId(n ? n.parentId : null);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { height: "100%", display: "flex", flexDirection: "column" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, padding: "12px 22px 0", flexWrap: "wrap" }, children: [
+      focusId && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: goUp, title: "\uC0C1\uC704\uB85C", style: { height: 26, padding: "0 9px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginRight: 4 }, children: "\u2191 \uC0C1\uC704\uB85C" }),
+      board.breadcrumb.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
+        i > 0 && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { color: "var(--text-3)", fontSize: 12, margin: "0 1px" }, children: "/" }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setFocusId(c.id), style: crumbStyle2(i === board.breadcrumb.length - 1), children: c.label })
+      ] }, i)),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { marginLeft: 10, display: "inline-flex", background: "var(--surface-2)", borderRadius: 8, padding: 2 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setScope("all"), style: scopeBtn(scope === "all"), children: "\uC804\uCCB4" }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setScope("direct"), style: scopeBtn(scope === "direct"), children: "\uC9C1\uACC4\uB9CC" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setView("outline"), style: { marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\u2261 \uC544\uC6C3\uB77C\uC774\uB108\uB85C" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", gap: 14, padding: "14px 22px 20px", alignItems: "flex-start", overflowX: "auto" }, children: board.columns.map((col) => {
+      const over = overStatus === col.id;
+      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { width: 278, flex: "none", background: "var(--surface-2)", borderRadius: "var(--r-col)", border: col.bottleneck ? "1px solid rgba(245,158,11,.4)" : "1px solid var(--border)", display: "flex", flexDirection: "column", maxHeight: "100%" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 9px" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { width: 9, height: 9, borderRadius: 3, background: col.color, flex: "none" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontWeight: 600, fontSize: 13 }, children: col.label }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 11, color: "var(--text-3)" }, children: col.kr }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 700, fontFamily: "var(--mono)", padding: "1px 8px", borderRadius: 99, background: col.bottleneck ? "rgba(245,158,11,.16)" : "var(--surface-3)", color: col.bottleneck ? "#f59e0b" : "var(--text-3)", animation: col.bottleneck ? "pulseRing 1.8s ease-in-out infinite" : "none" }, children: col.wip != null ? `${col.count}/${col.wip}` : col.count })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+          "div",
+          {
+            onDragOver: (e) => {
+              e.preventDefault();
+              if (overStatus !== col.id) setOverStatus(col.id);
+            },
+            onDrop: (e) => {
+              e.preventDefault();
+              drop(col.id);
+            },
+            style: { position: "relative", display: "flex", flexDirection: "column", gap: 9, padding: "4px 10px 12px", overflowY: "auto", minHeight: 80 },
+            children: [
+              over && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { position: "absolute", inset: 4, border: "2px dashed var(--accent)", borderRadius: 10, background: "var(--accent-soft)", pointerEvents: "none", zIndex: 2 } }),
+              col.cards.map((card) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Card, { card, dragging: dragId === card.id, onDragStart: () => setDragId(card.id), onDragEnd: () => {
+                setDragId(null);
+                setOverStatus(null);
+              }, onSelect: () => hasChildren(nodes, card.id) ? setFocusId(card.id) : onOpen(card.id), onDrill: () => setFocusId(card.id) }, card.id)),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => onCreate(col.id), style: { width: "100%", padding: 8, border: "1px dashed var(--border-2)", borderRadius: "var(--r-card)", background: "transparent", color: "var(--text-3)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "+ \uCE74\uB4DC \uCD94\uAC00" })
+            ]
+          }
+        )
+      ] }, col.id);
+    }) })
+  ] });
+}
+function Card({ card, dragging, onDragStart, onDragEnd, onSelect, onDrill }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+    "div",
+    {
+      draggable: true,
+      onDragStart,
+      onDragEnd,
+      onClick: onSelect,
+      style: { background: "var(--surface)", border: "1px solid var(--border)", borderLeft: card.stale ? "3px solid #f59e0b" : "1px solid var(--border)", borderRadius: "var(--r-card)", padding: "11px 12px", display: "flex", flexDirection: "column", gap: 9, cursor: "grab", boxShadow: "var(--shadow)", userSelect: "none", opacity: dragging ? 0.35 : 1, transition: "box-shadow .15s,opacity .15s" },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: typeBadge(card.type), children: typeLetter(card.type) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 11, fontWeight: 600, fontFamily: "var(--mono)", color: "var(--text-3)" }, children: card.key }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: prDot(card.priority) }),
+          card.stale && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,.14)", padding: "1px 6px", borderRadius: 6 }, children: [
+            card.staleDays,
+            "\uC77C \uC815\uCCB4"
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 13, fontWeight: 500, lineHeight: 1.4 }, children: card.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
+        card.showPath && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: pathChip, children: [
+          "\u21B3 ",
+          card.parentLabel
+        ] }),
+        card.hasChildren && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4, padding: "8px 9px", background: "var(--surface-2)", borderRadius: 8 }, children: [
+            card.preview.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--text-2)", overflow: "hidden" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { width: 6, height: 6, borderRadius: 2, flex: "none", background: sMeta(p.status).color } }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: p.title })
+            ] }, i)),
+            card.childCount > 3 && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { fontSize: 10, color: "var(--text-3)", paddingLeft: 12 }, children: [
+              "+",
+              card.childCount - 3,
+              " more\u2026"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7, marginTop: 3 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { flex: 1, height: 4, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { height: "100%", width: `${card.progress?.pct ?? 0}%`, background: "var(--accent)", borderRadius: 99 } }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 10, fontFamily: "var(--mono)", color: "var(--text-3)" }, children: card.progress ? `${card.progress.done}/${card.progress.total}` : "" })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: (e) => {
+            e.stopPropagation();
+            onDrill();
+          }, style: { display: "inline-flex", alignItems: "center", gap: 5, width: "100%", justifyContent: "center", marginTop: 2, height: 27, border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-2)", color: "var(--text-2)", fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }, children: "\u2198 \uB4E4\uC5B4\uAC00\uAE30 \xB7 drill in" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: avatar(card.assignee, 22), children: initials(card.assignee) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 11, color: "var(--text-3)" }, children: fmtDue(card.due) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: ptsBadge(), children: card.points })
+        ] })
+      ]
+    }
+  );
+}
+var fmtDue = (d) => {
+  const a = d.split("-");
+  return `${+a[1]}/${+a[2]}`;
+};
+var pathChip = { display: "inline-flex", alignItems: "center", gap: 4, maxWidth: "100%", fontSize: 10, fontWeight: 600, color: "var(--text-3)", background: "var(--surface-2)", borderRadius: 6, padding: "2px 7px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+var crumbStyle2 = (cur) => ({ display: "inline-flex", alignItems: "center", padding: "3px 9px", borderRadius: 7, border: "none", background: cur ? "var(--accent-soft)" : "transparent", color: cur ? "var(--accent)" : "var(--text-2)", fontSize: 12.5, fontWeight: cur ? 700 : 600, cursor: cur ? "default" : "pointer", fontFamily: "inherit", whiteSpace: "nowrap" });
+var scopeBtn = (active) => ({ height: 24, padding: "0 10px", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-3)", boxShadow: active ? "var(--shadow)" : "none" });
+
+// src/view/Modal.tsx
+var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
+var label = (t) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("label", { style: { display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 6 }, children: t });
+var field = { width: "100%", height: 38, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" };
+function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView }) {
+  const isCreate = mode === "create";
+  const isView = mode === "view";
+  const isEdit = mode === "edit";
+  const isForm = isCreate || isEdit;
+  const title = isCreate ? "\uC0C8 \uC774\uC288 \xB7 New issue" : isEdit ? "\uC774\uC288 \uD3B8\uC9D1 \xB7 Edit" : "\uC774\uC288 \uC0C1\uC138 \xB7 Detail";
+  const canSave = draft.title.trim().length > 0;
+  const hist = editing ? histItems(editing) : [];
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(10,12,18,.42)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .15s ease" }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { onClick: (e) => e.stopPropagation(), style: { width: 480, maxWidth: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-lg)", maxHeight: "88vh", display: "flex", flexDirection: "column", animation: "drawerIn .18s cubic-bezier(.2,.8,.2,1)" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid var(--border)", flex: "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: title }),
+      editing && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-2)", marginLeft: 9 }, children: editing.key }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onClose, style: { marginLeft: "auto", width: 28, height: 28, border: "none", background: "var(--surface-2)", borderRadius: 8, cursor: "pointer", color: "var(--text-2)", fontSize: 15 }, children: "\u2715" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { padding: 18, overflow: "auto" }, children: [
+      isForm && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: 15 }, children: [
+          label("\uC81C\uBAA9 \xB7 Title"),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: draft.title, onChange: (e) => setField("title", e.target.value), placeholder: "\uBB34\uC5C7\uC744 \uD574\uC57C \uD558\uB098\uC694?", style: { ...field, height: 38, fontSize: 14 } })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: 15 }, children: [
+          label("\uC124\uBA85 \xB7 Description"),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { value: draft.body, onChange: (e) => setField("body", e.target.value), placeholder: "\uC0C1\uC138 \uB0B4\uC6A9, \uC778\uC218 \uC870\uAC74 \uB4F1", style: { ...field, height: "auto", minHeight: 88, padding: "10px 12px", resize: "vertical", lineHeight: 1.55 } })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px 12px" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            label("\uC720\uD615 \xB7 Type"),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("select", { value: draft.type, onChange: (e) => setField("type", e.target.value), style: field, children: ["task", "story", "bug", "epic"].map((t) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("option", { value: t, children: [
+              TYPES[t].letter,
+              " \xB7 ",
+              t
+            ] }, t)) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            label("\uC0C1\uD0DC \xB7 Status"),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("select", { value: draft.status, onChange: (e) => setField("status", e.target.value), style: field, children: STATUSES.map((s) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("option", { value: s.id, children: [
+              s.label,
+              " \xB7 ",
+              s.kr
+            ] }, s.id)) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            label("\uB2F4\uB2F9\uC790 \xB7 Assignee"),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("select", { value: draft.assignee, onChange: (e) => setField("assignee", e.target.value), style: field, children: Object.keys(USERS).map((k) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: k, children: USERS[k].name }, k)) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            label("\uC6B0\uC120\uC21C\uC704 \xB7 Priority"),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("select", { value: draft.priority, onChange: (e) => setField("priority", e.target.value), style: field, children: Object.keys(PRIORITY).map((k) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("option", { value: k, children: [
+              PRIORITY[k].label,
+              " \xB7 ",
+              PRIORITY[k].kr
+            ] }, k)) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            label("\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8 \xB7 SP"),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { type: "number", min: 0, value: draft.points, onChange: (e) => setField("points", Number(e.target.value) || 0), style: { ...field, fontFamily: "var(--mono)", padding: "0 12px" } })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            label("\uB9C8\uAC10 \xB7 Due"),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { type: "date", value: draft.due, onChange: (e) => setField("due", e.target.value), style: { ...field, fontFamily: "var(--mono)", padding: "0 11px" } })
+          ] })
+        ] })
+      ] }),
+      isView && editing && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: typeBadge(editing.type), children: typeLetter(editing.type) }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: statusChip(editing.status), children: sMeta(editing.status).kr })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { style: { margin: "0 0 14px", fontSize: 18, fontWeight: 600, lineHeight: 1.35 }, children: editing.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 8 }, children: "\uC124\uBA85 \xB7 Description" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { margin: "0 0 22px", fontSize: 13.5, lineHeight: 1.6, color: editing.body ? "var(--text-2)" : "var(--text-3)", whiteSpace: "pre-wrap", fontStyle: editing.body ? "normal" : "italic" }, children: editing.body || "\uC124\uBA85\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4 \xB7 No description yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 12px" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Meta, { k: "\uB2F4\uB2F9\uC790", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: avatar(editing.assignee, 24), children: initials(editing.assignee) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 13 }, children: userName(editing.assignee) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Meta, { k: "\uC6B0\uC120\uC21C\uC704", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: prDot(editing.priority) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 13 }, children: PRIORITY[editing.priority].label })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Meta, { k: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { fontSize: 13, fontFamily: "var(--mono)", fontWeight: 600 }, children: [
+            editing.points,
+            " SP"
+          ] }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Meta, { k: "\uB9C8\uAC10", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 13, fontFamily: "var(--mono)" }, children: editing.due }) })
+        ] })
+      ] }),
+      editing && hist.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 14 }, children: "\uC0C1\uD0DC \uC804\uD658 \uC774\uB825 \xB7 History" }),
+        hist.map((hh, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", gap: 12, paddingBottom: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { width: 10, height: 10, borderRadius: "50%", background: hh.color, flex: "none", marginTop: 3 } }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }, children: hh.created ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 12.5, fontWeight: 600 }, children: "\uC774\uC288 \uC0DD\uC131\uB428 \xB7 Created" }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: statusChip(hh.from), children: sMeta(hh.from).kr }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--text-3)" }, children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: statusChip(hh.to), children: sMeta(hh.to).kr })
+            ] }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { fontSize: 11, color: "var(--text-3)", marginTop: 4 }, children: [
+              hh.by,
+              " \xB7 ",
+              hh.at
+            ] })
+          ] })
+        ] }, i))
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "14px 18px", borderTop: "1px solid var(--border)", flex: "none" }, children: [
+      editing && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onDelete, style: { padding: "8px 14px", border: "1px solid var(--border)", borderRadius: 8, background: "transparent", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\uC0AD\uC81C" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8 }, children: [
+        isView && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onClose, style: btnGhost, children: "\uB2EB\uAE30" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onEnterEdit, style: btnPrimary, children: "\uC218\uC815 \xB7 Edit" })
+        ] }),
+        isEdit && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onBackToView, style: btnGhost, children: "\uCDE8\uC18C" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onSave, style: { ...btnPrimary, opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }, children: "\uC800\uC7A5 \xB7 Save" })
+        ] }),
+        isCreate && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onClose, style: btnGhost, children: "\uCDE8\uC18C" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: onCreate, style: { ...btnPrimary, opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }, children: "\uC774\uC288 \uB9CC\uB4E4\uAE30" })
+        ] })
+      ] })
+    ] })
+  ] }) });
+}
+function Meta({ k, children }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 11, color: "var(--text-3)", marginBottom: 5 }, children: k }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 7 }, children })
+  ] });
+}
+function histItems(n) {
+  const out = [{ created: true, by: userName(n.assignee), at: n.start.split("-").slice(1).join("/"), color: "var(--text-3)" }];
+  for (const h2 of n.history) out.push({ created: false, from: h2.from, to: h2.to, by: userName(h2.by), at: h2.at.split("-").slice(1).join("/"), color: sMeta(h2.to).color });
+  return out;
+}
+var btnGhost = { padding: "8px 16px", border: "1px solid var(--border)", borderRadius: 8, background: "transparent", color: "var(--text-2)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" };
+var btnPrimary = { padding: "8px 18px", border: "none", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" };
+
+// src/view/App.tsx
+var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
+var dispose = (d) => {
+  if (typeof d === "function") d();
+  else d?.dispose?.();
+};
+var TABS = [
+  ["outline", "Outliner", "\uC544\uC6C3\uB77C\uC774\uB108"],
+  ["board", "Kanban", "\uCE78\uBC18"],
+  ["gantt", "Gantt", "\uAC04\uD2B8"],
+  ["timeline", "Timeline", "\uD0C0\uC784\uB77C\uC778"],
+  ["tree", "Tree", "\uD2B8\uB9AC"],
+  ["table", "Table", "\uD14C\uC774\uBE14"],
+  ["calendar", "Calendar", "\uCE98\uB9B0\uB354"]
+];
+var blankDraft = () => ({ title: "", body: "", type: "task", status: "todo", assignee: "me", priority: "medium", points: 3, start: TODAY, due: RANGE_END });
+function App({ store: store2, app }) {
+  const nodes = useNodes(store2);
+  const [view, setView] = (0, import_react4.useState)("outline");
+  const [search, setSearch] = (0, import_react4.useState)("");
+  const [focusId, setFocusId] = (0, import_react4.useState)(null);
+  const [scope, setScope] = (0, import_react4.useState)("direct");
+  const [modalOpen, setModalOpen] = (0, import_react4.useState)(false);
+  const [mode, setMode] = (0, import_react4.useState)("create");
+  const [editingId, setEditingId] = (0, import_react4.useState)(null);
+  const [draft, setDraft] = (0, import_react4.useState)(blankDraft);
+  (0, import_react4.useEffect)(() => {
+    const d = app?.bus?.on?.("kanban:nav", (p) => {
+      setFocusId(p?.focusId ?? null);
+      if (p?.view) setView(p.view);
+    });
+    return () => dispose(d);
+  }, [app]);
+  if (!store2) return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { padding: 24, color: "#888" }, children: "store \uC900\uBE44 \uC911\u2026" });
+  const apply = (fn) => void store2.apply(fn);
+  const editing = editingId ? byId(nodes, editingId) : null;
+  const st = stats(nodes);
+  const setField = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+  const openCreate = (status) => {
+    setDraft({ ...blankDraft(), status });
+    setMode("create");
+    setEditingId(null);
+    setModalOpen(true);
+  };
+  const openDetail = (id) => {
+    const n = byId(nodes, id);
+    if (!n) return;
+    setDraft({ title: n.title, body: n.body, type: n.type, status: n.status, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due });
+    setEditingId(id);
+    setMode("view");
+    setModalOpen(true);
+  };
+  const enterEdit = () => editing && (setDraft({ title: editing.title, body: editing.body, type: editing.type, status: editing.status, assignee: editing.assignee, priority: editing.priority, points: editing.points, start: editing.start, due: editing.due }), setMode("edit"));
+  const createIssue = () => {
+    if (!draft.title.trim()) return;
+    const now = Date.now();
+    const node = { id: store2.genId(), key: store2.nextKey(), parentId: focusId, order: 0, title: draft.title.trim(), body: draft.body.trim(), type: draft.type, status: draft.status, assignee: draft.assignee, priority: draft.priority, points: draft.points, start: draft.start, due: draft.due, collapsed: false, history: [], created: now, updated: now };
+    apply((ns) => insertNode(ns, node));
+    setModalOpen(false);
+  };
+  const saveEdit = () => {
+    if (!editingId || !draft.title.trim()) return;
+    const id = editingId;
+    apply(
+      (ns) => ns.map((n) => {
+        if (n.id !== id) return n;
+        const history = draft.status !== n.status ? [...n.history, { from: n.status, to: draft.status, by: "me", at: TODAY }] : n.history;
+        return { ...n, title: draft.title.trim(), body: draft.body.trim(), type: draft.type, status: draft.status, assignee: draft.assignee, priority: draft.priority, points: draft.points, start: draft.start, due: draft.due, history, updated: Date.now() };
+      })
+    );
+    setMode("view");
+  };
+  const del = () => {
+    if (editingId) apply((ns) => removeNode(ns, editingId));
+    setModalOpen(false);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "kanban-root", style: rootStyle(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("header", { style: { display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("nav", { style: { display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }, children: TABS.map(([id, lbl]) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { onClick: () => setView(id), style: tabStyle(view === id), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: lbl })
+      ] }, id)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flex: "none" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("button", { onClick: () => openCreate("todo"), style: { height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 17, lineHeight: 1, marginTop: -1 }, children: "+" }),
+          " \uC0C8 \uC774\uC288"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "\uAC80\uC0C9 \xB7 search", style: { height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" } })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 18, padding: "11px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", flexWrap: "wrap" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, flex: "none" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 12, color: "var(--text-3)", fontWeight: 600 }, children: "Sprint \uC9C4\uD589\uB960" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { width: 160, height: 7, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { height: "100%", width: `${st.progress}%`, background: "linear-gradient(90deg,var(--accent),#22c55e)", borderRadius: 99, transition: "width .3s" } }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)" }, children: [
+          st.progress,
+          "%"
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 16, flex: "none", fontSize: 12.5 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
+          "\uC644\uB8CC ",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.done }),
+          "/",
+          st.total
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
+          "\uC9C4\uD589 ",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.inProgress })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
+          "\uD3EC\uC778\uD2B8 ",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.donePts }),
+          "/",
+          st.totalPts,
+          " SP"
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 10px" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" } }),
+        "\uBCD1\uBAA9 ",
+        st.bottlenecks,
+        " \xB7 \uC9C0\uC5F0 ",
+        st.stale
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("main", { style: { flex: 1, minHeight: 0, position: "relative" }, children: [
+      view === "outline" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Outline, { store: store2, nodes, focusId, setFocusId, setView, onOpen: openDetail }),
+      view === "board" && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Board, { store: store2, nodes, focusId, setFocusId, scope, setScope, search, setView, onOpen: openDetail, onCreate: openCreate }),
+      view !== "outline" && view !== "board" && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: 40, color: "var(--text-3)", fontSize: 13 }, children: [
+        TABS.find((t) => t[0] === view)?.[2],
+        " \uBDF0 \u2014 \uC900\uBE44 \uC911 (M4)"
+      ] })
+    ] }),
+    modalOpen && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Modal, { mode, draft, editing, setField, onClose: () => setModalOpen(false), onSave: saveEdit, onCreate: createIssue, onDelete: del, onEnterEdit: enterEdit, onBackToView: () => setMode("view") })
+  ] });
+}
+var tabStyle = (active) => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
+
+// src/styles.ts
+var GLOBAL_CSS = `
+.kanban-root{
+  --surface: var(--card);
+  --surface-2: var(--side);
+  --surface-3: var(--inset);
+  --border: var(--bd);
+  --border-2: var(--bd);
+  --text: var(--fg);
+  --text-2: var(--fg2);
+  --text-3: var(--fg3);
+  --accent: var(--acc);
+  --accent-soft: var(--accbg);
+  --grid: var(--bd-soft, var(--bd));
+  --shadow-lg: var(--shadow);
+  --mono: ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace;
+  --r-card:10px;
+  --r-col:13px;
+  font-family: var(--app-font, system-ui, sans-serif);
+}
+*{box-sizing:border-box}
+.kanban-root input,.kanban-root textarea,.kanban-root select,.kanban-root button{font-family:inherit}
+.kanban-root ::-webkit-scrollbar{height:10px;width:10px}
+.kanban-root ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:8px;border:2px solid transparent;background-clip:content-box}
+.kanban-root ::-webkit-scrollbar-track{background:transparent}
+@keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}50%{box-shadow:0 0 0 4px rgba(245,158,11,.22)}}
+@keyframes drawerIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+`;
+
+// src/store.ts
+var COLL = "nodes";
+var VALID_STATUS = ["backlog", "todo", "inprogress", "review", "done"];
+var VALID_TYPE = ["epic", "story", "task", "bug"];
+var VALID_PRIORITY = ["highest", "high", "medium", "low"];
+function asStr(v, d = "") {
+  return typeof v === "string" ? v : d;
+}
+function asNum(v, d = 0) {
+  return typeof v === "number" && Number.isFinite(v) ? v : d;
+}
+function rowToNode(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw;
+  if (typeof r.id !== "string") return null;
+  const type = VALID_TYPE.includes(r.type) ? r.type : "task";
+  const status = VALID_STATUS.includes(r.status) ? r.status : "todo";
+  const priority = VALID_PRIORITY.includes(r.priority) ? r.priority : "medium";
+  return {
+    id: r.id,
+    key: asStr(r.key, r.id),
+    parentId: typeof r.parentId === "string" ? r.parentId : null,
+    order: asNum(r.order, 0),
+    title: asStr(r.title),
+    body: asStr(r.body),
+    type,
+    status,
+    assignee: asStr(r.assignee, "me"),
+    priority,
+    points: asNum(r.points, 0),
+    start: asStr(r.start, "2026-06-01"),
+    due: asStr(r.due, "2026-06-02"),
+    collapsed: r.collapsed === true,
+    history: Array.isArray(r.history) ? r.history : [],
+    created: asNum(r.created, 0),
+    updated: asNum(r.updated, 0)
+  };
+}
+function disposeOf(d) {
+  if (typeof d === "function") d();
+  else if (d && typeof d.dispose === "function") d.dispose();
+}
+function createStore(app) {
+  const data = app.data;
+  const scope = app.project?.current?.()?.id ?? "default";
+  let nodes = [];
+  let writing = 0;
+  const subs = /* @__PURE__ */ new Set();
+  let watchSub = null;
+  const notify = () => {
+    for (const cb of subs) cb();
+  };
+  async function hydrate() {
+    if (!data) return;
+    const rows = await data.query(COLL, { scope, limit: 1e5 });
+    nodes = rows.map(rowToNode).filter((n) => n != null);
+    notify();
+  }
+  async function persist(prev, next) {
+    if (!data) return;
+    const prevMap = new Map(prev.map((n) => [n.id, n]));
+    const nextIds = new Set(next.map((n) => n.id));
+    writing++;
+    try {
+      for (const n of next) {
+        const p = prevMap.get(n.id);
+        if (!p || JSON.stringify(p) !== JSON.stringify(n)) {
+          await data.put(COLL, n, { scope, id: n.id });
+        }
+      }
+      for (const p of prev) if (!nextIds.has(p.id)) await data.delete(COLL, p.id, { scope });
+    } finally {
+      writing--;
+    }
+  }
+  return {
+    get: () => nodes,
+    async apply(fn) {
+      const prev = nodes;
+      const next = fn(prev);
+      if (next === prev) return;
+      nodes = next;
+      notify();
+      await persist(prev, next);
+    },
+    subscribe(cb) {
+      subs.add(cb);
+      return () => subs.delete(cb);
+    },
+    nextKey() {
+      const nums = nodes.map((n) => parseInt(n.key.split("-")[1], 10) || 0);
+      return "WMP-" + (Math.max(0, ...nums) + 1);
+    },
+    genId() {
+      try {
+        return crypto.randomUUID();
+      } catch {
+        return "n-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e9).toString(36);
+      }
+    },
+    async init() {
+      if (!data) return;
+      await data.define(COLL, {
+        indexes: ["parentId", "order", "status", "assignee", "priority", "due", "type"],
+        fts: ["key", "title", "body"]
+      });
+      await hydrate();
+      watchSub = data.watch(COLL, { scope }, () => {
+        if (writing === 0) void hydrate();
+      });
+    },
+    dispose() {
+      if (watchSub) disposeOf(watchSub);
+      watchSub = null;
+      subs.clear();
+    }
+  };
+}
+
 // src/core/seed.ts
 var h = (from, to, by, at) => ({ from, to, by, at });
 var DESC = {
@@ -13777,9 +14490,12 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("focus.set", {
-    description: "\uC5F4\uB9B0 \uCE78\uBC18 GUI \uC758 \uAD00\uC810(focus)\uC744 \uADF8 \uB178\uB4DC\uB85C \uC774\uB3D9. \uD5E4\uB4DC\uB9AC\uC2A4 \uC870\uD68C\uB294 view.get \uC758 focus \uD30C\uB77C\uBBF8\uD130\uB97C \uC4F8 \uAC83.",
-    params: { node: { type: "string", description: "\uB178\uB4DC id/key (\uC0DD\uB7B5/root=\uCD5C\uC0C1\uC704)" } },
-    returns: "{ ok, focusId }",
+    description: "\uC5F4\uB9B0 \uCE78\uBC18 GUI \uC758 \uAD00\uC810(focus)\xB7\uBDF0\uB97C \uC774\uB3D9. \uD5E4\uB4DC\uB9AC\uC2A4 \uC870\uD68C\uB294 view.get \uC758 focus \uD30C\uB77C\uBBF8\uD130\uB97C \uC4F8 \uAC83.",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key (\uC0DD\uB7B5/root=\uCD5C\uC0C1\uC704)" },
+      view: { type: "string", description: "\uB3D9\uC2DC\uC5D0 \uC804\uD658\uD560 \uBDF0", enum: VIEW_ENUM }
+    },
+    returns: "{ ok, focusId, view }",
     handler: (p) => {
       const nodes = store2.get();
       let focusId = null;
@@ -13788,8 +14504,9 @@ function registerCommands(ctx, store2) {
         if (!r.ok) return r;
         focusId = r.node.id;
       }
-      ctx.app.bus?.emit?.("kanban:focus", { focusId });
-      return { ok: true, focusId };
+      const view = VIEW_ENUM.includes(p.view) ? p.view : void 0;
+      ctx.app.bus?.emit?.("kanban:nav", { focusId, view });
+      return { ok: true, focusId, view: view ?? null };
     }
   });
   sub("view.get", {
@@ -13899,8 +14616,8 @@ function registerCommands(ctx, store2) {
 }
 
 // src/plugin-entry.tsx
-var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
-var ErrBoundary = class extends import_react.Component {
+var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
+var ErrBoundary = class extends import_react5.Component {
   state = { err: null };
   static getDerivedStateFromError(err) {
     return { err };
@@ -13910,7 +14627,7 @@ var ErrBoundary = class extends import_react.Component {
   }
   render() {
     if (this.state.err) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { padding: 16, color: "#f88", fontFamily: "system-ui", fontSize: 13 }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { padding: 16, color: "#f88", fontFamily: "system-ui", fontSize: 13 }, children: [
         "\uCE78\uBC18 \uB80C\uB354 \uC624\uB958: ",
         this.state.err.message || String(this.state.err)
       ] });
@@ -13920,8 +14637,10 @@ var ErrBoundary = class extends import_react.Component {
 };
 var mounts = /* @__PURE__ */ new WeakMap();
 var store = null;
+var pluginApp = null;
 function mountApp(container) {
   unmountApp(container);
+  container.style.position = "relative";
   const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
   shadow.replaceChildren();
   const style = document.createElement("style");
@@ -13929,15 +14648,23 @@ function mountApp(container) {
   shadow.appendChild(style);
   const host = document.createElement("div");
   host.className = "kanban-root";
-  host.style.width = "100%";
-  host.style.height = "100%";
+  host.style.position = "absolute";
+  host.style.inset = "0";
   host.style.overflow = "hidden";
   shadow.appendChild(host);
-  const root = (0, import_client.createRoot)(host);
-  root.render(
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(ErrBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, { store }) })
-  );
-  mounts.set(container, { root, shadow });
+  try {
+    const root = (0, import_client.createRoot)(host);
+    root.render(
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(ErrBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(App, { store, app: pluginApp }) })
+    );
+    mounts.set(container, { root, shadow });
+  } catch (e) {
+    host.textContent = "[kanban] mount \uC2E4\uD328: " + (e instanceof Error ? e.message : String(e));
+    host.style.color = "#f88";
+    host.style.padding = "16px";
+    host.style.font = "13px system-ui";
+    console.error("[kanban] mount \uC2E4\uD328:", e);
+  }
 }
 function unmountApp(container) {
   const state = mounts.get(container);
@@ -13948,6 +14675,7 @@ function unmountApp(container) {
 var plugin_entry_default = {
   activate(ctx) {
     const app = ctx.app;
+    pluginApp = app;
     store = createStore(app);
     void store.init().catch((e) => console.error("[kanban] store init \uC2E4\uD328:", e));
     ctx.subscriptions.push({ dispose: () => store?.dispose() });

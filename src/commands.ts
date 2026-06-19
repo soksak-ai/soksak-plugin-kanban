@@ -346,9 +346,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── focus(줌) ── 열린 GUI 의 관점 이동(view 가 구독). 헤드리스 조회는 view.get 의 focus 파라미터.
   sub("focus.set", {
-    description: "열린 칸반 GUI 의 관점(focus)을 그 노드로 이동. 헤드리스 조회는 view.get 의 focus 파라미터를 쓸 것.",
-    params: { node: { type: "string", description: "노드 id/key (생략/root=최상위)" } },
-    returns: "{ ok, focusId }",
+    description: "열린 칸반 GUI 의 관점(focus)·뷰를 이동. 헤드리스 조회는 view.get 의 focus 파라미터를 쓸 것.",
+    params: {
+      node: { type: "string", description: "노드 id/key (생략/root=최상위)" },
+      view: { type: "string", description: "동시에 전환할 뷰", enum: VIEW_ENUM },
+    },
+    returns: "{ ok, focusId, view }",
     handler: (p) => {
       const nodes = store.get();
       let focusId: string | null = null;
@@ -357,8 +360,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         if (!r.ok) return r;
         focusId = r.node.id;
       }
-      ctx.app.bus?.emit?.("kanban:focus", { focusId });
-      return { ok: true, focusId };
+      const view = VIEW_ENUM.includes(p.view as ViewId) ? (p.view as ViewId) : undefined;
+      ctx.app.bus?.emit?.("kanban:nav", { focusId, view });
+      return { ok: true, focusId, view: view ?? null };
     },
   });
 
