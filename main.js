@@ -13038,7 +13038,7 @@ var shortTitle = (n) => (n.title || "").split(" \xB7 ")[0] || n.key;
 var workItems = (nodes) => nodes.filter((n) => n.parentId != null);
 function breadcrumb(nodes, focusId) {
   const chain = focusChain(nodes, focusId);
-  return [{ id: null, label: "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4" }, ...chain.map((n) => ({ id: n.id, label: shortTitle(n) }))];
+  return [{ id: null, label: "\uC804\uCCB4" }, ...chain.map((n) => ({ id: n.id, label: shortTitle(n) }))];
 }
 function stats(nodes, focusId = null) {
   const items = focusId != null ? descendantIds(nodes, focusId).map((id) => byId(nodes, id)).filter(Boolean) : workItems(nodes);
@@ -13365,7 +13365,6 @@ function rootStyle() {
 // src/view/Outline.tsx
 var import_react2 = __toESM(require_react(), 1);
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
-var kbd = (label2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { style: { fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, padding: "1px 5px", border: "1px solid var(--border-2)", borderRadius: 5, background: "var(--surface-2)", color: "var(--text-2)" }, children: label2 });
 function Outline({ store: store2, nodes, focusId, setFocusId, setView, onOpen }) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
@@ -13482,7 +13481,7 @@ function Outline({ store: store2, nodes, focusId, setFocusId, setView, onOpen })
     const n = byId(nodes, focusId);
     setFocusId(n ? n.parentId : null);
   };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4";
+  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4";
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 10 }, children: [
       crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
@@ -13490,32 +13489,6 @@ function Outline({ store: store2, nodes, focusId, setFocusId, setView, onOpen })
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFocusId(c.id), style: crumbStyle(i === crumbs.length - 1), children: c.label })
       ] }, i)),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setView("board"), style: { marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\u25A6 \uC774 \uB178\uB4DC \uBCF4\uB4DC\uB85C \u2192" })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { style: { margin: 0, fontSize: 14, fontWeight: 600 }, children: "\uD2B8\uB9AC \uC544\uC6C3\uB77C\uC774\uB108 \xB7 Outliner" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 11, fontSize: 11, color: "var(--text-3)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-          kbd("Tab"),
-          " \uB4E4\uC5EC\uC4F0\uAE30"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-          kbd("\u21E7Tab"),
-          " \uB0B4\uC5B4\uC4F0\uAE30"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-          kbd("Enter"),
-          " \uC0C8 \uC904"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-          kbd("\u232B"),
-          " \uC0AD\uC81C"
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { style: { margin: "0 0 16px", fontSize: 12, color: "var(--text-3)", maxWidth: 760, lineHeight: 1.5 }, children: [
-      "\uC784\uC758 \uAE4A\uC774\uB85C \uD2B8\uB9AC\uB97C \uC801\uC73C\uC138\uC694. \uAC01 \uC904\uC758 ",
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { style: { color: "var(--text-2)" }, children: "\u25A6" }),
-      " \uB97C \uB204\uB974\uBA74 \uADF8 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00(focus) \uD558\uC704\uAC00 \uBCF4\uB4DC/\uC544\uC6C3\uB77C\uC774\uB108\uB85C \uC7AC\uAD6C\uC131\uB429\uB2C8\uB2E4."
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { ref: containerRef, style: { maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }, children: [
       focusId && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { onClick: goUp, style: { display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", marginBottom: 4, borderRadius: 9, cursor: "pointer", color: "var(--text-2)" }, children: [
@@ -13709,7 +13682,7 @@ function Tree({ nodes, focusId, setFocusId, onOpen }) {
     const n = byId(nodes, focusId);
     setFocusId(n ? n.parentId : null);
   };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4";
+  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4";
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 12 }, children: crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
       i > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--text-3)", fontSize: 12, margin: "0 1px" }, children: "/" }),
@@ -14798,7 +14771,7 @@ function registerCommands(ctx, store2) {
         if (!r.ok) return r;
         focusId = r.node.id;
       }
-      return { ok: true, crumbs: breadcrumb(nodes, focusId), label: focusId ? shortTitle(byId(nodes, focusId)) : "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4" };
+      return { ok: true, crumbs: breadcrumb(nodes, focusId), label: focusId ? shortTitle(byId(nodes, focusId)) : "\uC804\uCCB4" };
     }
   });
 }

@@ -475,7 +475,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         if (!r.ok) return r;
         focusId = r.node.id;
       }
-      return { ok: true, crumbs: breadcrumb(nodes, focusId), label: focusId ? shortTitle(byId(nodes, focusId)!) : "전체 워크스페이스" };
+      return { ok: true, crumbs: breadcrumb(nodes, focusId), label: focusId ? shortTitle(byId(nodes, focusId)!) : "전체" };
     },
   });
 

@@ -20,10 +20,6 @@ interface Props {
   onOpen: (id: string) => void;
 }
 
-const kbd = (label: string) => (
-  <b style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, padding: "1px 5px", border: "1px solid var(--border-2)", borderRadius: 5, background: "var(--surface-2)", color: "var(--text-2)" }}>{label}</b>
-);
-
 export default function Outline({ store, nodes, focusId, setFocusId, setView, onOpen }: Props) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
@@ -148,7 +144,7 @@ export default function Outline({ store, nodes, focusId, setFocusId, setView, on
     const n = byId(nodes, focusId);
     setFocusId(n ? n.parentId : null);
   };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "전체 워크스페이스";
+  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "전체";
 
   return (
     <div style={{ padding: "14px 22px 20px", height: "100%", overflow: "auto" }}>
@@ -162,19 +158,6 @@ export default function Outline({ store, nodes, focusId, setFocusId, setView, on
         ))}
         <button onClick={() => setView("board")} style={{ marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>▦ 이 노드 보드로 →</button>
       </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 6 }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>트리 아웃라이너 · Outliner</h3>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 11, fontSize: 11, color: "var(--text-3)" }}>
-          <span>{kbd("Tab")} 들여쓰기</span>
-          <span>{kbd("⇧Tab")} 내어쓰기</span>
-          <span>{kbd("Enter")} 새 줄</span>
-          <span>{kbd("⌫")} 삭제</span>
-        </span>
-      </div>
-      <p style={{ margin: "0 0 16px", fontSize: 12, color: "var(--text-3)", maxWidth: 760, lineHeight: 1.5 }}>
-        임의 깊이로 트리를 적으세요. 각 줄의 <b style={{ color: "var(--text-2)" }}>▦</b> 를 누르면 그 노드로 들어가(focus) 하위가 보드/아웃라이너로 재구성됩니다.
-      </p>
 
       <div ref={containerRef} style={{ maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }}>
         {focusId && (

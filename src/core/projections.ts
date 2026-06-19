@@ -29,7 +29,7 @@ export interface Crumb {
 }
 export function breadcrumb(nodes: Node[], focusId: string | null): Crumb[] {
   const chain = focusChain(nodes, focusId);
-  return [{ id: null, label: "전체 워크스페이스" }, ...chain.map((n) => ({ id: n.id, label: shortTitle(n) }))];
+  return [{ id: null, label: "전체" }, ...chain.map((n) => ({ id: n.id, label: shortTitle(n) }))];
 }
 
 // ── 통계 ──
