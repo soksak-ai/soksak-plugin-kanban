@@ -21,7 +21,7 @@
       { "name": "ping", "title": "플러그인 적재/버전 확인(E2E)" },
       { "name": "node.add", "title": "노드 추가" },
       { "name": "node.edit", "title": "노드 수정" },
-      { "name": "node.remove", "title": "노드 삭제" },
+      { "name": "node.remove", "title": "노드 삭제", "danger": "destructive" },
       { "name": "node.get", "title": "노드 조회" },
       { "name": "node.list", "title": "노드 목록" },
       { "name": "outline.indent", "title": "들여쓰기(Tab)" },
@@ -37,7 +37,7 @@
       { "name": "timeline", "title": "상태 전환 타임라인" },
       { "name": "column.list", "title": "컬럼 목록" },
       { "name": "seed", "title": "데모 트리 적재" },
-      { "name": "reset", "title": "전체 삭제" },
+      { "name": "reset", "title": "전체 삭제", "danger": "destructive" },
       { "name": "breadcrumb", "title": "브레드크럼" }
     ],
     "programs": [
