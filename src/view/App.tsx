@@ -8,7 +8,6 @@ import type { KanbanStore } from "@/store";
 import { TODAY, RANGE_END } from "@/refs";
 import { byId } from "@/core/tree";
 import { insertNode, removeNode } from "@/core/algebra";
-import { stats } from "@/core/projections";
 import { useNodes } from "@/view/useStore";
 import { rootStyle } from "@/view/ui";
 import Outline from "@/view/Outline";
@@ -66,7 +65,6 @@ export default function App({ store, app }: AppProps) {
   if (!store) return <div style={{ padding: 24, color: "#888" }}>store 준비 중…</div>;
   const apply = (fn: (ns: Node[]) => Node[]) => void store.apply(fn);
   const editing = editingId ? byId(nodes, editingId) : null;
-  const st = stats(nodes);
 
   const setField = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const openCreate = (status: StatusId) => {
@@ -120,16 +118,7 @@ export default function App({ store, app }: AppProps) {
             </button>
           ))}
         </nav>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "none" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 12, fontSize: 12.5, whiteSpace: "nowrap" }}>
-            <span style={{ color: "var(--text-2)" }}>완료 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.done}</b>/{st.total}</span>
-            <span style={{ color: "var(--text-2)" }}>진행 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.inProgress}</b></span>
-          </span>
-          {(st.bottlenecks > 0 || st.stale > 0) && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", whiteSpace: "nowrap" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" }} />병목 {st.bottlenecks} · 지연 {st.stale}
-            </span>
-          )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
           <button onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> 새 이슈</button>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="검색 · search" style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
         </div>

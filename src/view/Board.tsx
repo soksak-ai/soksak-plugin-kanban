@@ -9,6 +9,7 @@ import { byId, hasChildren } from "@/core/tree";
 import { setStatus } from "@/core/algebra";
 import { toBoard, type BoardScope, type CardVM } from "@/core/projections";
 import { avatar, initials, typeBadge, typeLetter, prDot, ptsBadge, sMeta } from "@/view/ui";
+import ScopeStat from "@/view/ScopeStat";
 
 interface Props {
   store: KanbanStore;
@@ -56,7 +57,8 @@ export default function Board({ store, nodes, focusId, setFocusId, scope, setSco
           <button onClick={() => setScope("all")} style={scopeBtn(scope === "all")}>전체</button>
           <button onClick={() => setScope("direct")} style={scopeBtn(scope === "direct")}>직계만</button>
         </div>
-        <button onClick={() => setView("outline")} style={{ marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>≡ 아웃라이너로</button>
+        <ScopeStat nodes={nodes} focusId={focusId} />
+        <button onClick={() => setView("outline")} style={{ marginLeft: 12, height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>≡ 아웃라이너로</button>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 14, padding: "14px 22px 20px", alignItems: "flex-start", overflowX: "auto" }}>
