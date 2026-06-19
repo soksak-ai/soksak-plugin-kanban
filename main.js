@@ -13575,7 +13575,7 @@ var drillStyle = { display: "inline-flex", alignItems: "center", gap: 4, height:
 // src/view/Board.tsx
 var import_react3 = __toESM(require_react(), 1);
 var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, search, setView, onOpen, onCreate }) {
+function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, search, onOpen, onCreate }) {
   const board = toBoard(nodes, focusId, scope, search);
   const [dragId, setDragId] = (0, import_react3.useState)(null);
   const [overStatus, setOverStatus] = (0, import_react3.useState)(null);
@@ -13600,8 +13600,7 @@ function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, sea
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setScope("all"), style: scopeBtn(scope === "all"), children: "\uC804\uCCB4" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setScope("direct"), style: scopeBtn(scope === "direct"), children: "\uC9C1\uACC4\uB9CC" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ScopeStat, { nodes, focusId }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setView("outline"), style: { marginLeft: 12, height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\u2261 \uC544\uC6C3\uB77C\uC774\uB108\uB85C" })
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ScopeStat, { nodes, focusId })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", gap: 14, padding: "14px 22px 20px", alignItems: "flex-start", overflowX: "auto" }, children: board.columns.map((col) => {
       const over = overStatus === col.id;
@@ -14124,7 +14123,7 @@ function App({ store: store2, app }) {
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("main", { style: { flex: 1, minHeight: 0, position: "relative" }, children: [
       view === "outline" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Outline, { store: store2, nodes, focusId, setFocusId, onOpen: openDetail }),
-      view === "board" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Board, { store: store2, nodes, focusId, setFocusId, scope, setScope, search, setView, onOpen: openDetail, onCreate: openCreate }),
+      view === "board" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Board, { store: store2, nodes, focusId, setFocusId, scope, setScope, search, onOpen: openDetail, onCreate: openCreate }),
       view === "tree" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Tree, { nodes, focusId, setFocusId, onOpen: openDetail }),
       view === "gantt" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Gantt, { nodes, onOpen: openDetail }),
       view === "timeline" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Timeline, { nodes, onOpen: openDetail }),
