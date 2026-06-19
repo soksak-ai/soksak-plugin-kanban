@@ -120,35 +120,24 @@ export default function App({ store, app }: AppProps) {
             </button>
           ))}
         </nav>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "none" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 12, fontSize: 12.5, whiteSpace: "nowrap" }}>
+            <span style={{ color: "var(--text-2)" }}>완료 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.done}</b>/{st.total}</span>
+            <span style={{ color: "var(--text-2)" }}>진행 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.inProgress}</b></span>
+          </span>
+          {(st.bottlenecks > 0 || st.stale > 0) && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", whiteSpace: "nowrap" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" }} />병목 {st.bottlenecks} · 지연 {st.stale}
+            </span>
+          )}
           <button onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> 새 이슈</button>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="검색 · search" style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
         </div>
       </header>
 
-      {/* STATS STRIP */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "11px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "none" }}>
-          <span style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Sprint 진행률</span>
-          <div style={{ width: 160, height: 7, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${st.progress}%`, background: "linear-gradient(90deg,var(--accent),#22c55e)", borderRadius: 99, transition: "width .3s" }} />
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)" }}>{st.progress}%</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flex: "none", fontSize: 12.5 }}>
-          <span style={{ color: "var(--text-2)" }}>완료 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.done}</b>/{st.total}</span>
-          <span style={{ color: "var(--text-2)" }}>진행 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.inProgress}</b></span>
-          <span style={{ color: "var(--text-2)" }}>포인트 <b style={{ color: "var(--text)", fontFamily: "var(--mono)" }}>{st.donePts}</b>/{st.totalPts} SP</span>
-        </div>
-        <div style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 10px" }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" }} />
-          병목 {st.bottlenecks} · 지연 {st.stale}
-        </div>
-      </div>
-
       {/* MAIN */}
       <main style={{ flex: 1, minHeight: 0, position: "relative" }}>
-        {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} setView={setView} onOpen={openDetail} />}
+        {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
         {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} setView={setView} onOpen={openDetail} onCreate={openCreate} />}
         {view === "tree" && <Tree nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
         {view === "gantt" && <Gantt nodes={nodes} onOpen={openDetail} />}

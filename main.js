@@ -13365,7 +13365,7 @@ function rootStyle() {
 // src/view/Outline.tsx
 var import_react2 = __toESM(require_react(), 1);
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
-function Outline({ store: store2, nodes, focusId, setFocusId, setView, onOpen }) {
+function Outline({ store: store2, nodes, focusId, setFocusId, onOpen }) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
   const containerRef = (0, import_react2.useRef)(null);
@@ -13483,13 +13483,10 @@ function Outline({ store: store2, nodes, focusId, setFocusId, setView, onOpen })
   };
   const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4";
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 10 }, children: [
-      crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
-        i > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--text-3)", fontSize: 12, margin: "0 1px" }, children: "/" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFocusId(c.id), style: crumbStyle(i === crumbs.length - 1), children: c.label })
-      ] }, i)),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setView("board"), style: { marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\u25A6 \uC774 \uB178\uB4DC \uBCF4\uB4DC\uB85C \u2192" })
-    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 10 }, children: crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
+      i > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--text-3)", fontSize: 12, margin: "0 1px" }, children: "/" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFocusId(c.id), style: crumbStyle(i === crumbs.length - 1), children: c.label })
+    ] }, i)) }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { ref: containerRef, style: { maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }, children: [
       focusId && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { onClick: goUp, style: { display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", marginBottom: 4, borderRadius: 9, cursor: "pointer", color: "var(--text-2)" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: upIcon, children: "\u2191" }),
@@ -14084,7 +14081,26 @@ function App({ store: store2, app }) {
         /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" } }),
         /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: lbl })
       ] }, id)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flex: "none" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, flex: "none" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 12, fontSize: 12.5, whiteSpace: "nowrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
+            "\uC644\uB8CC ",
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.done }),
+            "/",
+            st.total
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
+            "\uC9C4\uD589 ",
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.inProgress })
+          ] })
+        ] }),
+        (st.bottlenecks > 0 || st.stale > 0) && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 9px", whiteSpace: "nowrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" } }),
+          "\uBCD1\uBAA9 ",
+          st.bottlenecks,
+          " \xB7 \uC9C0\uC5F0 ",
+          st.stale
+        ] }),
         /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("button", { onClick: () => openCreate("todo"), style: { height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 17, lineHeight: 1, marginTop: -1 }, children: "+" }),
           " \uC0C8 \uC774\uC288"
@@ -14092,44 +14108,8 @@ function App({ store: store2, app }) {
         /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "\uAC80\uC0C9 \xB7 search", style: { height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" } })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 18, padding: "11px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", flexWrap: "wrap" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, flex: "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 12, color: "var(--text-3)", fontWeight: 600 }, children: "Sprint \uC9C4\uD589\uB960" }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { width: 160, height: 7, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { height: "100%", width: `${st.progress}%`, background: "linear-gradient(90deg,var(--accent),#22c55e)", borderRadius: 99, transition: "width .3s" } }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { fontSize: 13, fontWeight: 700, fontFamily: "var(--mono)" }, children: [
-          st.progress,
-          "%"
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 16, flex: "none", fontSize: 12.5 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
-          "\uC644\uB8CC ",
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.done }),
-          "/",
-          st.total
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
-          "\uC9C4\uD589 ",
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.inProgress })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { color: "var(--text-2)" }, children: [
-          "\uD3EC\uC778\uD2B8 ",
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("b", { style: { color: "var(--text)", fontFamily: "var(--mono)" }, children: st.donePts }),
-          "/",
-          st.totalPts,
-          " SP"
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, color: "var(--text-2)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 10px" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#f59e0b" } }),
-        "\uBCD1\uBAA9 ",
-        st.bottlenecks,
-        " \xB7 \uC9C0\uC5F0 ",
-        st.stale
-      ] })
-    ] }),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("main", { style: { flex: 1, minHeight: 0, position: "relative" }, children: [
-      view === "outline" && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Outline, { store: store2, nodes, focusId, setFocusId, setView, onOpen: openDetail }),
+      view === "outline" && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Outline, { store: store2, nodes, focusId, setFocusId, onOpen: openDetail }),
       view === "board" && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Board, { store: store2, nodes, focusId, setFocusId, scope, setScope, search, setView, onOpen: openDetail, onCreate: openCreate }),
       view === "tree" && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Tree, { nodes, focusId, setFocusId, onOpen: openDetail }),
       view === "gantt" && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Gantt, { nodes, onOpen: openDetail }),

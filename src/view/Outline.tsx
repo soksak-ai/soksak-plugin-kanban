@@ -2,7 +2,7 @@
 // 제목 입력은 비제어(성능) — blur·구조변경 시 커밋. 구조 변경 후 pendingFocus 로 입력 재포커스.
 import { useRef, useLayoutEffect } from "react";
 import type { CSSProperties } from "react";
-import type { Node, ViewId } from "@/types";
+import type { Node } from "@/types";
 import type { KanbanStore } from "@/store";
 import { TODAY, RANGE_END } from "@/refs";
 import { byId, hasChildren } from "@/core/tree";
@@ -16,11 +16,10 @@ interface Props {
   nodes: Node[];
   focusId: string | null;
   setFocusId: (id: string | null) => void;
-  setView: (v: ViewId) => void;
   onOpen: (id: string) => void;
 }
 
-export default function Outline({ store, nodes, focusId, setFocusId, setView, onOpen }: Props) {
+export default function Outline({ store, nodes, focusId, setFocusId, onOpen }: Props) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -156,7 +155,6 @@ export default function Outline({ store, nodes, focusId, setFocusId, setView, on
             <button onClick={() => setFocusId(c.id)} style={crumbStyle(i === crumbs.length - 1)}>{c.label}</button>
           </span>
         ))}
-        <button onClick={() => setView("board")} style={{ marginLeft: "auto", height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>▦ 이 노드 보드로 →</button>
       </div>
 
       <div ref={containerRef} style={{ maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }}>
