@@ -139,13 +139,6 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen }: P
     el?.focus();
   };
 
-  const goUp = () => {
-    if (!focusId) return;
-    const n = byId(nodes, focusId);
-    setFocusId(n ? n.parentId : null);
-  };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "전체";
-
   return (
     <div style={{ padding: "14px 22px 20px", height: "100%", overflow: "auto" }}>
       {/* breadcrumb + 보드로 */}
@@ -160,13 +153,6 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen }: P
       </div>
 
       <div ref={containerRef} style={{ maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }}>
-        {focusId && (
-          <div onClick={goUp} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", marginBottom: 4, borderRadius: 9, cursor: "pointer", color: "var(--text-2)" }}>
-            <span style={upIcon}>↑</span>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>상위로</span>
-            <span style={{ fontSize: 11, color: "var(--text-3)" }}>· {upParentLabel}</span>
-          </div>
-        )}
         {rows.map((row) => {
           const m = sMeta(row.status);
           return (
@@ -219,5 +205,4 @@ const crumbStyle = (cur: boolean): CSSProperties => ({
   fontFamily: "inherit",
   whiteSpace: "nowrap",
 });
-const upIcon: CSSProperties = { width: 20, height: 20, borderRadius: 6, border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flex: "none" };
 const drillStyle: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 4, height: 22, padding: "0 8px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--surface-2)", color: "var(--text-2)", fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", flex: "none" };
