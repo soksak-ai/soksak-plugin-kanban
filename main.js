@@ -13503,12 +13503,6 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen }) {
     const el = containerRef.current?.querySelector(`[data-outline-id="${id}"]`);
     el?.focus();
   };
-  const goUp = () => {
-    if (!focusId) return;
-    const n = byId(nodes, focusId);
-    setFocusId(n ? n.parentId : null);
-  };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4";
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 10 }, children: [
       crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
@@ -13518,14 +13512,6 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen }) {
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(ScopeStat, { nodes, focusId })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { ref: containerRef, style: { maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }, children: [
-      focusId && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { onClick: goUp, style: { display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", marginBottom: 4, borderRadius: 9, cursor: "pointer", color: "var(--text-2)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: upIcon, children: "\u2191" }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 13, fontWeight: 600 }, children: "\uC0C1\uC704\uB85C" }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { fontSize: 11, color: "var(--text-3)" }, children: [
-          "\xB7 ",
-          upParentLabel
-        ] })
-      ] }),
       rows.map((row) => {
         const m = sMeta(row.status);
         return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
@@ -13569,7 +13555,6 @@ var crumbStyle = (cur) => ({
   fontFamily: "inherit",
   whiteSpace: "nowrap"
 });
-var upIcon = { width: 20, height: 20, borderRadius: 6, border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flex: "none" };
 var drillStyle = { display: "inline-flex", alignItems: "center", gap: 4, height: 22, padding: "0 8px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--surface-2)", color: "var(--text-2)", fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", flex: "none" };
 
 // src/view/Board.tsx
@@ -13704,12 +13689,6 @@ var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
 function Tree({ nodes, focusId, setFocusId, onOpen }) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
-  const goUp = () => {
-    if (!focusId) return;
-    const n = byId(nodes, focusId);
-    setFocusId(n ? n.parentId : null);
-  };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "\uC804\uCCB4";
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 12 }, children: [
       crumbs.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
@@ -13719,36 +13698,26 @@ function Tree({ nodes, focusId, setFocusId, onOpen }) {
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ScopeStat, { nodes, focusId })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { style: { margin: "0 0 4px", fontSize: 14, fontWeight: 600 }, children: "\uD2B8\uB9AC \uAD6C\uC870 \xB7 Structure" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }, children: "\uD589\uC744 \uD074\uB9AD\uD558\uBA74 \uADF8 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00(\uC7AC\uAD6C\uC131), \uC0C1\uC704\uB85C\uB294 \u2191 \uB610\uB294 \uBE0C\uB808\uB4DC\uD06C\uB7FC." }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { maxWidth: 780, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", overflow: "hidden", boxShadow: "var(--shadow)" }, children: [
-      focusId && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { onClick: goUp, style: { display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: "0 14px", borderBottom: "1px solid var(--grid)", cursor: "pointer", color: "var(--text-2)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { width: 20, height: 20, borderRadius: 6, border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flex: "none" }, children: "\u2191" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 13, fontWeight: 600 }, children: "\uC0C1\uC704\uB85C" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { fontSize: 11, color: "var(--text-3)" }, children: [
-          "\xB7 ",
-          upParentLabel
-        ] })
-      ] }),
-      rows.map((r) => {
-        const m = sMeta(r.status);
-        return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { onClick: () => r.hasChildren ? setFocusId(r.id) : onOpen(r.id), style: { display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: `0 14px 0 ${14 + r.depth * 22}px`, borderBottom: "1px solid var(--grid)", cursor: "pointer" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: r.isEpic ? { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" } : typeBadge(r.type), children: r.isEpic ? "E" : typeLetter(r.type) }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }, children: r.key }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 13, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: r.isEpic ? 600 : 400 }, children: r.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
-          r.progress && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { width: 72, height: 5, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flex: "none" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { height: "100%", width: `${r.progress.pct}%`, background: "#8b5cf6", borderRadius: 99 } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }, children: [
-              r.progress.done,
-              "/",
-              r.progress.total
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: statusChip(r.status), children: m.kr }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 10, color: "var(--text-3)", flex: "none", width: 54, textAlign: "right" }, children: r.hasChildren ? "\u25B8 \uB4E4\uC5B4\uAC00\uAE30" : "" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: avatar(r.assignee, 20), children: initials(r.assignee) })
-        ] }, r.id);
-      })
-    ] })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }, children: "\uD589\uC744 \uD074\uB9AD\uD558\uBA74 \uADF8 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00(\uC7AC\uAD6C\uC131), \uC0C1\uC704\uB85C\uB294 \uBE0C\uB808\uB4DC\uD06C\uB7FC." }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { maxWidth: 780, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", overflow: "hidden", boxShadow: "var(--shadow)" }, children: rows.map((r) => {
+      const m = sMeta(r.status);
+      return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { onClick: () => r.hasChildren ? setFocusId(r.id) : onOpen(r.id), style: { display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: `0 14px 0 ${14 + r.depth * 22}px`, borderBottom: "1px solid var(--grid)", cursor: "pointer" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: r.isEpic ? { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" } : typeBadge(r.type), children: r.isEpic ? "E" : typeLetter(r.type) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }, children: r.key }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 13, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: r.isEpic ? 600 : 400 }, children: r.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
+        r.progress && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { width: 72, height: 5, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flex: "none" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { height: "100%", width: `${r.progress.pct}%`, background: "#8b5cf6", borderRadius: 99 } }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }, children: [
+            r.progress.done,
+            "/",
+            r.progress.total
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: statusChip(r.status), children: m.kr }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 10, color: "var(--text-3)", flex: "none", width: 54, textAlign: "right" }, children: r.hasChildren ? "\u25B8 \uB4E4\uC5B4\uAC00\uAE30" : "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: avatar(r.assignee, 20), children: initials(r.assignee) })
+      ] }, r.id);
+    }) })
   ] });
 }
 var crumbStyle3 = (cur) => ({ display: "inline-flex", alignItems: "center", padding: "3px 9px", borderRadius: 7, border: "none", background: cur ? "var(--accent-soft)" : "transparent", color: cur ? "var(--accent)" : "var(--text-2)", fontSize: 12.5, fontWeight: cur ? 700 : 600, cursor: cur ? "default" : "pointer", fontFamily: "inherit", whiteSpace: "nowrap" });

@@ -1,7 +1,6 @@
 // 트리 뷰(focus 스코프) — 재귀 구조 읽기 + 진행률 + drill. 행 클릭=자식 있으면 재구성, 없으면 상세.
 import type { CSSProperties } from "react";
 import type { Node } from "@/types";
-import { byId } from "@/core/tree";
 import { toOutlineRows, breadcrumb } from "@/core/projections";
 import { avatar, initials, statusChip, sMeta, typeBadge, typeLetter } from "@/view/ui";
 import ScopeStat from "@/view/ScopeStat";
@@ -16,12 +15,6 @@ interface Props {
 export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
-  const goUp = () => {
-    if (!focusId) return;
-    const n = byId(nodes, focusId);
-    setFocusId(n ? n.parentId : null);
-  };
-  const upParentLabel = crumbs.length >= 2 ? crumbs[crumbs.length - 2].label : "전체";
 
   return (
     <div style={{ padding: "14px 22px 20px", height: "100%", overflow: "auto" }}>
@@ -35,15 +28,8 @@ export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
         <ScopeStat nodes={nodes} focusId={focusId} />
       </div>
       <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600 }}>트리 구조 · Structure</h3>
-      <p style={{ margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }}>행을 클릭하면 그 노드로 들어가(재구성), 상위로는 ↑ 또는 브레드크럼.</p>
+      <p style={{ margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }}>행을 클릭하면 그 노드로 들어가(재구성), 상위로는 브레드크럼.</p>
       <div style={{ maxWidth: 780, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", overflow: "hidden", boxShadow: "var(--shadow)" }}>
-        {focusId && (
-          <div onClick={goUp} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: "0 14px", borderBottom: "1px solid var(--grid)", cursor: "pointer", color: "var(--text-2)" }}>
-            <span style={{ width: 20, height: 20, borderRadius: 6, border: "1px solid var(--border-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flex: "none" }}>↑</span>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>상위로</span>
-            <span style={{ fontSize: 11, color: "var(--text-3)" }}>· {upParentLabel}</span>
-          </div>
-        )}
         {rows.map((r) => {
           const m = sMeta(r.status);
           return (
