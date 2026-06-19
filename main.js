@@ -3290,8 +3290,8 @@ var require_react_dom_client_production = __commonJS({
         currentEntangledActionThenable = {
           status: "pending",
           value: void 0,
-          then: function(resolve) {
-            entangledListeners.push(resolve);
+          then: function(resolve2) {
+            entangledListeners.push(resolve2);
           }
         };
       }
@@ -3314,8 +3314,8 @@ var require_react_dom_client_production = __commonJS({
         status: "pending",
         value: null,
         reason: null,
-        then: function(resolve) {
-          listeners.push(resolve);
+        then: function(resolve2) {
+          listeners.push(resolve2);
         }
       };
       thenable.then(
@@ -11576,8 +11576,8 @@ var require_react_dom_client_production = __commonJS({
             var link = resource = ownerDocument.createElement("link");
             markNodeAsHoistable(link);
             setInitialProperties(link, "link", href);
-            link._p = new Promise(function(resolve, reject) {
-              link.onload = resolve;
+            link._p = new Promise(function(resolve2, reject) {
+              link.onload = resolve2;
               link.onerror = reject;
             });
             link.addEventListener("load", function() {
@@ -11749,8 +11749,8 @@ var require_react_dom_client_production = __commonJS({
             instance$249 = (hoistableRoot.ownerDocument || hoistableRoot).createElement("link");
             markNodeAsHoistable(instance$249);
             var linkInstance = instance$249;
-            linkInstance._p = new Promise(function(resolve, reject) {
-              linkInstance.onload = resolve;
+            linkInstance._p = new Promise(function(resolve2, reject) {
+              linkInstance.onload = resolve2;
               linkInstance.onerror = reject;
             });
             setInitialProperties(instance$249, "link", instance);
@@ -11878,8 +11878,8 @@ var require_react_dom_client_production = __commonJS({
           instance = instance.createElement("link");
           markNodeAsHoistable(instance);
           var linkInstance = instance;
-          linkInstance._p = new Promise(function(resolve, reject) {
-            linkInstance.onload = resolve;
+          linkInstance._p = new Promise(function(resolve2, reject) {
+            linkInstance.onload = resolve2;
             linkInstance.onerror = reject;
           });
           setInitialProperties(instance, "link", props);
@@ -12515,8 +12515,8 @@ var require_react_dom_client_production = __commonJS({
       function handleNavigate(event) {
         event.canIntercept && "react-transition" === event.info && event.intercept({
           handler: function() {
-            return new Promise(function(resolve) {
-              return pendingResolve = resolve;
+            return new Promise(function(resolve2) {
+              return pendingResolve = resolve2;
             });
           },
           focusReset: "manual",
@@ -12756,7 +12756,8 @@ var import_client = __toESM(require_client(), 1);
 
 // src/view/App.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
-function App() {
+function App({ store: store2 }) {
+  const count = store2?.get().length ?? 0;
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
     "div",
     {
@@ -12769,7 +12770,11 @@ function App() {
       },
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 15, fontWeight: 700, color: "var(--text)" }, children: "\uCE78\uBC18 \xB7 Kanban" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, marginTop: 6 }, children: "scaffolding (M0) \u2014 \uD2B8\uB9AC \uCF54\uC5B4/\uBDF0 \uC900\uBE44 \uC911" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, marginTop: 6 }, children: [
+          "\uBC18\uC751 \uC178/\uBDF0 \uC900\uBE44 \uC911 (M2) \u2014 \uB178\uB4DC ",
+          count,
+          "\uAC1C. \uBA85\uB839\uC740 CLI/MCP \uB85C \uB3D9\uC791\uD569\uB2C8\uB2E4."
+        ] })
       ]
     }
   );
@@ -12801,6 +12806,1098 @@ input{font-family:inherit}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 `;
 
+// src/store.ts
+var COLL = "nodes";
+var VALID_STATUS = ["backlog", "todo", "inprogress", "review", "done"];
+var VALID_TYPE = ["epic", "story", "task", "bug"];
+var VALID_PRIORITY = ["highest", "high", "medium", "low"];
+function asStr(v, d = "") {
+  return typeof v === "string" ? v : d;
+}
+function asNum(v, d = 0) {
+  return typeof v === "number" && Number.isFinite(v) ? v : d;
+}
+function rowToNode(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw;
+  if (typeof r.id !== "string") return null;
+  const type = VALID_TYPE.includes(r.type) ? r.type : "task";
+  const status = VALID_STATUS.includes(r.status) ? r.status : "todo";
+  const priority = VALID_PRIORITY.includes(r.priority) ? r.priority : "medium";
+  return {
+    id: r.id,
+    key: asStr(r.key, r.id),
+    parentId: typeof r.parentId === "string" ? r.parentId : null,
+    order: asNum(r.order, 0),
+    title: asStr(r.title),
+    body: asStr(r.body),
+    type,
+    status,
+    assignee: asStr(r.assignee, "me"),
+    priority,
+    points: asNum(r.points, 0),
+    start: asStr(r.start, "2026-06-01"),
+    due: asStr(r.due, "2026-06-02"),
+    collapsed: r.collapsed === true,
+    history: Array.isArray(r.history) ? r.history : [],
+    created: asNum(r.created, 0),
+    updated: asNum(r.updated, 0)
+  };
+}
+function disposeOf(d) {
+  if (typeof d === "function") d();
+  else if (d && typeof d.dispose === "function") d.dispose();
+}
+function createStore(app) {
+  const data = app.data;
+  const scope = app.project?.current?.()?.id ?? "default";
+  let nodes = [];
+  let writing = 0;
+  const subs = /* @__PURE__ */ new Set();
+  let watchSub = null;
+  const notify = () => {
+    for (const cb of subs) cb();
+  };
+  async function hydrate() {
+    if (!data) return;
+    const rows = await data.query(COLL, { scope, limit: 1e5 });
+    nodes = rows.map(rowToNode).filter((n) => n != null);
+    notify();
+  }
+  async function persist(prev, next) {
+    if (!data) return;
+    const prevMap = new Map(prev.map((n) => [n.id, n]));
+    const nextIds = new Set(next.map((n) => n.id));
+    writing++;
+    try {
+      for (const n of next) {
+        const p = prevMap.get(n.id);
+        if (!p || JSON.stringify(p) !== JSON.stringify(n)) {
+          await data.put(COLL, n, { scope, id: n.id });
+        }
+      }
+      for (const p of prev) if (!nextIds.has(p.id)) await data.delete(COLL, p.id, { scope });
+    } finally {
+      writing--;
+    }
+  }
+  return {
+    get: () => nodes,
+    async apply(fn) {
+      const prev = nodes;
+      const next = fn(prev);
+      if (next === prev) return;
+      nodes = next;
+      notify();
+      await persist(prev, next);
+    },
+    subscribe(cb) {
+      subs.add(cb);
+      return () => subs.delete(cb);
+    },
+    nextKey() {
+      const nums = nodes.map((n) => parseInt(n.key.split("-")[1], 10) || 0);
+      return "WMP-" + (Math.max(0, ...nums) + 1);
+    },
+    genId() {
+      try {
+        return crypto.randomUUID();
+      } catch {
+        return "n-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e9).toString(36);
+      }
+    },
+    async init() {
+      if (!data) return;
+      await data.define(COLL, {
+        indexes: ["parentId", "order", "status", "assignee", "priority", "due", "type"],
+        fts: ["key", "title", "body"]
+      });
+      await hydrate();
+      watchSub = data.watch(COLL, { scope }, () => {
+        if (writing === 0) void hydrate();
+      });
+    },
+    dispose() {
+      if (watchSub) disposeOf(watchSub);
+      watchSub = null;
+      subs.clear();
+    }
+  };
+}
+
+// src/refs.ts
+var STATUSES = [
+  { id: "backlog", label: "Backlog", kr: "\uBC31\uB85C\uADF8", color: "#94a3b8" },
+  { id: "todo", label: "To Do", kr: "\uC608\uC815", color: "#3b82f6" },
+  { id: "inprogress", label: "In Progress", kr: "\uC9C4\uD589 \uC911", color: "#f59e0b", wip: 3 },
+  { id: "review", label: "In Review", kr: "\uB9AC\uBDF0", color: "#8b5cf6", wip: 3 },
+  { id: "done", label: "Done", kr: "\uC644\uB8CC", color: "#10b981" }
+];
+var PRIORITY = {
+  highest: { kr: "\uCD5C\uC0C1", label: "Highest", color: "#dc2626", rank: 4 },
+  high: { kr: "\uB192\uC74C", label: "High", color: "#f97316", rank: 3 },
+  medium: { kr: "\uBCF4\uD1B5", label: "Medium", color: "#eab308", rank: 2 },
+  low: { kr: "\uB0AE\uC74C", label: "Low", color: "#3b82f6", rank: 1 }
+};
+var RANGE_START = "2026-06-01";
+var RANGE_END = "2026-06-28";
+var TODAY = "2026-06-18";
+var TOTAL_DAYS = 28;
+var STATUS_IDS = STATUSES.map((s) => s.id);
+
+// src/core/tree.ts
+function byId(nodes, id) {
+  if (id == null) return null;
+  return nodes.find((n) => n.id === id) ?? null;
+}
+function childrenOf(nodes, parentId) {
+  return nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.order - b.order || a.created - b.created);
+}
+function depthOf(nodes, id) {
+  let d = 0;
+  let cur = byId(nodes, id);
+  const seen = /* @__PURE__ */ new Set();
+  while (cur && cur.parentId != null && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    cur = byId(nodes, cur.parentId);
+    d++;
+  }
+  return d;
+}
+function descendantIds(nodes, id) {
+  const out = [];
+  const stack = [id];
+  const seen = /* @__PURE__ */ new Set();
+  while (stack.length) {
+    const cur = stack.pop();
+    for (const n of nodes) {
+      if (n.parentId === cur && !seen.has(n.id)) {
+        seen.add(n.id);
+        out.push(n.id);
+        stack.push(n.id);
+      }
+    }
+  }
+  return out;
+}
+function isAncestor(nodes, ancestorId, nodeId) {
+  let cur = byId(nodes, nodeId);
+  const seen = /* @__PURE__ */ new Set();
+  while (cur && !seen.has(cur.id)) {
+    if (cur.id === ancestorId) return true;
+    seen.add(cur.id);
+    cur = cur.parentId != null ? byId(nodes, cur.parentId) : null;
+  }
+  return false;
+}
+function focusChain(nodes, focusId) {
+  const arr = [];
+  let cur = focusId != null ? byId(nodes, focusId) : null;
+  const seen = /* @__PURE__ */ new Set();
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    arr.unshift(cur);
+    cur = cur.parentId != null ? byId(nodes, cur.parentId) : null;
+  }
+  return arr;
+}
+function subProgress(nodes, id) {
+  const ds = descendantIds(nodes, id);
+  if (!ds.length) return null;
+  const done = ds.filter((x) => {
+    const n = byId(nodes, x);
+    return n != null && n.status === "done";
+  }).length;
+  return { done, total: ds.length, pct: Math.round(done / ds.length * 100) };
+}
+function effectiveType(node, depth) {
+  if (depth === 0) return "epic";
+  if (node.type === "epic") return "task";
+  return node.type;
+}
+
+// src/core/algebra.ts
+function normalizeOrders(nodes) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    const k = n.parentId;
+    const g = groups.get(k);
+    if (g) g.push(n);
+    else groups.set(k, [n]);
+  }
+  const orderMap = /* @__PURE__ */ new Map();
+  for (const [, group] of groups) {
+    group.sort((a, b) => a.order - b.order || a.created - b.created);
+    group.forEach((n, i) => orderMap.set(n.id, i));
+  }
+  return nodes.map((n) => {
+    const o = orderMap.get(n.id);
+    return o === n.order ? n : { ...n, order: o ?? n.order };
+  });
+}
+var patch = (nodes, id, fn) => nodes.map((n) => n.id === id ? fn(n) : n);
+function insertNode(nodes, newNode, afterId) {
+  const siblings = childrenOf(nodes, newNode.parentId);
+  let order;
+  if (afterId) {
+    const a = siblings.find((s) => s.id === afterId);
+    order = a ? a.order + 0.5 : siblings.length;
+  } else {
+    order = siblings.length;
+  }
+  return normalizeOrders([...nodes, { ...newNode, order }]);
+}
+function indent(nodes, id) {
+  const node = byId(nodes, id);
+  if (!node) return nodes;
+  const siblings = childrenOf(nodes, node.parentId);
+  const k = siblings.findIndex((s) => s.id === id);
+  if (k <= 0) return nodes;
+  const prev = siblings[k - 1];
+  const prevKids = childrenOf(nodes, prev.id);
+  return normalizeOrders(patch(nodes, id, (n) => ({ ...n, parentId: prev.id, order: prevKids.length })));
+}
+function outdent(nodes, id) {
+  const node = byId(nodes, id);
+  if (!node || node.parentId == null) return nodes;
+  const oldParent = byId(nodes, node.parentId);
+  const newParentId = oldParent.parentId;
+  const oldSiblings = childrenOf(nodes, node.parentId);
+  const k = oldSiblings.findIndex((s) => s.id === id);
+  const following = oldSiblings.slice(k + 1);
+  const nodeKidCount = childrenOf(nodes, id).length;
+  let next = patch(nodes, id, (n) => ({
+    ...n,
+    parentId: newParentId,
+    order: oldParent.order + 0.5
+    // 옛 부모 바로 뒤
+  }));
+  following.forEach((f, i) => {
+    next = patch(next, f.id, (n) => ({ ...n, parentId: id, order: nodeKidCount + i }));
+  });
+  return normalizeOrders(next);
+}
+function reorder(nodes, id, position) {
+  const node = byId(nodes, id);
+  if (!node) return nodes;
+  const siblings = childrenOf(nodes, node.parentId).filter((s) => s.id !== id);
+  return normalizeOrders(patch(nodes, id, (n) => ({ ...n, order: orderForPosition(siblings, position) })));
+}
+function moveNode(nodes, id, newParentId, position) {
+  const node = byId(nodes, id);
+  if (!node) return nodes;
+  if (newParentId != null) {
+    if (newParentId === id) return nodes;
+    if (isAncestor(nodes, id, newParentId)) return nodes;
+  }
+  const siblings = childrenOf(nodes, newParentId).filter((s) => s.id !== id);
+  const pos = position == null ? siblings.length : position;
+  return normalizeOrders(
+    patch(nodes, id, (n) => ({ ...n, parentId: newParentId, order: orderForPosition(siblings, pos) }))
+  );
+}
+function removeNode(nodes, id, promoteChildren = false) {
+  const node = byId(nodes, id);
+  if (!node) return nodes;
+  if (promoteChildren) {
+    const kids = childrenOf(nodes, id);
+    let next = nodes.filter((n) => n.id !== id);
+    kids.forEach((kid, i) => {
+      next = patch(next, kid.id, (n) => ({ ...n, parentId: node.parentId, order: node.order + (i + 1) * 1e-3 }));
+    });
+    return normalizeOrders(next);
+  }
+  const remove = /* @__PURE__ */ new Set([id, ...descendantIds(nodes, id)]);
+  return normalizeOrders(nodes.filter((n) => !remove.has(n.id)));
+}
+function setStatus(nodes, id, status, by, today) {
+  const node = byId(nodes, id);
+  if (!node || node.status === status) return nodes;
+  return patch(nodes, id, (n) => ({
+    ...n,
+    status,
+    history: [...n.history, { from: n.status, to: status, by, at: today }]
+  }));
+}
+function boardMove(nodes, id, status, by, today, position) {
+  let next = setStatus(nodes, id, status, by, today);
+  if (position != null) next = reorder(next, id, position);
+  return next;
+}
+function sortChildren(nodes, parentId, by, dir = "asc") {
+  const kids = childrenOf(nodes, parentId);
+  const sorted = [...kids].sort((a, b) => cmp(a, b, by) * (dir === "desc" ? -1 : 1));
+  let next = nodes;
+  sorted.forEach((n, i) => {
+    next = patch(next, n.id, (x) => ({ ...x, order: i }));
+  });
+  return normalizeOrders(next);
+}
+function orderForPosition(siblings, position) {
+  const pos = Math.max(0, Math.min(position, siblings.length));
+  if (siblings.length === 0) return 0;
+  if (pos === 0) return siblings[0].order - 0.5;
+  if (pos >= siblings.length) return siblings[siblings.length - 1].order + 0.5;
+  return (siblings[pos - 1].order + siblings[pos].order) / 2;
+}
+function sortVal(n, by) {
+  switch (by) {
+    case "status":
+      return STATUS_IDS.indexOf(n.status);
+    case "priority":
+      return PRIORITY[n.priority].rank;
+    case "points":
+      return n.points;
+    case "due":
+      return n.due;
+    case "assignee":
+      return n.assignee;
+    default:
+      return n[by];
+  }
+}
+function cmp(a, b, by) {
+  const x = sortVal(a, by);
+  const y = sortVal(b, by);
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+// src/core/dates.ts
+function parseDate(d) {
+  const a = d.split("-").map(Number);
+  return new Date(a[0], a[1] - 1, a[2]);
+}
+function dayIdx(d, rangeStart) {
+  return Math.round((parseDate(d).getTime() - parseDate(rangeStart).getTime()) / 864e5);
+}
+function diffDays(a, b) {
+  return Math.round((parseDate(a).getTime() - parseDate(b).getTime()) / 864e5);
+}
+function fmtShort(d) {
+  const a = d.split("-");
+  return +a[1] + "/" + +a[2];
+}
+function staleInfo(node, today) {
+  const last = node.history.length ? node.history[node.history.length - 1].at : node.start;
+  const days = Math.max(0, diffDays(today, last));
+  return { days, stale: node.status !== "done" && days > 4 };
+}
+
+// src/core/projections.ts
+var shortTitle = (n) => (n.title || "").split(" \xB7 ")[0] || n.key;
+var workItems = (nodes) => nodes.filter((n) => n.parentId != null);
+function breadcrumb(nodes, focusId) {
+  const chain = focusChain(nodes, focusId);
+  return [{ id: null, label: "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4" }, ...chain.map((n) => ({ id: n.id, label: shortTitle(n) }))];
+}
+function stats(nodes, focusId = null) {
+  const items = focusId != null ? descendantIds(nodes, focusId).map((id) => byId(nodes, id)).filter(Boolean) : workItems(nodes);
+  const done = items.filter((i) => i.status === "done").length;
+  const totalPts = items.reduce((a, i) => a + i.points, 0);
+  const donePts = items.filter((i) => i.status === "done").reduce((a, i) => a + i.points, 0);
+  const bottlenecks = STATUSES.filter(
+    (s) => s.wip != null && items.filter((i) => i.status === s.id).length > s.wip
+  ).length;
+  const stale = items.filter((i) => staleInfo(i, TODAY).stale).length;
+  return {
+    total: items.length,
+    done,
+    inProgress: items.filter((i) => i.status === "inprogress").length,
+    progress: items.length ? Math.round(done / items.length * 100) : 0,
+    totalPts,
+    donePts,
+    bottlenecks,
+    stale
+  };
+}
+function cardVM(nodes, n, focusId, scope) {
+  const { days, stale } = staleInfo(n, TODAY);
+  const kids = childrenOf(nodes, n.id);
+  const prog = subProgress(nodes, n.id);
+  const parent = n.parentId != null ? byId(nodes, n.parentId) : null;
+  return {
+    id: n.id,
+    key: n.key,
+    title: n.title,
+    type: effectiveType(n, depthOf(nodes, n.id)),
+    status: n.status,
+    priority: n.priority,
+    assignee: n.assignee,
+    points: n.points,
+    start: n.start,
+    due: n.due,
+    staleDays: days,
+    stale,
+    hasChildren: kids.length > 0,
+    childCount: kids.length,
+    progress: prog,
+    preview: kids.slice(0, 3).map((c) => ({ title: shortTitle(c), status: c.status })),
+    parentId: n.parentId,
+    parentLabel: parent ? shortTitle(parent) : "",
+    showPath: scope === "all" && !!parent && n.parentId !== (focusId ?? null)
+  };
+}
+function leavesUnder(nodes, focusId) {
+  const res = [];
+  const walk = (pid) => {
+    for (const i of childrenOf(nodes, pid)) {
+      if (childrenOf(nodes, i.id).length === 0) res.push(i);
+      else walk(i.id);
+    }
+  };
+  walk(focusId ?? null);
+  return res;
+}
+function toBoard(nodes, focusId = null, scope = "direct", search = "") {
+  const base = scope === "all" ? leavesUnder(nodes, focusId) : childrenOf(nodes, focusId);
+  const q = search.trim().toLowerCase();
+  const match = (n) => !q || n.key.toLowerCase().includes(q) || n.title.toLowerCase().includes(q);
+  const columns = STATUSES.map((s) => {
+    const cards = base.filter((i) => i.status === s.id && match(i));
+    return {
+      id: s.id,
+      label: s.label,
+      kr: s.kr,
+      color: s.color,
+      wip: s.wip ?? null,
+      count: cards.length,
+      bottleneck: s.wip != null && cards.length > s.wip,
+      cards: cards.map((c) => cardVM(nodes, c, focusId, scope))
+    };
+  });
+  return { focusId, breadcrumb: breadcrumb(nodes, focusId), scope, columns };
+}
+function toOutlineRows(nodes, focusId = null) {
+  const rows = [];
+  const seen = /* @__PURE__ */ new Set();
+  const walk = (pid, depth) => {
+    for (const n of childrenOf(nodes, pid)) {
+      if (seen.has(n.id)) continue;
+      seen.add(n.id);
+      const kids = childrenOf(nodes, n.id);
+      const gdepth = depthOf(nodes, n.id);
+      const isEpic = gdepth === 0;
+      rows.push({
+        id: n.id,
+        key: n.key,
+        title: n.title,
+        depth,
+        isEpic,
+        type: effectiveType(n, gdepth),
+        status: n.status,
+        assignee: n.assignee,
+        hasChildren: kids.length > 0,
+        childCount: kids.length,
+        doneCount: kids.filter((k) => k.status === "done").length,
+        progress: subProgress(nodes, n.id)
+      });
+      walk(n.id, depth + 1);
+    }
+  };
+  walk(focusId ?? null, 0);
+  return rows;
+}
+function toGantt(nodes) {
+  const rows = [];
+  const push = (n, isEpic) => {
+    const sIdx = Math.max(0, dayIdx(n.start, RANGE_START));
+    const eIdx = Math.min(TOTAL_DAYS - 1, dayIdx(n.due, RANGE_START));
+    rows.push({
+      id: n.id,
+      key: n.key,
+      title: shortTitle(n),
+      isEpic,
+      status: n.status,
+      leftPct: sIdx / TOTAL_DAYS * 100,
+      widthPct: Math.max(2, (eIdx - sIdx + 1) / TOTAL_DAYS * 100)
+    });
+  };
+  for (const epic of childrenOf(nodes, null)) {
+    push(epic, true);
+    for (const id of descendantIds(nodes, epic.id)) {
+      const n = byId(nodes, id);
+      if (n) push(n, false);
+    }
+  }
+  const weeks = [];
+  for (let w = 0; w < 4; w++) weeks.push({ label: "6\uC6D4 " + (w + 1) + "\uC8FC", range: "6/" + (w * 7 + 1) + " \u2013 6/" + (w * 7 + 7) });
+  return { rows, weeks, todayPct: dayIdx(TODAY, RANGE_START) / TOTAL_DAYS * 100 };
+}
+function toTimeline(nodes) {
+  const evs = [];
+  for (const n of workItems(nodes)) for (const hh of n.history) evs.push({ n, h: hh });
+  evs.sort((a, b) => a.h.at < b.h.at ? 1 : a.h.at > b.h.at ? -1 : 0);
+  const groups = [];
+  for (const { n, h: h2 } of evs) {
+    const dl = fmtShort(h2.at);
+    let g = groups.find((x) => x.dateLabel === dl);
+    if (!g) {
+      g = { dateLabel: dl, items: [] };
+      groups.push(g);
+    }
+    g.items.push({ id: n.id, key: n.key, title: shortTitle(n), from: h2.from, to: h2.to, by: h2.by, at: h2.at });
+  }
+  return groups;
+}
+function toTable(nodes, sortKey = "key", sortDir = "asc") {
+  const val = (i) => {
+    if (sortKey === "status") return STATUS_IDS.indexOf(i.status);
+    if (sortKey === "priority") return PRIORITY[i.priority].rank;
+    if (sortKey === "points") return i.points;
+    if (sortKey === "due") return i.due;
+    if (sortKey === "assignee") return i.assignee;
+    if (sortKey === "title") return i.title;
+    return i.key;
+  };
+  return workItems(nodes).slice().sort((a, b) => {
+    const x = val(a);
+    const y = val(b);
+    const r = x < y ? -1 : x > y ? 1 : 0;
+    return sortDir === "asc" ? r : -r;
+  }).map((i) => ({
+    id: i.id,
+    key: i.key,
+    title: i.title,
+    type: i.type,
+    status: i.status,
+    assignee: i.assignee,
+    priority: i.priority,
+    points: i.points,
+    due: i.due
+  }));
+}
+function toCalendar(nodes) {
+  const weekdays = [
+    ["\uC6D4", "Mon"],
+    ["\uD654", "Tue"],
+    ["\uC218", "Wed"],
+    ["\uBAA9", "Thu"],
+    ["\uAE08", "Fri"],
+    ["\uD1A0", "Sat"],
+    ["\uC77C", "Sun"]
+  ].map(([kr, en]) => ({ kr, en }));
+  const offset = (new Date(2026, 5, 1).getDay() + 6) % 7;
+  const byDay = {};
+  for (const i of workItems(nodes)) {
+    const a = i.due.split("-");
+    if (+a[1] === 6) (byDay[+a[2]] ||= []).push(i);
+  }
+  const cells = [];
+  for (let k = 0; k < offset; k++) cells.push({ show: false });
+  for (let d = 1; d <= 30; d++) {
+    cells.push({
+      show: true,
+      day: d,
+      isToday: d === 18,
+      items: (byDay[d] || []).map((i) => ({ id: i.id, key: i.key, status: i.status }))
+    });
+  }
+  while (cells.length % 7 !== 0) cells.push({ show: false });
+  const weeks = [];
+  for (let w = 0; w < cells.length / 7; w++) weeks.push({ days: cells.slice(w * 7, w * 7 + 7) });
+  return { weekdays, weeks, monthLabel: "2026\uB144 6\uC6D4" };
+}
+function projectView(nodes, view, focusId = null, opts = {}) {
+  switch (view) {
+    case "board":
+      return toBoard(nodes, focusId, opts.scope ?? "direct", opts.search ?? "");
+    case "outline":
+    case "tree":
+      return { focusId, breadcrumb: breadcrumb(nodes, focusId), rows: toOutlineRows(nodes, focusId) };
+    case "gantt":
+      return toGantt(nodes);
+    case "timeline":
+      return toTimeline(nodes);
+    case "table":
+      return toTable(nodes, opts.sortKey ?? "key", opts.sortDir ?? "asc");
+    case "calendar":
+      return toCalendar(nodes);
+    default:
+      return null;
+  }
+}
+
+// src/core/seed.ts
+var h = (from, to, by, at) => ({ from, to, by, at });
+var DESC = {
+  "WMP-100": "\uACB0\uC81C \uD50C\uB85C\uC6B0 \uC804\uBC18\uC744 PG v3 \uAE30\uC900\uC73C\uB85C \uC7AC\uC124\uACC4\uD55C\uB2E4. \uC548\uC815\uC131\xB7\uC815\uC0B0 \uC815\uD655\uB3C4 \uAC1C\uC120\uC774 \uBAA9\uD45C.",
+  "WMP-200": "\uC2E0\uADDC \uC0AC\uC6A9\uC790\uC758 \uCCAB 7\uC77C \uACBD\uD5D8\uC744 \uAC1C\uC120\uD574 \uD65C\uC131\uD654\uC728\uC744 \uB192\uC778\uB2E4.",
+  "WMP-300": "\uC774\uBCA4\uD2B8 \uAE30\uBC18 \uB370\uC774\uD130 \uC218\uC9D1\xB7\uC801\uC7AC \uD30C\uC774\uD504\uB77C\uC778\uC744 \uAD6C\uCD95\uD55C\uB2E4.",
+  "WMP-101": "\uB808\uAC70\uC2DC PG SDK\uB97C v3 \uC5B4\uB311\uD130\uB85C \uAD50\uCCB4\uD558\uACE0 \uD0C0\uC784\uC544\uC6C3\xB7\uC7AC\uC2DC\uB3C4 \uC815\uCC45\uC744 \uD45C\uC900\uD654\uD55C\uB2E4. \uACB0\uC81C \uBAA8\uB4C8 \uC758\uC874\uC131\uC744 \uC815\uB9AC\uD55C\uB2E4.",
+  "WMP-102": "\uACB0\uC81C \uC2E4\uD328 \uC2DC \uC9C0\uC218 \uBC31\uC624\uD504\uB85C \uCD5C\uB300 3\uD68C \uC7AC\uC2DC\uB3C4\uD558\uACE0, \uBA71\uB4F1\uD0A4\uB85C \uC911\uBCF5 \uCCAD\uAD6C\uB97C \uBC29\uC9C0\uD55C\uB2E4.",
+  "WMP-103": "\uBD80\uBD84 \uD658\uBD88\xB7\uC804\uC561 \uD658\uBD88\uC744 \uBAA8\uB450 \uC9C0\uC6D0\uD558\uB294 Refund API v2\uB97C \uC124\uACC4\xB7\uAD6C\uD604\uD55C\uB2E4.",
+  "WMP-104": "\uACB0\uC81C \uC644\uB8CC \uC2DC \uC601\uC218\uC99D PDF\uB97C \uC0DD\uC131\uD574 \uC0AC\uC6A9\uC790 \uC774\uBA54\uC77C\uB85C \uBC1C\uC1A1\uD55C\uB2E4.",
+  "WMP-105": "\uB3D9\uC77C \uC8FC\uBB38\uC774 \uC9E7\uC740 \uC2DC\uAC04 \uB0B4 2\uAC74 \uCCAD\uAD6C\uB418\uB294 \uBC84\uADF8. \uBA71\uB4F1 \uCC98\uB9AC \uB204\uB77D\uC774 \uC758\uC2EC\uB41C\uB2E4. \uC6B0\uC120\uC21C\uC704 \uCD5C\uC0C1.",
+  "WMP-201": "3\uB2E8\uACC4 \uAC00\uC785 \uD50C\uB85C\uC6B0\uB97C 1\uD398\uC774\uC9C0 \uC810\uC9C4 \uACF5\uAC1C(progressive disclosure) \uBC29\uC2DD\uC73C\uB85C \uC7AC\uC124\uACC4\uD55C\uB2E4.",
+  "WMP-202": "\uAC00\uC785 \uC9C1\uD6C4 \uC774\uBA54\uC77C \uC778\uC99D \uB9C1\uD06C\uB97C \uBC1C\uC1A1\uD558\uACE0 \uAC80\uC99D\uD558\uB294 \uD50C\uB85C\uC6B0\uB97C \uAD6C\uD604\uD55C\uB2E4.",
+  "WMP-203": "\uCCAB \uB85C\uADF8\uC778 \uD6C4 \uD575\uC2EC \uC791\uC5C5 5\uAC1C\uB97C \uC548\uB0B4\uD558\uB294 \uC628\uBCF4\uB529 \uCCB4\uD06C\uB9AC\uC2A4\uD2B8\uB97C \uB9CC\uB4E0\uB2E4.",
+  "WMP-204": "\uC2E0\uADDC \uAC00\uC785\uC790\uC5D0\uAC8C \uBC1C\uC1A1\uB418\uB294 \uD658\uC601 \uC774\uBA54\uC77C \uD15C\uD50C\uB9BF\uC744 \uC81C\uC791\uD55C\uB2E4.",
+  "WMP-205": "\uD2B9\uC815 \uBE0C\uB77C\uC6B0\uC800\uC5D0\uC11C \uAC00\uC785 \uBC84\uD2BC\uC774 \uBE44\uD65C\uC131 \uC0C1\uD0DC\uB85C \uB0A8\uB294 \uBC84\uADF8. \uD3FC \uAC80\uC99D \uB85C\uC9C1 \uD655\uC778 \uD544\uC694.",
+  "WMP-206": "Google\xB7GitHub SSO \uB85C\uADF8\uC778 \uC635\uC158\uC744 \uCD94\uAC00\uD55C\uB2E4.",
+  "WMP-301": "\uD074\uB77C\uC774\uC5B8\uD2B8 \uC774\uBCA4\uD2B8 \uC218\uC9D1\uC744 \uC704\uD55C \uACF5\uD1B5 \uC2A4\uD0A4\uB9C8\uB97C \uC815\uC758\uD55C\uB2E4.",
+  "WMP-302": "\uB9E4\uC2DC\uAC04 ETL \uC7A1\uC744 \uC2E4\uD589\uD558\uB294 \uC2A4\uCF00\uC904\uB7EC\uB97C \uAD6C\uC131\uD55C\uB2E4.",
+  "WMP-303": "\uD575\uC2EC \uC9C0\uD45C\uB97C \uBCF4\uC5EC\uC8FC\uB294 \uBD84\uC11D \uB300\uC2DC\uBCF4\uB4DC\uB97C \uAD6C\uCD95\uD55C\uB2E4.",
+  "WMP-304": "\uC77C\uBD80 \uC774\uBCA4\uD2B8\uAC00 \uC801\uC7AC\uB418\uC9C0 \uC54A\uACE0 \uB204\uB77D\uB418\uB294 \uBC84\uADF8. \uD050 \uC720\uC2E4\uC774 \uC758\uC2EC\uB41C\uB2E4.",
+  "WMP-305": "\uC218\uC9D1 \uB370\uC774\uD130\uC758 \uBB34\uACB0\uC131\uC744 \uAC80\uC99D\uD558\uB294 \uB8F0\uC744 \uC791\uC131\uD55C\uB2E4."
+};
+var ROWS = [
+  { id: "E1", key: "WMP-100", type: "epic", title: "\uACB0\uC81C \uC2DC\uC2A4\uD15C \uAC1C\uD3B8 \xB7 Payments Revamp", status: "inprogress", assignee: "JH", priority: "high", points: 0, start: "2026-06-02", due: "2026-06-26", parentId: null, history: [] },
+  { id: "E2", key: "WMP-200", type: "epic", title: "\uC628\uBCF4\uB529 UX \uAC1C\uC120 \xB7 Onboarding UX", status: "inprogress", assignee: "SP", priority: "high", points: 0, start: "2026-06-04", due: "2026-06-24", parentId: null, history: [] },
+  { id: "E3", key: "WMP-300", type: "epic", title: "\uB370\uC774\uD130 \uD30C\uC774\uD504\uB77C\uC778 \xB7 Data Pipeline", status: "todo", assignee: "DY", priority: "medium", points: 0, start: "2026-06-10", due: "2026-06-28", parentId: null, history: [] },
+  { id: "101", key: "WMP-101", type: "task", title: "PG \uC5F0\uB3D9 \uB9AC\uD329\uD130\uB9C1 \xB7 Refactor PG integration", status: "inprogress", assignee: "AK", priority: "high", points: 5, start: "2026-06-05", due: "2026-06-19", parentId: "E1", history: [h("backlog", "todo", "SP", "2026-06-03"), h("todo", "inprogress", "AK", "2026-06-12")] },
+  { id: "401", key: "WMP-401", type: "task", title: "\uAC8C\uC774\uD2B8\uC6E8\uC774 \uCD94\uC0C1\uD654 \uB808\uC774\uC5B4 \xB7 Gateway abstraction", status: "inprogress", assignee: "AK", priority: "high", points: 3, start: "2026-06-06", due: "2026-06-18", parentId: "101", history: [h("todo", "inprogress", "AK", "2026-06-13")] },
+  { id: "411", key: "WMP-411", type: "task", title: "PG \uC5B4\uB311\uD130 \uC778\uD130\uD398\uC774\uC2A4 \uC815\uC758 \xB7 Adapter interface", status: "done", assignee: "AK", priority: "medium", points: 2, start: "2026-06-06", due: "2026-06-10", parentId: "401", history: [h("inprogress", "done", "AK", "2026-06-10")] },
+  { id: "412", key: "WMP-412", type: "task", title: "\uD1A0\uC2A4\xB7\uCE74\uCE74\uC624 \uC5B4\uB311\uD130 \uAD6C\uD604 \xB7 Toss/Kakao adapters", status: "inprogress", assignee: "DY", priority: "high", points: 3, start: "2026-06-11", due: "2026-06-19", parentId: "401", history: [h("todo", "inprogress", "DY", "2026-06-14")] },
+  { id: "421", key: "WMP-421", type: "task", title: "\uC0CC\uB4DC\uBC15\uC2A4 \uD0A4 \uBC1C\uAE09 \xB7 Sandbox keys", status: "done", assignee: "DY", priority: "low", points: 1, start: "2026-06-11", due: "2026-06-13", parentId: "412", history: [h("inprogress", "done", "DY", "2026-06-13")] },
+  { id: "402", key: "WMP-402", type: "task", title: "\uC5D0\uB7EC \uCF54\uB4DC \uB9E4\uD551 \uD14C\uC774\uBE14 \xB7 Error code mapping", status: "review", assignee: "JH", priority: "medium", points: 2, start: "2026-06-09", due: "2026-06-17", parentId: "101", history: [h("inprogress", "review", "JH", "2026-06-15")] },
+  { id: "102", key: "WMP-102", type: "task", title: "\uACB0\uC81C \uC2E4\uD328 \uC7AC\uC2DC\uB3C4 \uB85C\uC9C1 \xB7 Payment retry logic", status: "review", assignee: "JH", priority: "high", points: 3, start: "2026-06-08", due: "2026-06-17", parentId: "E1", history: [h("todo", "inprogress", "JH", "2026-06-09"), h("inprogress", "review", "JH", "2026-06-15")] },
+  { id: "103", key: "WMP-103", type: "task", title: "\uD658\uBD88 API v2 \xB7 Refund API v2", status: "todo", assignee: "DY", priority: "medium", points: 5, start: "2026-06-15", due: "2026-06-24", parentId: "E1", history: [h("backlog", "todo", "DY", "2026-06-13")] },
+  { id: "104", key: "WMP-104", type: "task", title: "\uACB0\uC81C \uC601\uC218\uC99D PDF \xB7 Receipt PDF", status: "done", assignee: "SY", priority: "low", points: 2, start: "2026-06-02", due: "2026-06-09", parentId: "E1", history: [h("inprogress", "review", "SY", "2026-06-07"), h("review", "done", "SY", "2026-06-09")] },
+  { id: "105", key: "WMP-105", type: "bug", title: "\uC911\uBCF5 \uACB0\uC81C \uBC1C\uC0DD \xB7 Duplicate charge", status: "inprogress", assignee: "AK", priority: "highest", points: 3, start: "2026-06-14", due: "2026-06-20", parentId: "E1", history: [h("todo", "inprogress", "AK", "2026-06-16")] },
+  { id: "201", key: "WMP-201", type: "story", title: "\uC2E0\uADDC \uAC00\uC785 \uD50C\uB85C\uC6B0 \uB9AC\uB514\uC790\uC778 \xB7 Signup flow redesign", status: "inprogress", assignee: "SP", priority: "high", points: 8, start: "2026-06-06", due: "2026-06-22", parentId: "E2", history: [h("todo", "inprogress", "SP", "2026-06-10")] },
+  { id: "501", key: "WMP-501", type: "task", title: "\uAC00\uC785 \uD654\uBA74 \uB514\uC790\uC778 QA \xB7 Design QA", status: "todo", assignee: "SP", priority: "medium", points: 2, start: "2026-06-16", due: "2026-06-21", parentId: "201", history: [] },
+  { id: "502", key: "WMP-502", type: "task", title: "\uD3FC \uAC80\uC99D \uB85C\uC9C1 \xB7 Form validation", status: "inprogress", assignee: "TL", priority: "high", points: 3, start: "2026-06-12", due: "2026-06-20", parentId: "201", history: [h("todo", "inprogress", "TL", "2026-06-15")] },
+  { id: "511", key: "WMP-511", type: "task", title: "\uBE44\uBC00\uBC88\uD638 \uC815\uCC45 \uC801\uC6A9 \xB7 Password policy", status: "review", assignee: "TL", priority: "medium", points: 2, start: "2026-06-13", due: "2026-06-19", parentId: "502", history: [h("inprogress", "review", "TL", "2026-06-16")] },
+  { id: "202", key: "WMP-202", type: "task", title: "\uC774\uBA54\uC77C \uC778\uC99D \xB7 Email verification", status: "review", assignee: "TL", priority: "medium", points: 3, start: "2026-06-09", due: "2026-06-18", parentId: "E2", history: [h("todo", "inprogress", "TL", "2026-06-11"), h("inprogress", "review", "TL", "2026-06-16")] },
+  { id: "203", key: "WMP-203", type: "story", title: "\uC628\uBCF4\uB529 \uCCB4\uD06C\uB9AC\uC2A4\uD2B8 \xB7 Onboarding checklist", status: "todo", assignee: "SY", priority: "medium", points: 5, start: "2026-06-16", due: "2026-06-25", parentId: "E2", history: [] },
+  { id: "204", key: "WMP-204", type: "task", title: "\uD658\uC601 \uC774\uBA54\uC77C \uD15C\uD50C\uB9BF \xB7 Welcome email", status: "done", assignee: "SP", priority: "low", points: 2, start: "2026-06-04", due: "2026-06-08", parentId: "E2", history: [h("inprogress", "review", "SP", "2026-06-06"), h("review", "done", "SP", "2026-06-08")] },
+  { id: "205", key: "WMP-205", type: "bug", title: "\uAC00\uC785 \uBC84\uD2BC \uBE44\uD65C\uC131 \xB7 Signup button disabled", status: "done", assignee: "TL", priority: "high", points: 1, start: "2026-06-05", due: "2026-06-07", parentId: "E2", history: [h("inprogress", "done", "TL", "2026-06-07")] },
+  { id: "206", key: "WMP-206", type: "story", title: "SSO \uB85C\uADF8\uC778 \xB7 SSO login", status: "backlog", assignee: "AK", priority: "medium", points: 5, start: "2026-06-20", due: "2026-06-27", parentId: "E2", history: [] },
+  { id: "301", key: "WMP-301", type: "task", title: "\uC774\uBCA4\uD2B8 \uC218\uC9D1 \uC2A4\uD0A4\uB9C8 \xB7 Event schema", status: "inprogress", assignee: "DY", priority: "high", points: 5, start: "2026-06-12", due: "2026-06-22", parentId: "E3", history: [h("todo", "inprogress", "DY", "2026-06-13")] },
+  { id: "601", key: "WMP-601", type: "task", title: "\uC2A4\uD0A4\uB9C8 \uBC84\uC800\uB2DD \xB7 Schema versioning", status: "todo", assignee: "DY", priority: "medium", points: 3, start: "2026-06-14", due: "2026-06-22", parentId: "301", history: [] },
+  { id: "602", key: "WMP-602", type: "bug", title: "PII \uB9C8\uC2A4\uD0B9 \uADDC\uCE59 \xB7 PII masking", status: "inprogress", assignee: "DY", priority: "high", points: 2, start: "2026-06-13", due: "2026-06-20", parentId: "301", history: [h("todo", "inprogress", "DY", "2026-06-15")] },
+  { id: "302", key: "WMP-302", type: "task", title: "ETL \uC7A1 \uC2A4\uCF00\uC904\uB7EC \xB7 ETL scheduler", status: "backlog", assignee: "JH", priority: "medium", points: 8, start: "2026-06-18", due: "2026-06-28", parentId: "E3", history: [] },
+  { id: "303", key: "WMP-303", type: "story", title: "\uB370\uC774\uD130 \uB300\uC2DC\uBCF4\uB4DC \xB7 Analytics dashboard", status: "backlog", assignee: "SY", priority: "low", points: 5, start: "2026-06-22", due: "2026-06-28", parentId: "E3", history: [] },
+  { id: "304", key: "WMP-304", type: "bug", title: "\uB204\uB77D \uC774\uBCA4\uD2B8 \uBC1C\uC0DD \xB7 Missing events", status: "review", assignee: "DY", priority: "high", points: 2, start: "2026-06-11", due: "2026-06-18", parentId: "E3", history: [h("todo", "inprogress", "DY", "2026-06-12"), h("inprogress", "review", "DY", "2026-06-13")] },
+  { id: "305", key: "WMP-305", type: "task", title: "\uB370\uC774\uD130 \uAC80\uC99D \uB8F0 \xB7 Validation rules", status: "done", assignee: "AK", priority: "medium", points: 3, start: "2026-06-08", due: "2026-06-12", parentId: "E3", history: [h("inprogress", "review", "AK", "2026-06-10"), h("review", "done", "AK", "2026-06-12")] }
+];
+function seedNodes(now = 0) {
+  const counter = /* @__PURE__ */ new Map();
+  return ROWS.map((r) => {
+    const ord = counter.get(r.parentId) ?? 0;
+    counter.set(r.parentId, ord + 1);
+    return {
+      id: r.id,
+      key: r.key,
+      parentId: r.parentId,
+      order: ord,
+      title: r.title,
+      body: DESC[r.key] ?? "",
+      type: r.type,
+      status: r.status,
+      assignee: r.assignee,
+      priority: r.priority,
+      points: r.points,
+      start: r.start,
+      due: r.due,
+      collapsed: false,
+      history: r.history,
+      created: now,
+      updated: now
+    };
+  });
+}
+
+// src/commands.ts
+function resolve(nodes, ref) {
+  const s = String(ref ?? "");
+  const direct = byId(nodes, s);
+  if (direct) return { ok: true, node: direct };
+  const byKey = nodes.filter((n) => n.key.toLowerCase() === s.toLowerCase());
+  if (byKey.length === 1) return { ok: true, node: byKey[0] };
+  if (byKey.length > 1) return { ok: false, error: `ambiguous key: '${s}'`, candidates: byKey.map((n) => n.id) };
+  const fuzzy = nodes.filter((n) => n.key.toLowerCase().includes(s.toLowerCase()) || n.title.toLowerCase().includes(s.toLowerCase())).slice(0, 5).map((n) => n.key);
+  return { ok: false, error: `node not found: '${s}'`, did_you_mean: fuzzy };
+}
+function resolveParent(nodes, ref) {
+  if (ref == null || ref === "" || ref === "root" || ref === "null") return { ok: true, id: null };
+  const r = resolve(nodes, ref);
+  return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
+}
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due });
+function registerCommands(ctx, store2) {
+  const cmds = ctx.app.commands;
+  if (!cmds) return;
+  const sub = (name, spec) => ctx.subscriptions.push(cmds.register(name, spec));
+  const STATUS_ENUM = STATUS_IDS;
+  const TYPE_ENUM = ["epic", "story", "task", "bug"];
+  const PRIORITY_ENUM = ["highest", "high", "medium", "low"];
+  const VIEW_ENUM = ["outline", "board", "gantt", "timeline", "tree", "table", "calendar"];
+  const SORT_ENUM = ["key", "title", "priority", "points", "due", "status", "assignee"];
+  sub("node.add", {
+    description: "\uB178\uB4DC \uCD94\uAC00. parentId \uC0DD\uB7B5 \uC2DC \uCD5C\uC0C1\uC704. after(\uD615\uC81C id/key) \uB4A4\uC5D0 \uC0BD\uC785.",
+    params: {
+      parentId: { type: "string", description: "\uBD80\uBAA8 \uB178\uB4DC id/key (\uC0DD\uB7B5=\uCD5C\uC0C1\uC704)" },
+      title: { type: "string", description: "\uC81C\uBAA9" },
+      type: { type: "string", description: "\uC720\uD615", enum: TYPE_ENUM },
+      status: { type: "string", description: "\uC0C1\uD0DC", enum: STATUS_ENUM },
+      assignee: { type: "string", description: "\uB2F4\uB2F9\uC790 id" },
+      priority: { type: "string", description: "\uC6B0\uC120\uC21C\uC704", enum: PRIORITY_ENUM },
+      points: { type: "number", description: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8" },
+      after: { type: "string", description: "\uC774 \uD615\uC81C(id/key) \uB4A4\uC5D0 \uC0BD\uC785" }
+    },
+    returns: "{ ok, nodeId, key }",
+    examples: [`sok plugin.soksak-plugin-kanban.node.add '{"title":"\uC0C8 \uC791\uC5C5","parentId":"WMP-100"}'`],
+    handler: async (p) => {
+      const nodes = store2.get();
+      const par = resolveParent(nodes, p.parentId);
+      if (!par.ok) return { ok: false, error: par.error };
+      const afterRef = p.after != null ? resolve(nodes, p.after) : null;
+      const now = Date.now();
+      const node = {
+        id: store2.genId(),
+        key: store2.nextKey(),
+        parentId: par.id,
+        order: 0,
+        title: typeof p.title === "string" ? p.title : "\uC0C8 \uD56D\uBAA9",
+        body: "",
+        type: TYPE_ENUM.includes(p.type) ? p.type : par.id == null ? "epic" : "task",
+        status: STATUS_ENUM.includes(p.status) ? p.status : "todo",
+        assignee: typeof p.assignee === "string" ? p.assignee : "me",
+        priority: PRIORITY_ENUM.includes(p.priority) ? p.priority : "medium",
+        points: typeof p.points === "number" ? p.points : par.id == null ? 0 : 3,
+        start: TODAY,
+        due: RANGE_END,
+        collapsed: false,
+        history: [],
+        created: now,
+        updated: now
+      };
+      await store2.apply((ns) => insertNode(ns, node, afterRef && afterRef.ok ? afterRef.node.id : void 0));
+      return { ok: true, nodeId: node.id, key: node.key };
+    }
+  });
+  sub("node.edit", {
+    description: "\uB178\uB4DC \uD544\uB4DC \uC218\uC815. status \uBCC0\uACBD \uC2DC history \uC790\uB3D9 \uAE30\uB85D.",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      title: { type: "string", description: "\uC81C\uBAA9" },
+      body: { type: "string", description: "\uBCF8\uBB38" },
+      type: { type: "string", description: "\uC720\uD615", enum: TYPE_ENUM },
+      status: { type: "string", description: "\uC0C1\uD0DC(\uBCC0\uACBD \uC2DC history)", enum: STATUS_ENUM },
+      assignee: { type: "string", description: "\uB2F4\uB2F9\uC790 id" },
+      priority: { type: "string", description: "\uC6B0\uC120\uC21C\uC704", enum: PRIORITY_ENUM },
+      points: { type: "number", description: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8" },
+      start: { type: "string", description: "\uC2DC\uC791 YYYY-MM-DD" },
+      due: { type: "string", description: "\uB9C8\uAC10 YYYY-MM-DD" }
+    },
+    returns: "{ ok, node }",
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      const id = r.node.id;
+      await store2.apply(
+        (ns) => ns.map((n) => {
+          if (n.id !== id) return n;
+          let history = n.history;
+          const nextStatus = typeof p.status === "string" && STATUS_ENUM.includes(p.status) ? p.status : n.status;
+          if (nextStatus !== n.status) history = [...history, { from: n.status, to: nextStatus, by: "me", at: TODAY }];
+          return {
+            ...n,
+            title: typeof p.title === "string" ? p.title : n.title,
+            body: typeof p.body === "string" ? p.body : n.body,
+            type: TYPE_ENUM.includes(p.type) ? p.type : n.type,
+            status: nextStatus,
+            assignee: typeof p.assignee === "string" ? p.assignee : n.assignee,
+            priority: PRIORITY_ENUM.includes(p.priority) ? p.priority : n.priority,
+            points: typeof p.points === "number" ? p.points : n.points,
+            start: typeof p.start === "string" ? p.start : n.start,
+            due: typeof p.due === "string" ? p.due : n.due,
+            history,
+            updated: Date.now()
+          };
+        })
+      );
+      const updated = byId(store2.get(), id);
+      return { ok: true, node: updated ? compact(updated) : null };
+    }
+  });
+  sub("node.remove", {
+    description: "\uB178\uB4DC \uC0AD\uC81C. promoteChildren=true \uBA74 \uC790\uC2DD\uC744 \uBD80\uBAA8\uB85C \uC2B9\uACA9, \uC544\uB2C8\uBA74 \uC11C\uBE0C\uD2B8\uB9AC \uD1B5\uC9F8 \uC0AD\uC81C.",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      promoteChildren: { type: "boolean", description: "\uC790\uC2DD \uC2B9\uACA9(\uAE30\uBCF8 false=\uC11C\uBE0C\uD2B8\uB9AC \uC0AD\uC81C)" }
+    },
+    returns: "{ ok, removed }",
+    danger: "destructive",
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      const before = store2.get().length;
+      await store2.apply((ns) => removeNode(ns, r.node.id, p.promoteChildren === true));
+      return { ok: true, removed: before - store2.get().length };
+    }
+  });
+  sub("node.get", {
+    description: "\uB178\uB4DC \uC870\uD68C. withChildren=true \uBA74 \uC9C1\uACC4 \uC790\uC2DD\uB3C4.",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      withChildren: { type: "boolean", description: "\uC9C1\uACC4 \uC790\uC2DD \uD3EC\uD568" }
+    },
+    returns: "{ ok, node, children? }",
+    handler: (p) => {
+      const nodes = store2.get();
+      const r = resolve(nodes, p.node);
+      if (!r.ok) return r;
+      const out = { ok: true, node: { ...compact(r.node), body: r.node.body, history: r.node.history } };
+      if (p.withChildren === true) out.children = childrenOf(nodes, r.node.id).map(compact);
+      return out;
+    }
+  });
+  sub("node.list", {
+    description: "\uB178\uB4DC \uBAA9\uB85D(\uD544\uD130). parentId/status/type/assignee/search.",
+    params: {
+      parentId: { type: "string", description: "\uBD80\uBAA8\uB85C \uD55C\uC815(\uC0DD\uB7B5=\uC804\uCCB4)" },
+      status: { type: "string", description: "\uC0C1\uD0DC", enum: STATUS_ENUM },
+      type: { type: "string", description: "\uC720\uD615", enum: TYPE_ENUM },
+      assignee: { type: "string", description: "\uB2F4\uB2F9\uC790 id" },
+      search: { type: "string", description: "\uD0A4/\uC81C\uBAA9 \uAC80\uC0C9\uC5B4" },
+      limit: { type: "number", description: "\uCD5C\uB300 \uAC1C\uC218(\uAE30\uBCF8 200)" }
+    },
+    returns: "{ ok, nodes }",
+    handler: (p) => {
+      let nodes = store2.get();
+      if (p.parentId != null && p.parentId !== "") {
+        const par = resolveParent(nodes, p.parentId);
+        if (!par.ok) return { ok: false, error: par.error };
+        nodes = nodes.filter((n) => n.parentId === par.id);
+      }
+      if (typeof p.status === "string") nodes = nodes.filter((n) => n.status === p.status);
+      if (typeof p.type === "string") nodes = nodes.filter((n) => n.type === p.type);
+      if (typeof p.assignee === "string") nodes = nodes.filter((n) => n.assignee === p.assignee);
+      if (typeof p.search === "string" && p.search.trim()) {
+        const q = p.search.trim().toLowerCase();
+        nodes = nodes.filter((n) => n.key.toLowerCase().includes(q) || n.title.toLowerCase().includes(q));
+      }
+      const limit = typeof p.limit === "number" ? p.limit : 200;
+      return { ok: true, nodes: nodes.slice(0, limit).map(compact) };
+    }
+  });
+  sub("outline.indent", {
+    description: "Tab \u2014 \uC9C1\uC804 \uD615\uC81C\uC758 \uC790\uC2DD\uC73C\uB85C \uB4E4\uC5EC\uC4F0\uAE30.",
+    params: { node: { type: "string", description: "\uB178\uB4DC id/key", required: true } },
+    returns: "{ ok }",
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      await store2.apply((ns) => indent(ns, r.node.id));
+      return { ok: true };
+    }
+  });
+  sub("outline.outdent", {
+    description: "Shift+Tab \u2014 \uD55C \uB2E8\uACC4 \uC704\uB85C(\uC870\uBD80\uBAA8 \uBC11, \uC61B \uBD80\uBAA8 \uB4A4). \uC790\uC2DD \uB3D9\uBC18, \uB4A4 \uD615\uC81C \uD761\uC218.",
+    params: { node: { type: "string", description: "\uB178\uB4DC id/key", required: true } },
+    returns: "{ ok }",
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      await store2.apply((ns) => outdent(ns, r.node.id));
+      return { ok: true };
+    }
+  });
+  sub("outline.move", {
+    description: "\uB178\uB4DC\uB97C \uB2E4\uB978 \uBD80\uBAA8\uB85C \uC774\uB3D9(reparent) + \uC704\uCE58. \uC790\uC190 \uBC11\uC73C\uB85C \uC774\uB3D9\uC740 \uAC70\uBD80(\uC21C\uD658).",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      parentId: { type: "string", description: "\uC0C8 \uBD80\uBAA8 id/key (\uC0DD\uB7B5/root=\uCD5C\uC0C1\uC704)" },
+      position: { type: "number", description: "\uD615\uC81C \uC911 0-based \uC704\uCE58(\uC0DD\uB7B5=\uB05D)" }
+    },
+    returns: "{ ok }",
+    handler: async (p) => {
+      const nodes = store2.get();
+      const r = resolve(nodes, p.node);
+      if (!r.ok) return r;
+      const par = resolveParent(nodes, p.parentId);
+      if (!par.ok) return { ok: false, error: par.error };
+      await store2.apply((ns) => moveNode(ns, r.node.id, par.id, typeof p.position === "number" ? p.position : void 0));
+      return { ok: true };
+    }
+  });
+  sub("outline.reorder", {
+    description: "\uAC19\uC740 \uBD80\uBAA8 \uC548\uC5D0\uC11C position(0-based)\uC73C\uB85C \uC21C\uC11C \uBCC0\uACBD.",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      position: { type: "number", description: "0-based \uC704\uCE58", required: true }
+    },
+    returns: "{ ok }",
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      await store2.apply((ns) => reorder(ns, r.node.id, typeof p.position === "number" ? p.position : 0));
+      return { ok: true };
+    }
+  });
+  sub("board.move", {
+    description: "\uBCF4\uB4DC \uC774\uB3D9 \u2014 \uC0C1\uD0DC \uBCC0\uACBD(history) + \uC120\uD0DD\uC801 position \uC7AC\uBC30\uCE58.",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      status: { type: "string", description: "\uB300\uC0C1 \uC0C1\uD0DC", required: true, enum: STATUS_ENUM },
+      position: { type: "number", description: "\uCE78 \uB0B4 0-based \uC704\uCE58" }
+    },
+    returns: "{ ok }",
+    examples: [`sok plugin.soksak-plugin-kanban.board.move '{"node":"WMP-103","status":"inprogress"}'`],
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      if (!STATUS_ENUM.includes(p.status)) return { ok: false, error: `invalid status: '${p.status}'` };
+      await store2.apply((ns) => boardMove(ns, r.node.id, p.status, "me", TODAY, typeof p.position === "number" ? p.position : void 0));
+      return { ok: true };
+    }
+  });
+  sub("board.reorder", {
+    description: "\uBCF4\uB4DC \uCE78 \uC548\uC5D0\uC11C position(0-based)\uC73C\uB85C \uC21C\uC11C \uBCC0\uACBD(\uD615\uC81C order).",
+    params: {
+      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
+      position: { type: "number", description: "0-based \uC704\uCE58", required: true }
+    },
+    returns: "{ ok }",
+    handler: async (p) => {
+      const r = resolve(store2.get(), p.node);
+      if (!r.ok) return r;
+      await store2.apply((ns) => reorder(ns, r.node.id, typeof p.position === "number" ? p.position : 0));
+      return { ok: true };
+    }
+  });
+  sub("board.sort", {
+    description: "parentId \uC790\uC2DD\uB4E4\uC744 by \uAE30\uC900 \uC815\uB82C\uD574 order \uC601\uC18D.",
+    params: {
+      parentId: { type: "string", description: "\uBD80\uBAA8 id/key (\uC0DD\uB7B5=\uCD5C\uC0C1\uC704)" },
+      by: { type: "string", description: "\uC815\uB82C \uD0A4", required: true, enum: SORT_ENUM },
+      dir: { type: "string", description: "asc|desc(\uAE30\uBCF8 asc)", enum: ["asc", "desc"] }
+    },
+    returns: "{ ok, order }",
+    handler: async (p) => {
+      const nodes = store2.get();
+      const par = resolveParent(nodes, p.parentId);
+      if (!par.ok) return { ok: false, error: par.error };
+      if (!SORT_ENUM.includes(p.by)) return { ok: false, error: `invalid sort key: '${p.by}'` };
+      const dir = p.dir === "desc" ? "desc" : "asc";
+      await store2.apply((ns) => sortChildren(ns, par.id, p.by, dir));
+      return { ok: true, order: childrenOf(store2.get(), par.id).map((n) => n.key) };
+    }
+  });
+  sub("focus.set", {
+    description: "\uC5F4\uB9B0 \uCE78\uBC18 GUI \uC758 \uAD00\uC810(focus)\uC744 \uADF8 \uB178\uB4DC\uB85C \uC774\uB3D9. \uD5E4\uB4DC\uB9AC\uC2A4 \uC870\uD68C\uB294 view.get \uC758 focus \uD30C\uB77C\uBBF8\uD130\uB97C \uC4F8 \uAC83.",
+    params: { node: { type: "string", description: "\uB178\uB4DC id/key (\uC0DD\uB7B5/root=\uCD5C\uC0C1\uC704)" } },
+    returns: "{ ok, focusId }",
+    handler: (p) => {
+      const nodes = store2.get();
+      let focusId = null;
+      if (p.node != null && p.node !== "" && p.node !== "root") {
+        const r = resolve(nodes, p.node);
+        if (!r.ok) return r;
+        focusId = r.node.id;
+      }
+      ctx.app.bus?.emit?.("kanban:focus", { focusId });
+      return { ok: true, focusId };
+    }
+  });
+  sub("view.get", {
+    description: "\uBDF0 \uD22C\uC601 \uBC18\uD658. board/outline/tree \uB294 focus \uC801\uC6A9(\uADF8 \uC790\uC2DD\uB4E4\uB85C \uC7AC\uAD6C\uC131), \uB098\uBA38\uC9C0\uB294 \uC804\uC5ED.",
+    params: {
+      view: { type: "string", description: "\uBDF0", required: true, enum: VIEW_ENUM },
+      focus: { type: "string", description: "\uAE30\uC900 \uB178\uB4DC id/key (board/outline/tree)" },
+      scope: { type: "string", description: "\uBCF4\uB4DC \uBC94\uC704 direct|all", enum: ["direct", "all"] },
+      search: { type: "string", description: "\uAC80\uC0C9\uC5B4(board)" },
+      sortKey: { type: "string", description: "\uC815\uB82C \uD0A4(table)", enum: SORT_ENUM },
+      sortDir: { type: "string", description: "asc|desc(table)", enum: ["asc", "desc"] }
+    },
+    returns: "{ ok, view, projection }",
+    examples: [`sok plugin.soksak-plugin-kanban.view.get '{"view":"board","focus":"WMP-100"}'`],
+    handler: (p) => {
+      const nodes = store2.get();
+      if (!VIEW_ENUM.includes(p.view)) return { ok: false, error: `invalid view: '${p.view}'` };
+      let focusId = null;
+      if (p.focus != null && p.focus !== "" && p.focus !== "root") {
+        const r = resolve(nodes, p.focus);
+        if (!r.ok) return r;
+        focusId = r.node.id;
+      }
+      const projection = projectView(nodes, p.view, focusId, {
+        scope: p.scope === "all" ? "all" : "direct",
+        search: typeof p.search === "string" ? p.search : "",
+        sortKey: SORT_ENUM.includes(p.sortKey) ? p.sortKey : "key",
+        sortDir: p.sortDir === "desc" ? "desc" : "asc"
+      });
+      return { ok: true, view: p.view, focus: focusId, projection };
+    }
+  });
+  sub("stats", {
+    description: "\uC9C4\uD589 \uD1B5\uACC4(\uC644\uB8CC/\uC9C4\uD589/\uD3EC\uC778\uD2B8/\uBCD1\uBAA9/\uC815\uCCB4). focus \uC9C0\uC815 \uC2DC \uADF8 \uC790\uC190\uB9CC.",
+    params: { focus: { type: "string", description: "\uAE30\uC900 \uB178\uB4DC id/key(\uC0DD\uB7B5=\uC804\uCCB4)" } },
+    returns: "{ ok, stats }",
+    handler: (p) => {
+      const nodes = store2.get();
+      let focusId = null;
+      if (p.focus != null && p.focus !== "" && p.focus !== "root") {
+        const r = resolve(nodes, p.focus);
+        if (!r.ok) return r;
+        focusId = r.node.id;
+      }
+      return { ok: true, stats: stats(nodes, focusId) };
+    }
+  });
+  sub("timeline", {
+    description: "\uC0C1\uD0DC \uC804\uD658 \uD0C0\uC784\uB77C\uC778(\uB0A0\uC9DC \uB0B4\uB9BC\uCC28\uC21C \uADF8\uB8F9).",
+    returns: "{ ok, groups }",
+    handler: () => ({ ok: true, groups: toTimeline(store2.get()) })
+  });
+  sub("column.list", {
+    description: "\uACE0\uC815 \uCEEC\uB7FC(\uC0C1\uD0DC) \uBA54\uD0C0 + \uD604\uC7AC \uCE74\uB4DC \uC218.",
+    returns: "{ ok, columns }",
+    handler: () => {
+      const items = store2.get().filter((n) => n.parentId != null);
+      return {
+        ok: true,
+        columns: STATUSES.map((s) => ({
+          id: s.id,
+          label: s.label,
+          kr: s.kr,
+          color: s.color,
+          wip: s.wip ?? null,
+          count: items.filter((i) => i.status === s.id).length
+        }))
+      };
+    }
+  });
+  sub("seed", {
+    description: "\uB370\uBAA8 \uD2B8\uB9AC(depth 4) \uC801\uC7AC. \uAE30\uC874 \uB370\uC774\uD130\uAC00 \uC788\uC73C\uBA74 force \uC5C6\uC774\uB294 \uAC74\uB108\uB700.",
+    params: { force: { type: "boolean", description: "\uAE30\uC874\uC744 \uB370\uBAA8\uB85C \uAD50\uCCB4" } },
+    returns: "{ ok, count, skipped? }",
+    handler: async (p) => {
+      const cur = store2.get();
+      if (cur.length && p.force !== true) return { ok: true, skipped: true, count: cur.length };
+      await store2.apply(() => seedNodes(Date.now()));
+      return { ok: true, count: store2.get().length };
+    }
+  });
+  sub("reset", {
+    description: "\uBAA8\uB4E0 \uB178\uB4DC \uC0AD\uC81C(\uBE48 \uBCF4\uB4DC).",
+    returns: "{ ok, removed }",
+    danger: "destructive",
+    handler: async () => {
+      const before = store2.get().length;
+      await store2.apply(() => []);
+      return { ok: true, removed: before };
+    }
+  });
+  sub("breadcrumb", {
+    description: "focus \uAE30\uC900 \uBE0C\uB808\uB4DC\uD06C\uB7FC(\uC804\uCCB4\u2192\u2026\u2192focus).",
+    params: { focus: { type: "string", description: "\uAE30\uC900 \uB178\uB4DC id/key" } },
+    returns: "{ ok, crumbs }",
+    handler: (p) => {
+      const nodes = store2.get();
+      let focusId = null;
+      if (p.focus != null && p.focus !== "" && p.focus !== "root") {
+        const r = resolve(nodes, p.focus);
+        if (!r.ok) return r;
+        focusId = r.node.id;
+      }
+      return { ok: true, crumbs: breadcrumb(nodes, focusId), label: focusId ? shortTitle(byId(nodes, focusId)) : "\uC804\uCCB4 \uC6CC\uD06C\uC2A4\uD398\uC774\uC2A4" };
+    }
+  });
+}
+
 // src/plugin-entry.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var ErrBoundary = class extends import_react.Component {
@@ -12822,6 +13919,7 @@ var ErrBoundary = class extends import_react.Component {
   }
 };
 var mounts = /* @__PURE__ */ new WeakMap();
+var store = null;
 function mountApp(container) {
   unmountApp(container);
   const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
@@ -12837,7 +13935,7 @@ function mountApp(container) {
   shadow.appendChild(host);
   const root = (0, import_client.createRoot)(host);
   root.render(
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(ErrBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, {}) })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(ErrBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, { store }) })
   );
   mounts.set(container, { root, shadow });
 }
@@ -12850,6 +13948,9 @@ function unmountApp(container) {
 var plugin_entry_default = {
   activate(ctx) {
     const app = ctx.app;
+    store = createStore(app);
+    void store.init().catch((e) => console.error("[kanban] store init \uC2E4\uD328:", e));
+    ctx.subscriptions.push({ dispose: () => store?.dispose() });
     ctx.subscriptions.push(
       app.ui.registerView("kanban", {
         mount(container) {
@@ -12868,13 +13969,16 @@ var plugin_entry_default = {
             ok: true,
             plugin: "soksak-plugin-kanban",
             version: "0.0.1",
-            phase: "M0"
+            phase: "M2"
           })
         })
       );
     }
+    registerCommands(ctx, store);
   },
   deactivate() {
+    store?.dispose();
+    store = null;
   }
 };
 export {

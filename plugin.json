@@ -13,7 +13,8 @@
     "data",
     "commands",
     "ui",
-    "notify"
+    "notify",
+    "programs"
   ],
   "contributes": {
     "views": [
@@ -34,6 +35,86 @@
       {
         "name": "ping",
         "title": "플러그인 적재/버전 확인(E2E)"
+      },
+      {
+        "name": "node.add",
+        "title": "노드 추가"
+      },
+      {
+        "name": "node.edit",
+        "title": "노드 수정"
+      },
+      {
+        "name": "node.remove",
+        "title": "노드 삭제"
+      },
+      {
+        "name": "node.get",
+        "title": "노드 조회"
+      },
+      {
+        "name": "node.list",
+        "title": "노드 목록"
+      },
+      {
+        "name": "outline.indent",
+        "title": "들여쓰기(Tab)"
+      },
+      {
+        "name": "outline.outdent",
+        "title": "내어쓰기(Shift+Tab)"
+      },
+      {
+        "name": "outline.move",
+        "title": "노드 이동(reparent)"
+      },
+      {
+        "name": "outline.reorder",
+        "title": "형제 순서 변경"
+      },
+      {
+        "name": "board.move",
+        "title": "보드 이동(상태 변경)"
+      },
+      {
+        "name": "board.reorder",
+        "title": "보드 칸 내 순서 변경"
+      },
+      {
+        "name": "board.sort",
+        "title": "보드 정렬"
+      },
+      {
+        "name": "focus.set",
+        "title": "관점(focus) 이동"
+      },
+      {
+        "name": "view.get",
+        "title": "뷰 투영 조회"
+      },
+      {
+        "name": "stats",
+        "title": "진행 통계"
+      },
+      {
+        "name": "timeline",
+        "title": "상태 전환 타임라인"
+      },
+      {
+        "name": "column.list",
+        "title": "컬럼 목록"
+      },
+      {
+        "name": "seed",
+        "title": "데모 트리 적재"
+      },
+      {
+        "name": "reset",
+        "title": "전체 삭제"
+      },
+      {
+        "name": "breadcrumb",
+        "title": "브레드크럼"
       }
     ],
     "programs": [
