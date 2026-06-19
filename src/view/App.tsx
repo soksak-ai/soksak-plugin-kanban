@@ -127,7 +127,7 @@ export default function App({ store, app }: AppProps) {
       {/* MAIN */}
       <main style={{ flex: 1, minHeight: 0, position: "relative" }}>
         {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
-        {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} setView={setView} onOpen={openDetail} onCreate={openCreate} />}
+        {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} onOpen={openDetail} onCreate={openCreate} />}
         {view === "tree" && <Tree nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
         {view === "gantt" && <Gantt nodes={nodes} onOpen={openDetail} />}
         {view === "timeline" && <Timeline nodes={nodes} onOpen={openDetail} />}

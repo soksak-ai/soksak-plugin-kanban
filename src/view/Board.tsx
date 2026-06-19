@@ -2,7 +2,7 @@
 // 자식 있는 카드 클릭=그 노드로 재구성(focus), 말단 클릭=상세. WIP 초과=병목 강조, 정체 표시.
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import type { Node, StatusId, ViewId } from "@/types";
+import type { Node, StatusId } from "@/types";
 import type { KanbanStore } from "@/store";
 import { TODAY } from "@/refs";
 import { byId, hasChildren } from "@/core/tree";
@@ -19,12 +19,11 @@ interface Props {
   scope: BoardScope;
   setScope: (s: BoardScope) => void;
   search: string;
-  setView: (v: ViewId) => void;
   onOpen: (id: string) => void;
   onCreate: (status: StatusId) => void;
 }
 
-export default function Board({ store, nodes, focusId, setFocusId, scope, setScope, search, setView, onOpen, onCreate }: Props) {
+export default function Board({ store, nodes, focusId, setFocusId, scope, setScope, search, onOpen, onCreate }: Props) {
   const board = toBoard(nodes, focusId, scope, search);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStatus, setOverStatus] = useState<StatusId | null>(null);
@@ -58,7 +57,6 @@ export default function Board({ store, nodes, focusId, setFocusId, scope, setSco
           <button onClick={() => setScope("direct")} style={scopeBtn(scope === "direct")}>직계만</button>
         </div>
         <ScopeStat nodes={nodes} focusId={focusId} />
-        <button onClick={() => setView("outline")} style={{ marginLeft: 12, height: 28, padding: "0 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>≡ 아웃라이너로</button>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 14, padding: "14px 22px 20px", alignItems: "flex-start", overflowX: "auto" }}>
