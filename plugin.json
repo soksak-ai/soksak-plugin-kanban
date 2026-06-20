@@ -133,6 +133,9 @@
         "kind": "view",
         "view": "kanban"
       }
-    ]
+    ],
+    "skill": {
+      "path": "skill/SKILL.md"
+    }
   }
 }

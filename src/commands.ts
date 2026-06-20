@@ -27,6 +27,7 @@ interface ParamSpec {
 }
 interface CommandSpec {
   description: string;
+  triggers?: { ko?: string };
   params?: Record<string, ParamSpec>;
   returns?: string;
   danger?: "destructive" | "inject";
@@ -83,16 +84,17 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── 노드(내용/식별) ──
   sub("node.add", {
-    description: "노드 추가. parentId 생략 시 최상위. after(형제 id/key) 뒤에 삽입.",
+    description: "Add a node to the tree. Omit parentId to add at root level. Inserts after the sibling specified by 'after'.",
+    triggers: { ko: "노드 추가 항목 생성 이슈 만들기" },
     params: {
-      parentId: { type: "string", description: "부모 노드 id/key (생략=최상위)" },
-      title: { type: "string", description: "제목" },
-      type: { type: "string", description: "유형", enum: TYPE_ENUM },
-      status: { type: "string", description: "상태", enum: STATUS_ENUM },
-      assignee: { type: "string", description: "담당자 id" },
-      priority: { type: "string", description: "우선순위", enum: PRIORITY_ENUM },
-      points: { type: "number", description: "스토리 포인트" },
-      after: { type: "string", description: "이 형제(id/key) 뒤에 삽입" },
+      parentId: { type: "string", description: "Parent node id or key (omit for root)" },
+      title: { type: "string", description: "Node title" },
+      type: { type: "string", description: "Node type", enum: TYPE_ENUM },
+      status: { type: "string", description: "Initial status", enum: STATUS_ENUM },
+      assignee: { type: "string", description: "Assignee id" },
+      priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
+      points: { type: "number", description: "Story points" },
+      after: { type: "string", description: "Insert after this sibling id/key" },
     },
     returns: "{ ok, nodeId, key }",
     examples: ['sok plugin.soksak-plugin-kanban.node.add \'{"title":"새 작업","parentId":"WMP-100"}\''],
@@ -128,18 +130,19 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("node.edit", {
-    description: "노드 필드 수정. status 변경 시 history 자동 기록.",
+    description: "Edit fields of a node. Changing status automatically appends a history entry.",
+    triggers: { ko: "노드 수정 편집 제목 상태 변경" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      title: { type: "string", description: "제목" },
-      body: { type: "string", description: "본문" },
-      type: { type: "string", description: "유형", enum: TYPE_ENUM },
-      status: { type: "string", description: "상태(변경 시 history)", enum: STATUS_ENUM },
-      assignee: { type: "string", description: "담당자 id" },
-      priority: { type: "string", description: "우선순위", enum: PRIORITY_ENUM },
-      points: { type: "number", description: "스토리 포인트" },
-      start: { type: "string", description: "시작 YYYY-MM-DD" },
-      due: { type: "string", description: "마감 YYYY-MM-DD" },
+      node: { type: "string", description: "Node id or key", required: true },
+      title: { type: "string", description: "New title" },
+      body: { type: "string", description: "Body / description text" },
+      type: { type: "string", description: "Node type", enum: TYPE_ENUM },
+      status: { type: "string", description: "New status (appends history entry on change)", enum: STATUS_ENUM },
+      assignee: { type: "string", description: "Assignee id" },
+      priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
+      points: { type: "number", description: "Story points" },
+      start: { type: "string", description: "Start date YYYY-MM-DD" },
+      due: { type: "string", description: "Due date YYYY-MM-DD" },
     },
     returns: "{ ok, node }",
     handler: async (p) => {
@@ -174,10 +177,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("node.remove", {
-    description: "노드 삭제. promoteChildren=true 면 자식을 부모로 승격, 아니면 서브트리 통째 삭제.",
+    description: "Remove a node. With promoteChildren=true, children are re-parented to the grandparent; otherwise the entire subtree is deleted.",
+    triggers: { ko: "노드 삭제 제거 지우기" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      promoteChildren: { type: "boolean", description: "자식 승격(기본 false=서브트리 삭제)" },
+      node: { type: "string", description: "Node id or key", required: true },
+      promoteChildren: { type: "boolean", description: "Promote children to grandparent instead of deleting the subtree (default false)" },
     },
     returns: "{ ok, removed }",
     danger: "destructive",
@@ -191,10 +195,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("node.get", {
-    description: "노드 조회. withChildren=true 면 직계 자식도.",
+    description: "Fetch a single node by id or key. Use withChildren=true to include its direct children.",
+    triggers: { ko: "노드 조회 가져오기 보기" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      withChildren: { type: "boolean", description: "직계 자식 포함" },
+      node: { type: "string", description: "Node id or key", required: true },
+      withChildren: { type: "boolean", description: "Include direct children in the response" },
     },
     returns: "{ ok, node, children? }",
     handler: (p) => {
@@ -208,14 +213,15 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("node.list", {
-    description: "노드 목록(필터). parentId/status/type/assignee/search.",
+    description: "List nodes with optional filters. Filter by parentId, status, type, assignee, or a search term against key and title.",
+    triggers: { ko: "노드 목록 리스트 검색 조회" },
     params: {
-      parentId: { type: "string", description: "부모로 한정(생략=전체)" },
-      status: { type: "string", description: "상태", enum: STATUS_ENUM },
-      type: { type: "string", description: "유형", enum: TYPE_ENUM },
-      assignee: { type: "string", description: "담당자 id" },
-      search: { type: "string", description: "키/제목 검색어" },
-      limit: { type: "number", description: "최대 개수(기본 200)" },
+      parentId: { type: "string", description: "Limit to direct children of this parent (omit for all nodes)" },
+      status: { type: "string", description: "Filter by status", enum: STATUS_ENUM },
+      type: { type: "string", description: "Filter by node type", enum: TYPE_ENUM },
+      assignee: { type: "string", description: "Filter by assignee id" },
+      search: { type: "string", description: "Search term matched against key and title" },
+      limit: { type: "number", description: "Maximum number of results (default 200)" },
     },
     returns: "{ ok, nodes }",
     handler: (p) => {
@@ -239,8 +245,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── 아웃라인(트리 위치/순서) ──
   sub("outline.indent", {
-    description: "Tab — 직전 형제의 자식으로 들여쓰기.",
-    params: { node: { type: "string", description: "노드 id/key", required: true } },
+    description: "Indent a node — make it a child of its previous sibling (re-parents in the tree). Use to nest an item under another.",
+    triggers: { ko: "들여쓰기 indent 하위로 자식 트리" },
+    params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
@@ -250,8 +257,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
   });
   sub("outline.outdent", {
-    description: "Shift+Tab — 한 단계 위로(조부모 밑, 옛 부모 뒤). 자식 동반, 뒤 형제 흡수.",
-    params: { node: { type: "string", description: "노드 id/key", required: true } },
+    description: "Outdent a node — move it up one level under the grandparent, after the former parent. Carries children along and absorbs trailing siblings.",
+    triggers: { ko: "내어쓰기 outdent 상위로 부모 올리기" },
+    params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
@@ -261,11 +269,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
   });
   sub("outline.move", {
-    description: "노드를 다른 부모로 이동(reparent) + 위치. 자손 밑으로 이동은 거부(순환).",
+    description: "Move a node to a different parent (reparent) at an optional position. Rejects moves that would create a cycle (moving under a descendant).",
+    triggers: { ko: "이동 reparent 부모 변경 옮기기" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      parentId: { type: "string", description: "새 부모 id/key (생략/root=최상위)" },
-      position: { type: "number", description: "형제 중 0-based 위치(생략=끝)" },
+      node: { type: "string", description: "Node id or key", required: true },
+      parentId: { type: "string", description: "New parent id or key (omit or 'root' for top level)" },
+      position: { type: "number", description: "0-based position among siblings (omit to append at end)" },
     },
     returns: "{ ok }",
     handler: async (p) => {
@@ -279,10 +288,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
   });
   sub("outline.reorder", {
-    description: "같은 부모 안에서 position(0-based)으로 순서 변경.",
+    description: "Reorder a node within its current parent by setting a new 0-based sibling position.",
+    triggers: { ko: "순서 변경 reorder 위치 정렬" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      position: { type: "number", description: "0-based 위치", required: true },
+      node: { type: "string", description: "Node id or key", required: true },
+      position: { type: "number", description: "Target 0-based position among siblings", required: true },
     },
     returns: "{ ok }",
     handler: async (p) => {
@@ -295,11 +305,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── 보드(상태) ──
   sub("board.move", {
-    description: "보드 이동 — 상태 변경(history) + 선택적 position 재배치.",
+    description: "Move a node to a different board column by changing its status. Records a history entry. Optionally sets its position within the target column.",
+    triggers: { ko: "보드 이동 상태 변경 컬럼 칸반" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      status: { type: "string", description: "대상 상태", required: true, enum: STATUS_ENUM },
-      position: { type: "number", description: "칸 내 0-based 위치" },
+      node: { type: "string", description: "Node id or key", required: true },
+      status: { type: "string", description: "Target status column", required: true, enum: STATUS_ENUM },
+      position: { type: "number", description: "0-based position within the target column" },
     },
     returns: "{ ok }",
     examples: ['sok plugin.soksak-plugin-kanban.board.move \'{"node":"WMP-103","status":"inprogress"}\''],
@@ -312,10 +323,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
   });
   sub("board.reorder", {
-    description: "보드 칸 안에서 position(0-based)으로 순서 변경(형제 order).",
+    description: "Reorder a node within its current board column by setting a new 0-based position.",
+    triggers: { ko: "보드 순서 카드 위치 변경" },
     params: {
-      node: { type: "string", description: "노드 id/key", required: true },
-      position: { type: "number", description: "0-based 위치", required: true },
+      node: { type: "string", description: "Node id or key", required: true },
+      position: { type: "number", description: "Target 0-based position within the column", required: true },
     },
     returns: "{ ok }",
     handler: async (p) => {
@@ -326,11 +338,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
   });
   sub("board.sort", {
-    description: "parentId 자식들을 by 기준 정렬해 order 영속.",
+    description: "Sort the children of a parent node by a given key and persist the new order.",
+    triggers: { ko: "정렬 sort 보드 자동 순서" },
     params: {
-      parentId: { type: "string", description: "부모 id/key (생략=최상위)" },
-      by: { type: "string", description: "정렬 키", required: true, enum: SORT_ENUM },
-      dir: { type: "string", description: "asc|desc(기본 asc)", enum: ["asc", "desc"] },
+      parentId: { type: "string", description: "Parent node id or key (omit for root)" },
+      by: { type: "string", description: "Sort key", required: true, enum: SORT_ENUM },
+      dir: { type: "string", description: "Sort direction asc or desc (default asc)", enum: ["asc", "desc"] },
     },
     returns: "{ ok, order }",
     handler: async (p) => {
@@ -346,10 +359,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── focus(줌) ── 열린 GUI 의 관점 이동(view 가 구독). 헤드리스 조회는 view.get 의 focus 파라미터.
   sub("focus.set", {
-    description: "열린 칸반 GUI 의 관점(focus)·뷰를 이동. 헤드리스 조회는 view.get 의 focus 파라미터를 쓸 것.",
+    description: "Navigate the open kanban GUI to a node and/or switch its view. For headless queries without a GUI, use view.get with the focus parameter instead.",
+    triggers: { ko: "focus 줌 이동 포커스 뷰 전환" },
     params: {
-      node: { type: "string", description: "노드 id/key (생략/root=최상위)" },
-      view: { type: "string", description: "동시에 전환할 뷰", enum: VIEW_ENUM },
+      node: { type: "string", description: "Node id or key to focus (omit or 'root' for top level)" },
+      view: { type: "string", description: "View to switch to simultaneously", enum: VIEW_ENUM },
     },
     returns: "{ ok, focusId, view }",
     handler: (p) => {
@@ -368,14 +382,15 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── 투영/파생 ──
   sub("view.get", {
-    description: "뷰 투영 반환. board/outline/tree 는 focus 적용(그 자식들로 재구성), 나머지는 전역.",
+    description: "Return a view projection. board/outline/tree projections are scoped to the focus node's children; other views (gantt, timeline, table, calendar) are global.",
+    triggers: { ko: "뷰 투영 보기 board outline tree gantt table calendar" },
     params: {
-      view: { type: "string", description: "뷰", required: true, enum: VIEW_ENUM },
-      focus: { type: "string", description: "기준 노드 id/key (board/outline/tree)" },
-      scope: { type: "string", description: "보드 범위 direct|all", enum: ["direct", "all"] },
-      search: { type: "string", description: "검색어(board)" },
-      sortKey: { type: "string", description: "정렬 키(table)", enum: SORT_ENUM },
-      sortDir: { type: "string", description: "asc|desc(table)", enum: ["asc", "desc"] },
+      view: { type: "string", description: "View type", required: true, enum: VIEW_ENUM },
+      focus: { type: "string", description: "Root node id or key for scoped views (board/outline/tree)" },
+      scope: { type: "string", description: "Board scope: direct children only or all descendants", enum: ["direct", "all"] },
+      search: { type: "string", description: "Search term (board view)" },
+      sortKey: { type: "string", description: "Sort key (table view)", enum: SORT_ENUM },
+      sortDir: { type: "string", description: "Sort direction asc or desc (table view)", enum: ["asc", "desc"] },
     },
     returns: "{ ok, view, projection }",
     examples: ['sok plugin.soksak-plugin-kanban.view.get \'{"view":"board","focus":"WMP-100"}\''],
@@ -399,8 +414,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("stats", {
-    description: "진행 통계(완료/진행/포인트/병목/정체). focus 지정 시 그 자손만.",
-    params: { focus: { type: "string", description: "기준 노드 id/key(생략=전체)" } },
+    description: "Return progress statistics: completion rate, in-progress count, story points, bottlenecks, and stale nodes. Scoped to a focus node's descendants when specified.",
+    triggers: { ko: "통계 진행 완료율 포인트 병목 현황" },
+    params: { focus: { type: "string", description: "Root node id or key to scope stats (omit for all nodes)" } },
     returns: "{ ok, stats }",
     handler: (p) => {
       const nodes = store.get();
@@ -415,13 +431,15 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("timeline", {
-    description: "상태 전환 타임라인(날짜 내림차순 그룹).",
+    description: "Return the status-transition timeline grouped by date in descending order. Useful for reviewing recent activity.",
+    triggers: { ko: "타임라인 timeline 활동 히스토리 상태 전환" },
     returns: "{ ok, groups }",
     handler: () => ({ ok: true, groups: toTimeline(store.get()) }),
   });
 
   sub("column.list", {
-    description: "고정 컬럼(상태) 메타 + 현재 카드 수.",
+    description: "List all board columns (statuses) with their metadata and current card count.",
+    triggers: { ko: "컬럼 목록 보드 상태 칸 현황" },
     returns: "{ ok, columns }",
     handler: () => {
       const items = store.get().filter((n) => n.parentId != null);
@@ -441,8 +459,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── 수명주기 ──
   sub("seed", {
-    description: "데모 트리(depth 4) 적재. 기존 데이터가 있으면 force 없이는 건너뜀.",
-    params: { force: { type: "boolean", description: "기존을 데모로 교체" } },
+    description: "Load a demo tree (depth 4) for exploration. Skips if data already exists unless force=true.",
+    triggers: { ko: "시드 데모 샘플 초기 데이터 seed" },
+    params: { force: { type: "boolean", description: "Replace existing data with the demo tree" } },
     returns: "{ ok, count, skipped? }",
     handler: async (p) => {
       const cur = store.get();
@@ -453,7 +472,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("reset", {
-    description: "모든 노드 삭제(빈 보드).",
+    description: "Delete all nodes and return to an empty board. This action is irreversible.",
+    triggers: { ko: "초기화 리셋 전체 삭제 비우기" },
     returns: "{ ok, removed }",
     danger: "destructive",
     handler: async () => {
@@ -464,8 +484,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   });
 
   sub("breadcrumb", {
-    description: "focus 기준 브레드크럼(전체→…→focus).",
-    params: { focus: { type: "string", description: "기준 노드 id/key" } },
+    description: "Return the ancestor path from the root to the focus node, useful for showing current position in the tree.",
+    triggers: { ko: "브레드크럼 경로 위치 ancestors 탐색" },
+    params: { focus: { type: "string", description: "Node id or key to trace ancestors for" } },
     returns: "{ ok, crumbs }",
     handler: (p) => {
       const nodes = store.get();
