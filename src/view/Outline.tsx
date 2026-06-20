@@ -4,13 +4,13 @@ import { useRef, useLayoutEffect } from "react";
 import type { CSSProperties } from "react";
 import type { Node } from "@/types";
 import type { KanbanStore } from "@/store";
-import { TODAY, RANGE_END } from "@/refs";
+import { TODAY, RANGE_END, STATUS_IDS, resolveLabel } from "@/refs";
 import { byId, hasChildren } from "@/core/tree";
 import { insertNode, indent, outdent, removeNode, setStatus } from "@/core/algebra";
 import { toOutlineRows, breadcrumb } from "@/core/projections";
-import { STATUS_IDS } from "@/refs";
 import { avatar, initials, statusChip, sMeta, hexA } from "@/view/ui";
 import ScopeStat from "@/view/ScopeStat";
+import { t } from "@/view/i18n";
 
 interface Props {
   store: KanbanStore;
@@ -18,9 +18,10 @@ interface Props {
   focusId: string | null;
   setFocusId: (id: string | null) => void;
   onOpen: (id: string) => void;
+  lang: string;
 }
 
-export default function Outline({ store, nodes, focusId, setFocusId, onOpen }: Props) {
+export default function Outline({ store, nodes, focusId, setFocusId, onOpen, lang }: Props) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,30 +163,30 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen }: P
               ))}
               <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 9, padding: "0 10px 0 8px" }}>
                 {row.isEpic ? (
-                  <span onClick={() => setFocusId(row.id)} title="이 노드로 들어가기" style={{ width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }}>E</span>
+                  <span onClick={() => setFocusId(row.id)} title={t("drillInTitle", lang)} style={{ width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }}>E</span>
                 ) : (
-                  <button onClick={() => setFocusId(row.id)} title="이 노드로 들어가기" style={{ width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 }} />
+                  <button onClick={() => setFocusId(row.id)} title={t("drillInTitle", lang)} style={{ width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 }} />
                 )}
                 <input
                   key={row.id}
                   defaultValue={row.title}
-                  placeholder={row.isEpic ? "제목 입력…" : "할 일 제목 입력…"}
+                  placeholder={row.isEpic ? t("titlePlaceholderEpic", lang) : t("titlePlaceholder", lang)}
                   data-outline-id={row.id}
                   onBlur={(e) => apply((ns) => commit(ns, row.id, e.target.value))}
                   onKeyDown={(e) => onKey(e, row.id)}
                   style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: row.isEpic ? 14 : 13, fontWeight: row.isEpic ? 700 : 500, color: "var(--text)", padding: "4px 0", letterSpacing: "-.01em" }}
                 />
                 {!row.isEpic && (
-                  <span onClick={() => cycleStatus(row.id)} title="상태 변경" style={{ cursor: "pointer", ...statusChip(row.status) }}>{m.kr}</span>
+                  <span onClick={() => cycleStatus(row.id)} title={t("statusChangeTitle", lang)} style={{ cursor: "pointer", ...statusChip(row.status) }}>{resolveLabel(m.label, lang)}</span>
                 )}
-                <button onClick={() => setFocusId(row.id)} title="이 노드로 들어가기" style={drillStyle}>{row.hasChildren ? `▦ ${row.doneCount}/${row.childCount}` : "▦ 보드"}</button>
+                <button onClick={() => setFocusId(row.id)} title={t("drillInTitle", lang)} style={drillStyle}>{row.hasChildren ? `▦ ${row.doneCount}/${row.childCount}` : t("drillInBoard", lang)}</button>
                 <span onClick={() => onOpen(row.id)} style={{ fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }}>{row.key}</span>
                 <span style={avatar(row.assignee, 20)}>{initials(row.assignee)}</span>
               </div>
             </div>
           );
         })}
-        <button onClick={() => addChild(focusId)} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "9px 10px", marginTop: 4, border: "none", background: "transparent", color: "var(--text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8 }}>+ 항목 추가</button>
+        <button onClick={() => addChild(focusId)} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "9px 10px", marginTop: 4, border: "none", background: "transparent", color: "var(--text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8 }}>{t("addItem", lang)}</button>
       </div>
     </div>
   );

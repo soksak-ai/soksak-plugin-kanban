@@ -3,16 +3,19 @@ import type { CSSProperties } from "react";
 import type { Node } from "@/types";
 import { toOutlineRows, breadcrumb } from "@/core/projections";
 import { avatar, initials, statusChip, sMeta, typeBadge, typeLetter } from "@/view/ui";
+import { resolveLabel } from "@/refs";
 import ScopeStat from "@/view/ScopeStat";
+import { t } from "@/view/i18n";
 
 interface Props {
   nodes: Node[];
   focusId: string | null;
   setFocusId: (id: string | null) => void;
   onOpen: (id: string) => void;
+  lang: string;
 }
 
-export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
+export default function Tree({ nodes, focusId, setFocusId, onOpen, lang }: Props) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
 
@@ -27,8 +30,8 @@ export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
         ))}
         <ScopeStat nodes={nodes} focusId={focusId} />
       </div>
-      <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600 }}>트리 구조 · Structure</h3>
-      <p style={{ margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }}>행을 클릭하면 그 노드로 들어가(재구성), 상위로는 브레드크럼.</p>
+      <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600 }}>{t("treeSectionTitle", lang)}</h3>
+      <p style={{ margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }}>{t("treeInstruction", lang)}</p>
       <div style={{ maxWidth: 780, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", overflow: "hidden", boxShadow: "var(--shadow)" }}>
         {rows.map((r) => {
           const m = sMeta(r.status);
@@ -38,7 +41,7 @@ export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
                 {r.isEpic ? "E" : typeLetter(r.type)}
               </span>
               <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }}>{r.key}</span>
-              <span style={{ fontSize: 13, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: r.isEpic ? 600 : 400 }}>{r.title || "(제목 없음)"}</span>
+              <span style={{ fontSize: 13, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: r.isEpic ? 600 : 400 }}>{r.title || t("noTitle", lang)}</span>
               {r.progress && (
                 <>
                   <div style={{ width: 72, height: 5, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flex: "none" }}>
@@ -47,8 +50,8 @@ export default function Tree({ nodes, focusId, setFocusId, onOpen }: Props) {
                   <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }}>{r.progress.done}/{r.progress.total}</span>
                 </>
               )}
-              <span style={statusChip(r.status)}>{m.kr}</span>
-              <span style={{ fontSize: 10, color: "var(--text-3)", flex: "none", width: 54, textAlign: "right" }}>{r.hasChildren ? "▸ 들어가기" : ""}</span>
+              <span style={statusChip(r.status)}>{resolveLabel(m.label, lang)}</span>
+              <span style={{ fontSize: 10, color: "var(--text-3)", flex: "none", width: 54, textAlign: "right" }}>{r.hasChildren ? t("drillInBtn", lang) : ""}</span>
               <span style={avatar(r.assignee, 20)}>{initials(r.assignee)}</span>
             </div>
           );

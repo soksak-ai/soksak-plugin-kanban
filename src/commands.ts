@@ -448,7 +448,6 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         columns: STATUSES.map((s) => ({
           id: s.id,
           label: s.label,
-          kr: s.kr,
           color: s.color,
           wip: s.wip ?? null,
           count: items.filter((i) => i.status === s.id).length,

@@ -4,6 +4,7 @@
 //   전역: Gantt / Timeline / Table / Calendar / Flow / stats (디자인 동작 일치)
 import type { Node, NodeType, StatusId, ViewId } from "@/types";
 import { STATUSES, STATUS_IDS, PRIORITY, RANGE_START, TODAY, TOTAL_DAYS } from "@/refs";
+import type { L10nLabel } from "@/refs";
 import {
   byId,
   childrenOf,
@@ -134,8 +135,7 @@ export function leavesUnder(nodes: Node[], focusId: string | null): Node[] {
 
 export interface BoardColumnVM {
   id: StatusId;
-  label: string;
-  kr: string;
+  label: L10nLabel;
   color: string;
   wip: number | null;
   count: number;
@@ -162,7 +162,6 @@ export function toBoard(
     return {
       id: s.id,
       label: s.label,
-      kr: s.kr,
       color: s.color,
       wip: s.wip ?? null,
       count: cards.length,
@@ -232,7 +231,7 @@ export interface GanttRowVM {
 }
 export interface GanttVM {
   rows: GanttRowVM[];
-  weeks: { label: string; range: string }[];
+  weeks: { label: L10nLabel; range: string }[];
   todayPct: number;
 }
 export function toGantt(nodes: Node[]): GanttVM {
@@ -258,7 +257,7 @@ export function toGantt(nodes: Node[]): GanttVM {
     }
   }
   const weeks = [];
-  for (let w = 0; w < 4; w++) weeks.push({ label: "6월 " + (w + 1) + "주", range: "6/" + (w * 7 + 1) + " – 6/" + (w * 7 + 7) });
+  for (let w = 0; w < 4; w++) weeks.push({ label: { en: "Jun W" + (w + 1), ko: "6월 " + (w + 1) + "주" } as L10nLabel, range: "6/" + (w * 7 + 1) + " – 6/" + (w * 7 + 7) });
   return { rows, weeks, todayPct: (dayIdx(TODAY, RANGE_START) / TOTAL_DAYS) * 100 };
 }
 
@@ -344,14 +343,14 @@ export interface CalendarDayVM {
   items?: { id: string; key: string; status: StatusId }[];
 }
 export interface CalendarVM {
-  weekdays: { kr: string; en: string }[];
+  weekdays: { ko: string; en: string }[];
   weeks: { days: CalendarDayVM[] }[];
-  monthLabel: string;
+  monthLabel: L10nLabel;
 }
 export function toCalendar(nodes: Node[]): CalendarVM {
   const weekdays = [
     ["월", "Mon"], ["화", "Tue"], ["수", "Wed"], ["목", "Thu"], ["금", "Fri"], ["토", "Sat"], ["일", "Sun"],
-  ].map(([kr, en]) => ({ kr, en }));
+  ].map(([ko, en]) => ({ ko, en }));
   const offset = (new Date(2026, 5, 1).getDay() + 6) % 7; // 월=0
   const byDay: Record<number, Node[]> = {};
   for (const i of workItems(nodes)) {
@@ -371,14 +370,13 @@ export function toCalendar(nodes: Node[]): CalendarVM {
   while (cells.length % 7 !== 0) cells.push({ show: false });
   const weeks = [];
   for (let w = 0; w < cells.length / 7; w++) weeks.push({ days: cells.slice(w * 7, w * 7 + 7) });
-  return { weekdays, weeks, monthLabel: "2026년 6월" };
+  return { weekdays, weeks, monthLabel: { en: "June 2026", ko: "2026년 6월" } };
 }
 
 // ── 플로우(전역) ──
 export interface FlowNodeVM {
   id: StatusId;
-  label: string;
-  kr: string;
+  label: L10nLabel;
   color: string;
   count: number;
   wip: number | null;
@@ -404,7 +402,6 @@ export function toFlow(nodes: Node[]): FlowVM {
     nodes: STATUSES.map((s, idx) => ({
       id: s.id,
       label: s.label,
-      kr: s.kr,
       color: s.color,
       count: counts[idx],
       wip: s.wip ?? null,

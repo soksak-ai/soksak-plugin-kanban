@@ -2,17 +2,19 @@
 import type { Node } from "@/types";
 import { toCalendar } from "@/core/projections";
 import { sMeta } from "@/view/ui";
+import { resolveLabel } from "@/refs";
+import { t } from "@/view/i18n";
 
-export default function Calendar({ nodes, onOpen }: { nodes: Node[]; onOpen: (id: string) => void }) {
+export default function Calendar({ nodes, onOpen, lang }: { nodes: Node[]; onOpen: (id: string) => void; lang: string }) {
   const c = toCalendar(nodes);
   return (
     <div style={{ padding: "20px 22px", height: "100%", overflow: "auto" }}>
-      <h3 style={{ margin: "0 0 18px", fontSize: 14, fontWeight: 600 }}>{c.monthLabel} · 마감 기준</h3>
+      <h3 style={{ margin: "0 0 18px", fontSize: 14, fontWeight: 600 }}>{resolveLabel(c.monthLabel, lang)} {t("byDueLabel", lang)}</h3>
       <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid var(--border)" }}>
           {c.weekdays.map((w) => (
             <div key={w.en} style={{ padding: "9px 12px", fontSize: 11, fontWeight: 600, color: "var(--text-3)", borderRight: "1px solid var(--grid)" }}>
-              {w.kr} <span style={{ fontWeight: 400 }}>{w.en}</span>
+              {w.ko} <span style={{ fontWeight: 400 }}>{w.en}</span>
             </div>
           ))}
         </div>
