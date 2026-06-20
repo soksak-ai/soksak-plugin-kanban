@@ -14361,16 +14361,17 @@ function registerCommands(ctx, store2) {
   const VIEW_ENUM = ["outline", "board", "gantt", "timeline", "tree", "table", "calendar"];
   const SORT_ENUM = ["key", "title", "priority", "points", "due", "status", "assignee"];
   sub("node.add", {
-    description: "\uB178\uB4DC \uCD94\uAC00. parentId \uC0DD\uB7B5 \uC2DC \uCD5C\uC0C1\uC704. after(\uD615\uC81C id/key) \uB4A4\uC5D0 \uC0BD\uC785.",
+    description: "Add a node to the tree. Omit parentId to add at root level. Inserts after the sibling specified by 'after'.",
+    triggers: { ko: "\uB178\uB4DC \uCD94\uAC00 \uD56D\uBAA9 \uC0DD\uC131 \uC774\uC288 \uB9CC\uB4E4\uAE30" },
     params: {
-      parentId: { type: "string", description: "\uBD80\uBAA8 \uB178\uB4DC id/key (\uC0DD\uB7B5=\uCD5C\uC0C1\uC704)" },
-      title: { type: "string", description: "\uC81C\uBAA9" },
-      type: { type: "string", description: "\uC720\uD615", enum: TYPE_ENUM },
-      status: { type: "string", description: "\uC0C1\uD0DC", enum: STATUS_ENUM },
-      assignee: { type: "string", description: "\uB2F4\uB2F9\uC790 id" },
-      priority: { type: "string", description: "\uC6B0\uC120\uC21C\uC704", enum: PRIORITY_ENUM },
-      points: { type: "number", description: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8" },
-      after: { type: "string", description: "\uC774 \uD615\uC81C(id/key) \uB4A4\uC5D0 \uC0BD\uC785" }
+      parentId: { type: "string", description: "Parent node id or key (omit for root)" },
+      title: { type: "string", description: "Node title" },
+      type: { type: "string", description: "Node type", enum: TYPE_ENUM },
+      status: { type: "string", description: "Initial status", enum: STATUS_ENUM },
+      assignee: { type: "string", description: "Assignee id" },
+      priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
+      points: { type: "number", description: "Story points" },
+      after: { type: "string", description: "Insert after this sibling id/key" }
     },
     returns: "{ ok, nodeId, key }",
     examples: [`sok plugin.soksak-plugin-kanban.node.add '{"title":"\uC0C8 \uC791\uC5C5","parentId":"WMP-100"}'`],
@@ -14404,18 +14405,19 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("node.edit", {
-    description: "\uB178\uB4DC \uD544\uB4DC \uC218\uC815. status \uBCC0\uACBD \uC2DC history \uC790\uB3D9 \uAE30\uB85D.",
+    description: "Edit fields of a node. Changing status automatically appends a history entry.",
+    triggers: { ko: "\uB178\uB4DC \uC218\uC815 \uD3B8\uC9D1 \uC81C\uBAA9 \uC0C1\uD0DC \uBCC0\uACBD" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      title: { type: "string", description: "\uC81C\uBAA9" },
-      body: { type: "string", description: "\uBCF8\uBB38" },
-      type: { type: "string", description: "\uC720\uD615", enum: TYPE_ENUM },
-      status: { type: "string", description: "\uC0C1\uD0DC(\uBCC0\uACBD \uC2DC history)", enum: STATUS_ENUM },
-      assignee: { type: "string", description: "\uB2F4\uB2F9\uC790 id" },
-      priority: { type: "string", description: "\uC6B0\uC120\uC21C\uC704", enum: PRIORITY_ENUM },
-      points: { type: "number", description: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8" },
-      start: { type: "string", description: "\uC2DC\uC791 YYYY-MM-DD" },
-      due: { type: "string", description: "\uB9C8\uAC10 YYYY-MM-DD" }
+      node: { type: "string", description: "Node id or key", required: true },
+      title: { type: "string", description: "New title" },
+      body: { type: "string", description: "Body / description text" },
+      type: { type: "string", description: "Node type", enum: TYPE_ENUM },
+      status: { type: "string", description: "New status (appends history entry on change)", enum: STATUS_ENUM },
+      assignee: { type: "string", description: "Assignee id" },
+      priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
+      points: { type: "number", description: "Story points" },
+      start: { type: "string", description: "Start date YYYY-MM-DD" },
+      due: { type: "string", description: "Due date YYYY-MM-DD" }
     },
     returns: "{ ok, node }",
     handler: async (p) => {
@@ -14449,10 +14451,11 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("node.remove", {
-    description: "\uB178\uB4DC \uC0AD\uC81C. promoteChildren=true \uBA74 \uC790\uC2DD\uC744 \uBD80\uBAA8\uB85C \uC2B9\uACA9, \uC544\uB2C8\uBA74 \uC11C\uBE0C\uD2B8\uB9AC \uD1B5\uC9F8 \uC0AD\uC81C.",
+    description: "Remove a node. With promoteChildren=true, children are re-parented to the grandparent; otherwise the entire subtree is deleted.",
+    triggers: { ko: "\uB178\uB4DC \uC0AD\uC81C \uC81C\uAC70 \uC9C0\uC6B0\uAE30" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      promoteChildren: { type: "boolean", description: "\uC790\uC2DD \uC2B9\uACA9(\uAE30\uBCF8 false=\uC11C\uBE0C\uD2B8\uB9AC \uC0AD\uC81C)" }
+      node: { type: "string", description: "Node id or key", required: true },
+      promoteChildren: { type: "boolean", description: "Promote children to grandparent instead of deleting the subtree (default false)" }
     },
     returns: "{ ok, removed }",
     danger: "destructive",
@@ -14465,10 +14468,11 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("node.get", {
-    description: "\uB178\uB4DC \uC870\uD68C. withChildren=true \uBA74 \uC9C1\uACC4 \uC790\uC2DD\uB3C4.",
+    description: "Fetch a single node by id or key. Use withChildren=true to include its direct children.",
+    triggers: { ko: "\uB178\uB4DC \uC870\uD68C \uAC00\uC838\uC624\uAE30 \uBCF4\uAE30" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      withChildren: { type: "boolean", description: "\uC9C1\uACC4 \uC790\uC2DD \uD3EC\uD568" }
+      node: { type: "string", description: "Node id or key", required: true },
+      withChildren: { type: "boolean", description: "Include direct children in the response" }
     },
     returns: "{ ok, node, children? }",
     handler: (p) => {
@@ -14481,14 +14485,15 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("node.list", {
-    description: "\uB178\uB4DC \uBAA9\uB85D(\uD544\uD130). parentId/status/type/assignee/search.",
+    description: "List nodes with optional filters. Filter by parentId, status, type, assignee, or a search term against key and title.",
+    triggers: { ko: "\uB178\uB4DC \uBAA9\uB85D \uB9AC\uC2A4\uD2B8 \uAC80\uC0C9 \uC870\uD68C" },
     params: {
-      parentId: { type: "string", description: "\uBD80\uBAA8\uB85C \uD55C\uC815(\uC0DD\uB7B5=\uC804\uCCB4)" },
-      status: { type: "string", description: "\uC0C1\uD0DC", enum: STATUS_ENUM },
-      type: { type: "string", description: "\uC720\uD615", enum: TYPE_ENUM },
-      assignee: { type: "string", description: "\uB2F4\uB2F9\uC790 id" },
-      search: { type: "string", description: "\uD0A4/\uC81C\uBAA9 \uAC80\uC0C9\uC5B4" },
-      limit: { type: "number", description: "\uCD5C\uB300 \uAC1C\uC218(\uAE30\uBCF8 200)" }
+      parentId: { type: "string", description: "Limit to direct children of this parent (omit for all nodes)" },
+      status: { type: "string", description: "Filter by status", enum: STATUS_ENUM },
+      type: { type: "string", description: "Filter by node type", enum: TYPE_ENUM },
+      assignee: { type: "string", description: "Filter by assignee id" },
+      search: { type: "string", description: "Search term matched against key and title" },
+      limit: { type: "number", description: "Maximum number of results (default 200)" }
     },
     returns: "{ ok, nodes }",
     handler: (p) => {
@@ -14510,8 +14515,9 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("outline.indent", {
-    description: "Tab \u2014 \uC9C1\uC804 \uD615\uC81C\uC758 \uC790\uC2DD\uC73C\uB85C \uB4E4\uC5EC\uC4F0\uAE30.",
-    params: { node: { type: "string", description: "\uB178\uB4DC id/key", required: true } },
+    description: "Indent a node \u2014 make it a child of its previous sibling (re-parents in the tree). Use to nest an item under another.",
+    triggers: { ko: "\uB4E4\uC5EC\uC4F0\uAE30 indent \uD558\uC704\uB85C \uC790\uC2DD \uD2B8\uB9AC" },
+    params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
@@ -14521,8 +14527,9 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("outline.outdent", {
-    description: "Shift+Tab \u2014 \uD55C \uB2E8\uACC4 \uC704\uB85C(\uC870\uBD80\uBAA8 \uBC11, \uC61B \uBD80\uBAA8 \uB4A4). \uC790\uC2DD \uB3D9\uBC18, \uB4A4 \uD615\uC81C \uD761\uC218.",
-    params: { node: { type: "string", description: "\uB178\uB4DC id/key", required: true } },
+    description: "Outdent a node \u2014 move it up one level under the grandparent, after the former parent. Carries children along and absorbs trailing siblings.",
+    triggers: { ko: "\uB0B4\uC5B4\uC4F0\uAE30 outdent \uC0C1\uC704\uB85C \uBD80\uBAA8 \uC62C\uB9AC\uAE30" },
+    params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
@@ -14532,11 +14539,12 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("outline.move", {
-    description: "\uB178\uB4DC\uB97C \uB2E4\uB978 \uBD80\uBAA8\uB85C \uC774\uB3D9(reparent) + \uC704\uCE58. \uC790\uC190 \uBC11\uC73C\uB85C \uC774\uB3D9\uC740 \uAC70\uBD80(\uC21C\uD658).",
+    description: "Move a node to a different parent (reparent) at an optional position. Rejects moves that would create a cycle (moving under a descendant).",
+    triggers: { ko: "\uC774\uB3D9 reparent \uBD80\uBAA8 \uBCC0\uACBD \uC62E\uAE30\uAE30" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      parentId: { type: "string", description: "\uC0C8 \uBD80\uBAA8 id/key (\uC0DD\uB7B5/root=\uCD5C\uC0C1\uC704)" },
-      position: { type: "number", description: "\uD615\uC81C \uC911 0-based \uC704\uCE58(\uC0DD\uB7B5=\uB05D)" }
+      node: { type: "string", description: "Node id or key", required: true },
+      parentId: { type: "string", description: "New parent id or key (omit or 'root' for top level)" },
+      position: { type: "number", description: "0-based position among siblings (omit to append at end)" }
     },
     returns: "{ ok }",
     handler: async (p) => {
@@ -14550,10 +14558,11 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("outline.reorder", {
-    description: "\uAC19\uC740 \uBD80\uBAA8 \uC548\uC5D0\uC11C position(0-based)\uC73C\uB85C \uC21C\uC11C \uBCC0\uACBD.",
+    description: "Reorder a node within its current parent by setting a new 0-based sibling position.",
+    triggers: { ko: "\uC21C\uC11C \uBCC0\uACBD reorder \uC704\uCE58 \uC815\uB82C" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      position: { type: "number", description: "0-based \uC704\uCE58", required: true }
+      node: { type: "string", description: "Node id or key", required: true },
+      position: { type: "number", description: "Target 0-based position among siblings", required: true }
     },
     returns: "{ ok }",
     handler: async (p) => {
@@ -14564,11 +14573,12 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("board.move", {
-    description: "\uBCF4\uB4DC \uC774\uB3D9 \u2014 \uC0C1\uD0DC \uBCC0\uACBD(history) + \uC120\uD0DD\uC801 position \uC7AC\uBC30\uCE58.",
+    description: "Move a node to a different board column by changing its status. Records a history entry. Optionally sets its position within the target column.",
+    triggers: { ko: "\uBCF4\uB4DC \uC774\uB3D9 \uC0C1\uD0DC \uBCC0\uACBD \uCEEC\uB7FC \uCE78\uBC18" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      status: { type: "string", description: "\uB300\uC0C1 \uC0C1\uD0DC", required: true, enum: STATUS_ENUM },
-      position: { type: "number", description: "\uCE78 \uB0B4 0-based \uC704\uCE58" }
+      node: { type: "string", description: "Node id or key", required: true },
+      status: { type: "string", description: "Target status column", required: true, enum: STATUS_ENUM },
+      position: { type: "number", description: "0-based position within the target column" }
     },
     returns: "{ ok }",
     examples: [`sok plugin.soksak-plugin-kanban.board.move '{"node":"WMP-103","status":"inprogress"}'`],
@@ -14581,10 +14591,11 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("board.reorder", {
-    description: "\uBCF4\uB4DC \uCE78 \uC548\uC5D0\uC11C position(0-based)\uC73C\uB85C \uC21C\uC11C \uBCC0\uACBD(\uD615\uC81C order).",
+    description: "Reorder a node within its current board column by setting a new 0-based position.",
+    triggers: { ko: "\uBCF4\uB4DC \uC21C\uC11C \uCE74\uB4DC \uC704\uCE58 \uBCC0\uACBD" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key", required: true },
-      position: { type: "number", description: "0-based \uC704\uCE58", required: true }
+      node: { type: "string", description: "Node id or key", required: true },
+      position: { type: "number", description: "Target 0-based position within the column", required: true }
     },
     returns: "{ ok }",
     handler: async (p) => {
@@ -14595,11 +14606,12 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("board.sort", {
-    description: "parentId \uC790\uC2DD\uB4E4\uC744 by \uAE30\uC900 \uC815\uB82C\uD574 order \uC601\uC18D.",
+    description: "Sort the children of a parent node by a given key and persist the new order.",
+    triggers: { ko: "\uC815\uB82C sort \uBCF4\uB4DC \uC790\uB3D9 \uC21C\uC11C" },
     params: {
-      parentId: { type: "string", description: "\uBD80\uBAA8 id/key (\uC0DD\uB7B5=\uCD5C\uC0C1\uC704)" },
-      by: { type: "string", description: "\uC815\uB82C \uD0A4", required: true, enum: SORT_ENUM },
-      dir: { type: "string", description: "asc|desc(\uAE30\uBCF8 asc)", enum: ["asc", "desc"] }
+      parentId: { type: "string", description: "Parent node id or key (omit for root)" },
+      by: { type: "string", description: "Sort key", required: true, enum: SORT_ENUM },
+      dir: { type: "string", description: "Sort direction asc or desc (default asc)", enum: ["asc", "desc"] }
     },
     returns: "{ ok, order }",
     handler: async (p) => {
@@ -14613,10 +14625,11 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("focus.set", {
-    description: "\uC5F4\uB9B0 \uCE78\uBC18 GUI \uC758 \uAD00\uC810(focus)\xB7\uBDF0\uB97C \uC774\uB3D9. \uD5E4\uB4DC\uB9AC\uC2A4 \uC870\uD68C\uB294 view.get \uC758 focus \uD30C\uB77C\uBBF8\uD130\uB97C \uC4F8 \uAC83.",
+    description: "Navigate the open kanban GUI to a node and/or switch its view. For headless queries without a GUI, use view.get with the focus parameter instead.",
+    triggers: { ko: "focus \uC90C \uC774\uB3D9 \uD3EC\uCEE4\uC2A4 \uBDF0 \uC804\uD658" },
     params: {
-      node: { type: "string", description: "\uB178\uB4DC id/key (\uC0DD\uB7B5/root=\uCD5C\uC0C1\uC704)" },
-      view: { type: "string", description: "\uB3D9\uC2DC\uC5D0 \uC804\uD658\uD560 \uBDF0", enum: VIEW_ENUM }
+      node: { type: "string", description: "Node id or key to focus (omit or 'root' for top level)" },
+      view: { type: "string", description: "View to switch to simultaneously", enum: VIEW_ENUM }
     },
     returns: "{ ok, focusId, view }",
     handler: (p) => {
@@ -14633,14 +14646,15 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("view.get", {
-    description: "\uBDF0 \uD22C\uC601 \uBC18\uD658. board/outline/tree \uB294 focus \uC801\uC6A9(\uADF8 \uC790\uC2DD\uB4E4\uB85C \uC7AC\uAD6C\uC131), \uB098\uBA38\uC9C0\uB294 \uC804\uC5ED.",
+    description: "Return a view projection. board/outline/tree projections are scoped to the focus node's children; other views (gantt, timeline, table, calendar) are global.",
+    triggers: { ko: "\uBDF0 \uD22C\uC601 \uBCF4\uAE30 board outline tree gantt table calendar" },
     params: {
-      view: { type: "string", description: "\uBDF0", required: true, enum: VIEW_ENUM },
-      focus: { type: "string", description: "\uAE30\uC900 \uB178\uB4DC id/key (board/outline/tree)" },
-      scope: { type: "string", description: "\uBCF4\uB4DC \uBC94\uC704 direct|all", enum: ["direct", "all"] },
-      search: { type: "string", description: "\uAC80\uC0C9\uC5B4(board)" },
-      sortKey: { type: "string", description: "\uC815\uB82C \uD0A4(table)", enum: SORT_ENUM },
-      sortDir: { type: "string", description: "asc|desc(table)", enum: ["asc", "desc"] }
+      view: { type: "string", description: "View type", required: true, enum: VIEW_ENUM },
+      focus: { type: "string", description: "Root node id or key for scoped views (board/outline/tree)" },
+      scope: { type: "string", description: "Board scope: direct children only or all descendants", enum: ["direct", "all"] },
+      search: { type: "string", description: "Search term (board view)" },
+      sortKey: { type: "string", description: "Sort key (table view)", enum: SORT_ENUM },
+      sortDir: { type: "string", description: "Sort direction asc or desc (table view)", enum: ["asc", "desc"] }
     },
     returns: "{ ok, view, projection }",
     examples: [`sok plugin.soksak-plugin-kanban.view.get '{"view":"board","focus":"WMP-100"}'`],
@@ -14663,8 +14677,9 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("stats", {
-    description: "\uC9C4\uD589 \uD1B5\uACC4(\uC644\uB8CC/\uC9C4\uD589/\uD3EC\uC778\uD2B8/\uBCD1\uBAA9/\uC815\uCCB4). focus \uC9C0\uC815 \uC2DC \uADF8 \uC790\uC190\uB9CC.",
-    params: { focus: { type: "string", description: "\uAE30\uC900 \uB178\uB4DC id/key(\uC0DD\uB7B5=\uC804\uCCB4)" } },
+    description: "Return progress statistics: completion rate, in-progress count, story points, bottlenecks, and stale nodes. Scoped to a focus node's descendants when specified.",
+    triggers: { ko: "\uD1B5\uACC4 \uC9C4\uD589 \uC644\uB8CC\uC728 \uD3EC\uC778\uD2B8 \uBCD1\uBAA9 \uD604\uD669" },
+    params: { focus: { type: "string", description: "Root node id or key to scope stats (omit for all nodes)" } },
     returns: "{ ok, stats }",
     handler: (p) => {
       const nodes = store2.get();
@@ -14678,12 +14693,14 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("timeline", {
-    description: "\uC0C1\uD0DC \uC804\uD658 \uD0C0\uC784\uB77C\uC778(\uB0A0\uC9DC \uB0B4\uB9BC\uCC28\uC21C \uADF8\uB8F9).",
+    description: "Return the status-transition timeline grouped by date in descending order. Useful for reviewing recent activity.",
+    triggers: { ko: "\uD0C0\uC784\uB77C\uC778 timeline \uD65C\uB3D9 \uD788\uC2A4\uD1A0\uB9AC \uC0C1\uD0DC \uC804\uD658" },
     returns: "{ ok, groups }",
     handler: () => ({ ok: true, groups: toTimeline(store2.get()) })
   });
   sub("column.list", {
-    description: "\uACE0\uC815 \uCEEC\uB7FC(\uC0C1\uD0DC) \uBA54\uD0C0 + \uD604\uC7AC \uCE74\uB4DC \uC218.",
+    description: "List all board columns (statuses) with their metadata and current card count.",
+    triggers: { ko: "\uCEEC\uB7FC \uBAA9\uB85D \uBCF4\uB4DC \uC0C1\uD0DC \uCE78 \uD604\uD669" },
     returns: "{ ok, columns }",
     handler: () => {
       const items = store2.get().filter((n) => n.parentId != null);
@@ -14701,8 +14718,9 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("seed", {
-    description: "\uB370\uBAA8 \uD2B8\uB9AC(depth 4) \uC801\uC7AC. \uAE30\uC874 \uB370\uC774\uD130\uAC00 \uC788\uC73C\uBA74 force \uC5C6\uC774\uB294 \uAC74\uB108\uB700.",
-    params: { force: { type: "boolean", description: "\uAE30\uC874\uC744 \uB370\uBAA8\uB85C \uAD50\uCCB4" } },
+    description: "Load a demo tree (depth 4) for exploration. Skips if data already exists unless force=true.",
+    triggers: { ko: "\uC2DC\uB4DC \uB370\uBAA8 \uC0D8\uD50C \uCD08\uAE30 \uB370\uC774\uD130 seed" },
+    params: { force: { type: "boolean", description: "Replace existing data with the demo tree" } },
     returns: "{ ok, count, skipped? }",
     handler: async (p) => {
       const cur = store2.get();
@@ -14712,7 +14730,8 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("reset", {
-    description: "\uBAA8\uB4E0 \uB178\uB4DC \uC0AD\uC81C(\uBE48 \uBCF4\uB4DC).",
+    description: "Delete all nodes and return to an empty board. This action is irreversible.",
+    triggers: { ko: "\uCD08\uAE30\uD654 \uB9AC\uC14B \uC804\uCCB4 \uC0AD\uC81C \uBE44\uC6B0\uAE30" },
     returns: "{ ok, removed }",
     danger: "destructive",
     handler: async () => {
@@ -14722,8 +14741,9 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("breadcrumb", {
-    description: "focus \uAE30\uC900 \uBE0C\uB808\uB4DC\uD06C\uB7FC(\uC804\uCCB4\u2192\u2026\u2192focus).",
-    params: { focus: { type: "string", description: "\uAE30\uC900 \uB178\uB4DC id/key" } },
+    description: "Return the ancestor path from the root to the focus node, useful for showing current position in the tree.",
+    triggers: { ko: "\uBE0C\uB808\uB4DC\uD06C\uB7FC \uACBD\uB85C \uC704\uCE58 ancestors \uD0D0\uC0C9" },
+    params: { focus: { type: "string", description: "Node id or key to trace ancestors for" } },
     returns: "{ ok, crumbs }",
     handler: (p) => {
       const nodes = store2.get();

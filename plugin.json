@@ -1,53 +1,141 @@
 {
   "spec": "soksak-plugin-spec@1",
   "id": "soksak-plugin-kanban",
-  "name": { "ko": "칸반", "en": "Kanban" },
+  "name": {
+    "ko": "칸반",
+    "en": "Kanban"
+  },
   "version": "0.1.0",
   "repo": "https://github.com/soksak-ai/soksak-plugin-kanban.git",
   "description": "트리(아웃라이너) 기반 이슈 추적 — 한 트리를 칸반·간트·타임라인·트리·테이블·캘린더 여섯 뷰로. 노드는 parentId+order 로 무한 깊이. CLI/MCP 로 조작.",
   "entry": "main.js",
-  "permissions": ["data", "commands", "ui", "notify", "programs"],
+  "permissions": [
+    "data",
+    "commands",
+    "ui",
+    "notify",
+    "programs"
+  ],
   "contributes": {
     "views": [
       {
         "id": "kanban",
-        "title": { "ko": "칸반", "en": "Kanban" },
+        "title": {
+          "ko": "칸반",
+          "en": "Kanban"
+        },
         "icon": "▦",
-        "placements": ["content"],
+        "placements": [
+          "content"
+        ],
         "defaultPlacement": "content"
       }
     ],
     "commands": [
-      { "name": "ping", "title": "플러그인 적재/버전 확인(E2E)" },
-      { "name": "node.add", "title": "노드 추가" },
-      { "name": "node.edit", "title": "노드 수정" },
-      { "name": "node.remove", "title": "노드 삭제", "danger": "destructive" },
-      { "name": "node.get", "title": "노드 조회" },
-      { "name": "node.list", "title": "노드 목록" },
-      { "name": "outline.indent", "title": "들여쓰기(Tab)" },
-      { "name": "outline.outdent", "title": "내어쓰기(Shift+Tab)" },
-      { "name": "outline.move", "title": "노드 이동(reparent)" },
-      { "name": "outline.reorder", "title": "형제 순서 변경" },
-      { "name": "board.move", "title": "보드 이동(상태 변경)" },
-      { "name": "board.reorder", "title": "보드 칸 내 순서 변경" },
-      { "name": "board.sort", "title": "보드 정렬" },
-      { "name": "focus.set", "title": "관점(focus) 이동" },
-      { "name": "view.get", "title": "뷰 투영 조회" },
-      { "name": "stats", "title": "진행 통계" },
-      { "name": "timeline", "title": "상태 전환 타임라인" },
-      { "name": "column.list", "title": "컬럼 목록" },
-      { "name": "seed", "title": "데모 트리 적재" },
-      { "name": "reset", "title": "전체 삭제", "danger": "destructive" },
-      { "name": "breadcrumb", "title": "브레드크럼" }
+      {
+        "name": "ping",
+        "title": "플러그인 적재/버전 확인(E2E)"
+      },
+      {
+        "name": "node.add",
+        "title": "노드 추가"
+      },
+      {
+        "name": "node.edit",
+        "title": "노드 수정"
+      },
+      {
+        "name": "node.remove",
+        "title": "노드 삭제",
+        "danger": "destructive"
+      },
+      {
+        "name": "node.get",
+        "title": "노드 조회"
+      },
+      {
+        "name": "node.list",
+        "title": "노드 목록"
+      },
+      {
+        "name": "outline.indent",
+        "title": "들여쓰기(Tab)"
+      },
+      {
+        "name": "outline.outdent",
+        "title": "내어쓰기(Shift+Tab)"
+      },
+      {
+        "name": "outline.move",
+        "title": "노드 이동(reparent)"
+      },
+      {
+        "name": "outline.reorder",
+        "title": "형제 순서 변경"
+      },
+      {
+        "name": "board.move",
+        "title": "보드 이동(상태 변경)"
+      },
+      {
+        "name": "board.reorder",
+        "title": "보드 칸 내 순서 변경"
+      },
+      {
+        "name": "board.sort",
+        "title": "보드 정렬"
+      },
+      {
+        "name": "focus.set",
+        "title": "관점(focus) 이동"
+      },
+      {
+        "name": "view.get",
+        "title": "뷰 투영 조회"
+      },
+      {
+        "name": "stats",
+        "title": "진행 통계"
+      },
+      {
+        "name": "timeline",
+        "title": "상태 전환 타임라인"
+      },
+      {
+        "name": "column.list",
+        "title": "컬럼 목록"
+      },
+      {
+        "name": "seed",
+        "title": "데모 트리 적재"
+      },
+      {
+        "name": "reset",
+        "title": "전체 삭제",
+        "danger": "destructive"
+      },
+      {
+        "name": "breadcrumb",
+        "title": "브레드크럼"
+      }
     ],
     "programs": [
       {
         "id": "kanban",
-        "title": { "ko": "칸반", "en": "Kanban" },
-        "path": { "ko": "유틸리티", "en": "Utility" },
+        "title": {
+          "ko": "칸반",
+          "en": "Kanban"
+        },
+        "path": {
+          "ko": "유틸리티",
+          "en": "Utility"
+        },
         "kind": "view",
         "view": "kanban"
       }
-    ]
+    ],
+    "skill": {
+      "path": "skill/SKILL.md"
+    }
   }
 }
