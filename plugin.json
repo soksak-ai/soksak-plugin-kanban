@@ -7,7 +7,10 @@
   },
   "version": "0.0.1",
   "repo": "https://github.com/soksak-ai/soksak-plugin-kanban.git",
-  "description": "트리(아웃라이너) 기반 이슈 추적 — 한 트리를 칸반·간트·타임라인·트리·테이블·캘린더 여섯 뷰로. 노드는 parentId+order 로 무한 깊이. CLI/MCP 로 조작.",
+  "description": {
+    "ko": "트리(아웃라이너) 기반 이슈 추적 — 한 트리를 칸반·간트·타임라인·트리·테이블·캘린더 여섯 뷰로. 노드는 parentId+order 로 무한 깊이. CLI/MCP 로 조작.",
+    "en": "Tree (outliner) based issue tracking — one tree projected as kanban, gantt, timeline, tree, table, and calendar. Nodes have infinite depth via parentId+order. Operated via CLI/MCP."
+  },
   "entry": "main.js",
   "permissions": [
     "data",
@@ -34,89 +37,152 @@
     "commands": [
       {
         "name": "ping",
-        "title": "플러그인 적재/버전 확인(E2E)"
+        "title": {
+          "ko": "플러그인 적재/버전 확인(E2E)",
+          "en": "Ping (load/version check)"
+        }
       },
       {
         "name": "node.add",
-        "title": "노드 추가"
+        "title": {
+          "ko": "노드 추가",
+          "en": "Add Node"
+        }
       },
       {
         "name": "node.edit",
-        "title": "노드 수정"
+        "title": {
+          "ko": "노드 수정",
+          "en": "Edit Node"
+        }
       },
       {
         "name": "node.remove",
-        "title": "노드 삭제",
+        "title": {
+          "ko": "노드 삭제",
+          "en": "Remove Node"
+        },
         "danger": "destructive"
       },
       {
         "name": "node.get",
-        "title": "노드 조회"
+        "title": {
+          "ko": "노드 조회",
+          "en": "Get Node"
+        }
       },
       {
         "name": "node.list",
-        "title": "노드 목록"
+        "title": {
+          "ko": "노드 목록",
+          "en": "List Nodes"
+        }
       },
       {
         "name": "outline.indent",
-        "title": "들여쓰기(Tab)"
+        "title": {
+          "ko": "들여쓰기(Tab)",
+          "en": "Indent (Tab)"
+        }
       },
       {
         "name": "outline.outdent",
-        "title": "내어쓰기(Shift+Tab)"
+        "title": {
+          "ko": "내어쓰기(Shift+Tab)",
+          "en": "Outdent (Shift+Tab)"
+        }
       },
       {
         "name": "outline.move",
-        "title": "노드 이동(reparent)"
+        "title": {
+          "ko": "노드 이동(reparent)",
+          "en": "Move Node (reparent)"
+        }
       },
       {
         "name": "outline.reorder",
-        "title": "형제 순서 변경"
+        "title": {
+          "ko": "형제 순서 변경",
+          "en": "Reorder Siblings"
+        }
       },
       {
         "name": "board.move",
-        "title": "보드 이동(상태 변경)"
+        "title": {
+          "ko": "보드 이동(상태 변경)",
+          "en": "Move on Board (change status)"
+        }
       },
       {
         "name": "board.reorder",
-        "title": "보드 칸 내 순서 변경"
+        "title": {
+          "ko": "보드 칸 내 순서 변경",
+          "en": "Reorder within Column"
+        }
       },
       {
         "name": "board.sort",
-        "title": "보드 정렬"
+        "title": {
+          "ko": "보드 정렬",
+          "en": "Sort Board"
+        }
       },
       {
         "name": "focus.set",
-        "title": "관점(focus) 이동"
+        "title": {
+          "ko": "관점(focus) 이동",
+          "en": "Set Focus"
+        }
       },
       {
         "name": "view.get",
-        "title": "뷰 투영 조회"
+        "title": {
+          "ko": "뷰 투영 조회",
+          "en": "Get View Projection"
+        }
       },
       {
         "name": "stats",
-        "title": "진행 통계"
+        "title": {
+          "ko": "진행 통계",
+          "en": "Progress Stats"
+        }
       },
       {
         "name": "timeline",
-        "title": "상태 전환 타임라인"
+        "title": {
+          "ko": "상태 전환 타임라인",
+          "en": "Status Transition Timeline"
+        }
       },
       {
         "name": "column.list",
-        "title": "컬럼 목록"
+        "title": {
+          "ko": "컬럼 목록",
+          "en": "List Columns"
+        }
       },
       {
         "name": "seed",
-        "title": "데모 트리 적재"
+        "title": {
+          "ko": "데모 트리 적재",
+          "en": "Seed Demo Tree"
+        }
       },
       {
         "name": "reset",
-        "title": "전체 삭제",
+        "title": {
+          "ko": "전체 삭제",
+          "en": "Reset All"
+        },
         "danger": "destructive"
       },
       {
         "name": "breadcrumb",
-        "title": "브레드크럼"
+        "title": {
+          "ko": "브레드크럼",
+          "en": "Breadcrumb"
+        }
       }
     ],
     "programs": [
