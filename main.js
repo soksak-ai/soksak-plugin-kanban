@@ -12758,12 +12758,15 @@ var import_client = __toESM(require_client(), 1);
 var import_react5 = __toESM(require_react(), 1);
 
 // src/refs.ts
+function resolveLabel(label2, lang) {
+  return label2[lang] ?? label2.en;
+}
 var STATUSES = [
-  { id: "backlog", label: "Backlog", kr: "\uBC31\uB85C\uADF8", color: "#94a3b8" },
-  { id: "todo", label: "To Do", kr: "\uC608\uC815", color: "#3b82f6" },
-  { id: "inprogress", label: "In Progress", kr: "\uC9C4\uD589 \uC911", color: "#f59e0b", wip: 3 },
-  { id: "review", label: "In Review", kr: "\uB9AC\uBDF0", color: "#8b5cf6", wip: 3 },
-  { id: "done", label: "Done", kr: "\uC644\uB8CC", color: "#10b981" }
+  { id: "backlog", label: { en: "Backlog", ko: "\uBC31\uB85C\uADF8" }, color: "#94a3b8" },
+  { id: "todo", label: { en: "To Do", ko: "\uC608\uC815" }, color: "#3b82f6" },
+  { id: "inprogress", label: { en: "In Progress", ko: "\uC9C4\uD589 \uC911" }, color: "#f59e0b", wip: 3 },
+  { id: "review", label: { en: "In Review", ko: "\uB9AC\uBDF0" }, color: "#8b5cf6", wip: 3 },
+  { id: "done", label: { en: "Done", ko: "\uC644\uB8CC" }, color: "#10b981" }
 ];
 var USERS = {
   JH: { name: "\uAE40\uC9C0\uD6C8", initials: "JH", color: "#5b5bf0" },
@@ -12775,10 +12778,10 @@ var USERS = {
   me: { name: "\uB098 (You)", initials: "ME", color: "#0ea5e9" }
 };
 var PRIORITY = {
-  highest: { kr: "\uCD5C\uC0C1", label: "Highest", color: "#dc2626", rank: 4 },
-  high: { kr: "\uB192\uC74C", label: "High", color: "#f97316", rank: 3 },
-  medium: { kr: "\uBCF4\uD1B5", label: "Medium", color: "#eab308", rank: 2 },
-  low: { kr: "\uB0AE\uC74C", label: "Low", color: "#3b82f6", rank: 1 }
+  highest: { label: { en: "Highest", ko: "\uCD5C\uC0C1" }, color: "#dc2626", rank: 4 },
+  high: { label: { en: "High", ko: "\uB192\uC74C" }, color: "#f97316", rank: 3 },
+  medium: { label: { en: "Medium", ko: "\uBCF4\uD1B5" }, color: "#eab308", rank: 2 },
+  low: { label: { en: "Low", ko: "\uB0AE\uC74C" }, color: "#3b82f6", rank: 1 }
 };
 var TYPES = {
   epic: { letter: "E", color: "#8b5cf6" },
@@ -13047,12 +13050,12 @@ function avatar(uid, size = 22) {
   };
 }
 function typeBadge(type) {
-  const t = TYPES[type];
+  const t2 = TYPES[type];
   return {
     width: 18,
     height: 18,
     borderRadius: 5,
-    background: t.color,
+    background: t2.color,
     color: "#fff",
     fontSize: 10,
     fontWeight: 700,
@@ -13106,6 +13109,88 @@ function rootStyle() {
     letterSpacing: "-.01em"
   };
 }
+
+// src/view/i18n.ts
+var strings = {
+  // App
+  newIssueBtn: { en: "New issue", ko: "\uC0C8 \uC774\uC288" },
+  searchPlaceholder: { en: "Search", ko: "\uAC80\uC0C9" },
+  addItem: { en: "+ Add item", ko: "+ \uD56D\uBAA9 \uCD94\uAC00" },
+  addCard: { en: "+ Add card", ko: "+ \uCE74\uB4DC \uCD94\uAC00" },
+  // Calendar
+  byDueLabel: { en: "\xB7 by due date", ko: "\xB7 \uB9C8\uAC10 \uAE30\uC900" },
+  // Outline / Tree / Board shared
+  drillInTitle: { en: "Drill in", ko: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30" },
+  drillInBtn: { en: "\u25B8 drill in", ko: "\u25B8 \uB4E4\uC5B4\uAC00\uAE30" },
+  drillInBoard: { en: "\u25A6 Board", ko: "\u25A6 \uBCF4\uB4DC" },
+  statusChangeTitle: { en: "Change status", ko: "\uC0C1\uD0DC \uBCC0\uACBD" },
+  titlePlaceholderEpic: { en: "Enter title\u2026", ko: "\uC81C\uBAA9 \uC785\uB825\u2026" },
+  titlePlaceholder: { en: "Enter task title\u2026", ko: "\uD560 \uC77C \uC81C\uBAA9 \uC785\uB825\u2026" },
+  noTitle: { en: "(no title)", ko: "(\uC81C\uBAA9 \uC5C6\uC74C)" },
+  // Board
+  goUpTitle: { en: "Go up", ko: "\uC0C1\uC704\uB85C" },
+  goUpBtn: { en: "\u2191 Up", ko: "\u2191 \uC0C1\uC704\uB85C" },
+  scopeAll: { en: "All", ko: "\uC804\uCCB4" },
+  scopeDirect: { en: "Direct", ko: "\uC9C1\uACC4\uB9CC" },
+  drillInCard: { en: "\u2198 drill in", ko: "\u2198 \uB4E4\uC5B4\uAC00\uAE30" },
+  // Tree
+  treeSectionTitle: { en: "Tree \xB7 Structure", ko: "\uD2B8\uB9AC \uAD6C\uC870 \xB7 Structure" },
+  treeInstruction: { en: "Click a row to drill into that node; use breadcrumbs to go up.", ko: "\uD589\uC744 \uD074\uB9AD\uD558\uBA74 \uADF8 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00(\uC7AC\uAD6C\uC131), \uC0C1\uC704\uB85C\uB294 \uBE0C\uB808\uB4DC\uD06C\uB7FC." },
+  // Table
+  tableTitle: { en: "Table \xB7 List", ko: "\uD14C\uC774\uBE14 \xB7 List" },
+  colTitle: { en: "Title", ko: "\uC81C\uBAA9" },
+  colStatus: { en: "Status", ko: "\uC0C1\uD0DC" },
+  colAssignee: { en: "Assignee", ko: "\uB2F4\uB2F9" },
+  colPriority: { en: "Priority", ko: "\uC6B0\uC120" },
+  colDue: { en: "Due", ko: "\uB9C8\uAC10" },
+  // Modal — titles
+  modalTitleCreate: { en: "New issue", ko: "\uC0C8 \uC774\uC288" },
+  modalTitleEdit: { en: "Edit issue", ko: "\uC774\uC288 \uD3B8\uC9D1" },
+  modalTitleDetail: { en: "Issue detail", ko: "\uC774\uC288 \uC0C1\uC138" },
+  // Modal — field labels
+  fieldTitle: { en: "Title", ko: "\uC81C\uBAA9" },
+  fieldDesc: { en: "Description", ko: "\uC124\uBA85" },
+  fieldType: { en: "Type", ko: "\uC720\uD615" },
+  fieldStatus: { en: "Status", ko: "\uC0C1\uD0DC" },
+  fieldAssignee: { en: "Assignee", ko: "\uB2F4\uB2F9\uC790" },
+  fieldPriority: { en: "Priority", ko: "\uC6B0\uC120\uC21C\uC704" },
+  fieldPoints: { en: "Story Points", ko: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8" },
+  fieldDue: { en: "Due", ko: "\uB9C8\uAC10" },
+  // Modal — placeholders / body
+  titlePlaceholderModal: { en: "What needs to be done?", ko: "\uBB34\uC5C7\uC744 \uD574\uC57C \uD558\uB098\uC694?" },
+  bodyPlaceholder: { en: "Details, acceptance criteria, etc.", ko: "\uC0C1\uC138 \uB0B4\uC6A9, \uC778\uC218 \uC870\uAC74 \uB4F1" },
+  noBody: { en: "No description yet", ko: "\uC124\uBA85\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4" },
+  // Modal — meta section keys
+  metaAssignee: { en: "Assignee", ko: "\uB2F4\uB2F9\uC790" },
+  metaPriority: { en: "Priority", ko: "\uC6B0\uC120\uC21C\uC704" },
+  metaPoints: { en: "Story Points", ko: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8" },
+  metaDue: { en: "Due", ko: "\uB9C8\uAC10" },
+  // Modal — history section
+  historyLabel: { en: "History \xB7 Status changes", ko: "\uC0C1\uD0DC \uC804\uD658 \uC774\uB825 \xB7 History" },
+  historyCreated: { en: "Issue created", ko: "\uC774\uC288 \uC0DD\uC131\uB428" },
+  // Modal — buttons
+  btnClose: { en: "Close", ko: "\uB2EB\uAE30" },
+  btnEdit: { en: "Edit", ko: "\uC218\uC815" },
+  btnCancel: { en: "Cancel", ko: "\uCDE8\uC18C" },
+  btnSave: { en: "Save", ko: "\uC800\uC7A5" },
+  btnCreate: { en: "Create issue", ko: "\uC774\uC288 \uB9CC\uB4E4\uAE30" },
+  btnDelete: { en: "Delete", ko: "\uC0AD\uC81C" },
+  // Board stale
+  staleDays: { en: "d stale", ko: "\uC77C \uC815\uCCB4" }
+};
+function t(key, lang) {
+  const e = strings[key];
+  return e[lang] ?? e.en;
+}
+var VIEW_TABS = [
+  { id: "outline", en: "Outliner", ko: "\uC544\uC6C3\uB77C\uC774\uB108" },
+  { id: "board", en: "Kanban", ko: "\uCE78\uBC18" },
+  { id: "gantt", en: "Gantt", ko: "\uAC04\uD2B8" },
+  { id: "timeline", en: "Timeline", ko: "\uD0C0\uC784\uB77C\uC778" },
+  { id: "tree", en: "Tree", ko: "\uD2B8\uB9AC" },
+  { id: "table", en: "Table", ko: "\uD14C\uC774\uBE14" },
+  { id: "calendar", en: "Calendar", ko: "\uCE98\uB9B0\uB354" }
+];
 
 // src/view/Outline.tsx
 var import_react2 = __toESM(require_react(), 1);
@@ -13205,7 +13290,6 @@ function toBoard(nodes, focusId = null, scope = "direct", search = "") {
     return {
       id: s.id,
       label: s.label,
-      kr: s.kr,
       color: s.color,
       wip: s.wip ?? null,
       count: cards.length,
@@ -13268,7 +13352,7 @@ function toGantt(nodes) {
     }
   }
   const weeks = [];
-  for (let w = 0; w < 4; w++) weeks.push({ label: "6\uC6D4 " + (w + 1) + "\uC8FC", range: "6/" + (w * 7 + 1) + " \u2013 6/" + (w * 7 + 7) });
+  for (let w = 0; w < 4; w++) weeks.push({ label: { en: "Jun W" + (w + 1), ko: "6\uC6D4 " + (w + 1) + "\uC8FC" }, range: "6/" + (w * 7 + 1) + " \u2013 6/" + (w * 7 + 7) });
   return { rows, weeks, todayPct: dayIdx(TODAY, RANGE_START) / TOTAL_DAYS * 100 };
 }
 function toTimeline(nodes) {
@@ -13323,7 +13407,7 @@ function toCalendar(nodes) {
     ["\uAE08", "Fri"],
     ["\uD1A0", "Sat"],
     ["\uC77C", "Sun"]
-  ].map(([kr, en]) => ({ kr, en }));
+  ].map(([ko, en]) => ({ ko, en }));
   const offset = (new Date(2026, 5, 1).getDay() + 6) % 7;
   const byDay = {};
   for (const i of workItems(nodes)) {
@@ -13343,7 +13427,7 @@ function toCalendar(nodes) {
   while (cells.length % 7 !== 0) cells.push({ show: false });
   const weeks = [];
   for (let w = 0; w < cells.length / 7; w++) weeks.push({ days: cells.slice(w * 7, w * 7 + 7) });
-  return { weekdays, weeks, monthLabel: "2026\uB144 6\uC6D4" };
+  return { weekdays, weeks, monthLabel: { en: "June 2026", ko: "2026\uB144 6\uC6D4" } };
 }
 function projectView(nodes, view, focusId = null, opts = {}) {
   switch (view) {
@@ -13392,7 +13476,7 @@ function ScopeStat({ nodes, focusId }) {
 
 // src/view/Outline.tsx
 var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
-function Outline({ store: store2, nodes, focusId, setFocusId, onOpen }) {
+function Outline({ store: store2, nodes, focusId, setFocusId, onOpen, lang }) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
   const containerRef = (0, import_react2.useRef)(null);
@@ -13517,12 +13601,12 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen }) {
         return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
           Array.from({ length: row.depth }).map((_, k) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { width: 22, flex: "none", alignSelf: "stretch", borderRight: "1.5px solid var(--border)" } }, k)),
           /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 9, padding: "0 10px 0 8px" }, children: [
-            row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { onClick: () => setFocusId(row.id), title: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30", style: { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }, children: "E" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setFocusId(row.id), title: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30", style: { width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 } }),
+            row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }, children: "E" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: { width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 } }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
               "input",
               {
                 defaultValue: row.title,
-                placeholder: row.isEpic ? "\uC81C\uBAA9 \uC785\uB825\u2026" : "\uD560 \uC77C \uC81C\uBAA9 \uC785\uB825\u2026",
+                placeholder: row.isEpic ? t("titlePlaceholderEpic", lang) : t("titlePlaceholder", lang),
                 "data-outline-id": row.id,
                 onBlur: (e) => apply((ns) => commit(ns, row.id, e.target.value)),
                 onKeyDown: (e) => onKey(e, row.id),
@@ -13530,14 +13614,14 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen }) {
               },
               row.id
             ),
-            !row.isEpic && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { onClick: () => cycleStatus(row.id), title: "\uC0C1\uD0DC \uBCC0\uACBD", style: { cursor: "pointer", ...statusChip(row.status) }, children: m.kr }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setFocusId(row.id), title: "\uC774 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00\uAE30", style: drillStyle, children: row.hasChildren ? `\u25A6 ${row.doneCount}/${row.childCount}` : "\u25A6 \uBCF4\uB4DC" }),
+            !row.isEpic && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { onClick: () => cycleStatus(row.id), title: t("statusChangeTitle", lang), style: { cursor: "pointer", ...statusChip(row.status) }, children: resolveLabel(m.label, lang) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: drillStyle, children: row.hasChildren ? `\u25A6 ${row.doneCount}/${row.childCount}` : t("drillInBoard", lang) }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { onClick: () => onOpen(row.id), style: { fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }, children: row.key }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: avatar(row.assignee, 20), children: initials(row.assignee) })
           ] })
         ] }, row.id);
       }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => addChild(focusId), style: { display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "9px 10px", marginTop: 4, border: "none", background: "transparent", color: "var(--text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8 }, children: "+ \uD56D\uBAA9 \uCD94\uAC00" })
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => addChild(focusId), style: { display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "9px 10px", marginTop: 4, border: "none", background: "transparent", color: "var(--text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8 }, children: t("addItem", lang) })
     ] })
   ] });
 }
@@ -13560,7 +13644,7 @@ var drillStyle = { display: "inline-flex", alignItems: "center", gap: 4, height:
 // src/view/Board.tsx
 var import_react3 = __toESM(require_react(), 1);
 var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, search, onOpen, onCreate }) {
+function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, search, onOpen, onCreate, lang }) {
   const board = toBoard(nodes, focusId, scope, search);
   const [dragId, setDragId] = (0, import_react3.useState)(null);
   const [overStatus, setOverStatus] = (0, import_react3.useState)(null);
@@ -13576,14 +13660,14 @@ function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, sea
   };
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { height: "100%", display: "flex", flexDirection: "column" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4, padding: "12px 22px 0", flexWrap: "wrap" }, children: [
-      focusId && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: goUp, title: "\uC0C1\uC704\uB85C", style: { height: 26, padding: "0 9px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginRight: 4 }, children: "\u2191 \uC0C1\uC704\uB85C" }),
+      focusId && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: goUp, title: t("goUpTitle", lang), style: { height: 26, padding: "0 9px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg)", color: "var(--text-2)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginRight: 4 }, children: t("goUpBtn", lang) }),
       board.breadcrumb.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { display: "inline-flex", alignItems: "center" }, children: [
         i > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--text-3)", fontSize: 12, margin: "0 1px" }, children: "/" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setFocusId(c.id), style: crumbStyle2(i === board.breadcrumb.length - 1), children: c.label })
       ] }, i)),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginLeft: 10, display: "inline-flex", background: "var(--surface-2)", borderRadius: 8, padding: 2 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setScope("all"), style: scopeBtn(scope === "all"), children: "\uC804\uCCB4" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setScope("direct"), style: scopeBtn(scope === "direct"), children: "\uC9C1\uACC4\uB9CC" })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setScope("all"), style: scopeBtn(scope === "all"), children: t("scopeAll", lang) }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setScope("direct"), style: scopeBtn(scope === "direct"), children: t("scopeDirect", lang) })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ScopeStat, { nodes, focusId })
     ] }),
@@ -13592,8 +13676,7 @@ function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, sea
       return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { width: 278, flex: "none", background: "var(--surface-2)", borderRadius: "var(--r-col)", border: col.bottleneck ? "1px solid rgba(245,158,11,.4)" : "1px solid var(--border)", display: "flex", flexDirection: "column", maxHeight: "100%" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 9px" }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { width: 9, height: 9, borderRadius: 3, background: col.color, flex: "none" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontWeight: 600, fontSize: 13 }, children: col.label }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 11, color: "var(--text-3)" }, children: col.kr }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontWeight: 600, fontSize: 13 }, children: resolveLabel(col.label, lang) }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 700, fontFamily: "var(--mono)", padding: "1px 8px", borderRadius: 99, background: col.bottleneck ? "rgba(245,158,11,.16)" : "var(--surface-3)", color: col.bottleneck ? "#f59e0b" : "var(--text-3)", animation: col.bottleneck ? "pulseRing 1.8s ease-in-out infinite" : "none" }, children: col.wip != null ? `${col.count}/${col.wip}` : col.count })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
@@ -13610,11 +13693,11 @@ function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, sea
             style: { position: "relative", display: "flex", flexDirection: "column", gap: 9, padding: "4px 10px 12px", overflowY: "auto", minHeight: 80 },
             children: [
               over && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { position: "absolute", inset: 4, border: "2px dashed var(--accent)", borderRadius: 10, background: "var(--accent-soft)", pointerEvents: "none", zIndex: 2 } }),
-              col.cards.map((card) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Card, { card, dragging: dragId === card.id, onDragStart: () => setDragId(card.id), onDragEnd: () => {
+              col.cards.map((card) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Card, { card, lang, dragging: dragId === card.id, onDragStart: () => setDragId(card.id), onDragEnd: () => {
                 setDragId(null);
                 setOverStatus(null);
               }, onSelect: () => hasChildren(nodes, card.id) ? setFocusId(card.id) : onOpen(card.id), onDrill: () => setFocusId(card.id) }, card.id)),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => onCreate(col.id), style: { width: "100%", padding: 8, border: "1px dashed var(--border-2)", borderRadius: "var(--r-card)", background: "transparent", color: "var(--text-3)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "+ \uCE74\uB4DC \uCD94\uAC00" })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => onCreate(col.id), style: { width: "100%", padding: 8, border: "1px dashed var(--border-2)", borderRadius: "var(--r-card)", background: "transparent", color: "var(--text-3)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: t("addCard", lang) })
             ]
           }
         )
@@ -13622,7 +13705,7 @@ function Board({ store: store2, nodes, focusId, setFocusId, scope, setScope, sea
     }) })
   ] });
 }
-function Card({ card, dragging, onDragStart, onDragEnd, onSelect, onDrill }) {
+function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill }) {
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
     "div",
     {
@@ -13638,10 +13721,10 @@ function Card({ card, dragging, onDragStart, onDragEnd, onSelect, onDrill }) {
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: prDot(card.priority) }),
           card.stale && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,.14)", padding: "1px 6px", borderRadius: 6 }, children: [
             card.staleDays,
-            "\uC77C \uC815\uCCB4"
+            t("staleDays", lang)
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500, lineHeight: 1.4 }, children: card.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500, lineHeight: 1.4 }, children: card.title || t("noTitle", lang) }),
         card.showPath && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: pathChip, children: [
           "\u21B3 ",
           card.parentLabel
@@ -13665,7 +13748,7 @@ function Card({ card, dragging, onDragStart, onDragEnd, onSelect, onDrill }) {
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: (e) => {
             e.stopPropagation();
             onDrill();
-          }, style: { display: "inline-flex", alignItems: "center", gap: 5, width: "100%", justifyContent: "center", marginTop: 2, height: 27, border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-2)", color: "var(--text-2)", fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }, children: "\u2198 \uB4E4\uC5B4\uAC00\uAE30 \xB7 drill in" })
+          }, style: { display: "inline-flex", alignItems: "center", gap: 5, width: "100%", justifyContent: "center", marginTop: 2, height: 27, border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-2)", color: "var(--text-2)", fontSize: 11, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }, children: t("drillInCard", lang) })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: avatar(card.assignee, 22), children: initials(card.assignee) }),
@@ -13686,7 +13769,7 @@ var scopeBtn = (active) => ({ height: 24, padding: "0 10px", border: "none", bor
 
 // src/view/Tree.tsx
 var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
-function Tree({ nodes, focusId, setFocusId, onOpen }) {
+function Tree({ nodes, focusId, setFocusId, onOpen, lang }) {
   const rows = toOutlineRows(nodes, focusId);
   const crumbs = breadcrumb(nodes, focusId);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: "14px 22px 20px", height: "100%", overflow: "auto" }, children: [
@@ -13697,14 +13780,14 @@ function Tree({ nodes, focusId, setFocusId, onOpen }) {
       ] }, i)),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ScopeStat, { nodes, focusId })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { style: { margin: "0 0 4px", fontSize: 14, fontWeight: 600 }, children: "\uD2B8\uB9AC \uAD6C\uC870 \xB7 Structure" }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }, children: "\uD589\uC744 \uD074\uB9AD\uD558\uBA74 \uADF8 \uB178\uB4DC\uB85C \uB4E4\uC5B4\uAC00(\uC7AC\uAD6C\uC131), \uC0C1\uC704\uB85C\uB294 \uBE0C\uB808\uB4DC\uD06C\uB7FC." }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { style: { margin: "0 0 4px", fontSize: 14, fontWeight: 600 }, children: t("treeSectionTitle", lang) }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: "0 0 16px", fontSize: 12, color: "var(--text-3)" }, children: t("treeInstruction", lang) }),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { maxWidth: 780, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", overflow: "hidden", boxShadow: "var(--shadow)" }, children: rows.map((r) => {
       const m = sMeta(r.status);
       return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { onClick: () => r.hasChildren ? setFocusId(r.id) : onOpen(r.id), style: { display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: `0 14px 0 ${14 + r.depth * 22}px`, borderBottom: "1px solid var(--grid)", cursor: "pointer" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: r.isEpic ? { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" } : typeBadge(r.type), children: r.isEpic ? "E" : typeLetter(r.type) }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }, children: r.key }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 13, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: r.isEpic ? 600 : 400 }, children: r.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 13, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: r.isEpic ? 600 : 400 }, children: r.title || t("noTitle", lang) }),
         r.progress && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { width: 72, height: 5, borderRadius: 99, background: "var(--surface-3)", overflow: "hidden", flex: "none" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { height: "100%", width: `${r.progress.pct}%`, background: "#8b5cf6", borderRadius: 99 } }) }),
           /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)", flex: "none" }, children: [
@@ -13713,8 +13796,8 @@ function Tree({ nodes, focusId, setFocusId, onOpen }) {
             r.progress.total
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: statusChip(r.status), children: m.kr }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 10, color: "var(--text-3)", flex: "none", width: 54, textAlign: "right" }, children: r.hasChildren ? "\u25B8 \uB4E4\uC5B4\uAC00\uAE30" : "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: statusChip(r.status), children: resolveLabel(m.label, lang) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 10, color: "var(--text-3)", flex: "none", width: 54, textAlign: "right" }, children: r.hasChildren ? t("drillInBtn", lang) : "" }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: avatar(r.assignee, 20), children: initials(r.assignee) })
       ] }, r.id);
     }) })
@@ -13724,7 +13807,7 @@ var crumbStyle3 = (cur) => ({ display: "inline-flex", alignItems: "center", padd
 
 // src/view/Gantt.tsx
 var import_jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
-function Gantt({ nodes, onOpen }) {
+function Gantt({ nodes, onOpen, lang }) {
   const g = toGantt(nodes);
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { padding: "20px 22px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }, children: [
@@ -13741,7 +13824,7 @@ function Gantt({ nodes, onOpen }) {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { flex: 1, position: "relative" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { display: "flex", height: 34, borderBottom: "1px solid var(--border)" }, children: g.weeks.map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { flex: 1, borderRight: "1px solid var(--grid)", display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { fontSize: 11, fontWeight: 600 }, children: w.label }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { fontSize: 11, fontWeight: 600 }, children: resolveLabel(w.label, lang) }),
           /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { fontSize: 9.5, color: "var(--text-3)" }, children: w.range })
         ] }, i)) }),
         g.rows.map((r) => {
@@ -13756,7 +13839,7 @@ function Gantt({ nodes, onOpen }) {
 
 // src/view/Timeline.tsx
 var import_jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
-function Timeline({ nodes, onOpen }) {
+function Timeline({ nodes, onOpen, lang }) {
   const groups = toTimeline(nodes);
   return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { padding: "20px 22px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { style: { margin: "0 0 4px", fontSize: 14, fontWeight: 600 }, children: "\uC0C1\uD0DC \uC804\uD658 \uD0C0\uC784\uB77C\uC778 \xB7 Transition history" }),
@@ -13771,9 +13854,9 @@ function Timeline({ nodes, onOpen }) {
         /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)" }, children: ev.key }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: statusChip(ev.from), children: sMeta(ev.from).kr }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: statusChip(ev.from), children: resolveLabel(sMeta(ev.from).label, lang) }),
             /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: { color: "var(--text-3)" }, children: "\u2192" }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: statusChip(ev.to), children: sMeta(ev.to).kr })
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: statusChip(ev.to), children: resolveLabel(sMeta(ev.to).label, lang) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: { fontSize: 12.5, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: ev.title })
         ] })
@@ -13786,15 +13869,15 @@ function Timeline({ nodes, onOpen }) {
 var import_react4 = __toESM(require_react(), 1);
 var import_jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
 var COLS = [
-  ["key", "Key", 92],
-  ["title", "\uC81C\uBAA9", 0],
-  ["status", "\uC0C1\uD0DC", 104],
-  ["assignee", "\uB2F4\uB2F9", 120],
-  ["priority", "\uC6B0\uC120", 78],
-  ["points", "SP", 54],
-  ["due", "\uB9C8\uAC10", 64]
+  ["key", { en: "Key", ko: "Key" }, 92],
+  ["title", { en: "Title", ko: "\uC81C\uBAA9" }, 0],
+  ["status", { en: "Status", ko: "\uC0C1\uD0DC" }, 104],
+  ["assignee", { en: "Assignee", ko: "\uB2F4\uB2F9" }, 120],
+  ["priority", { en: "Priority", ko: "\uC6B0\uC120" }, 78],
+  ["points", { en: "SP", ko: "SP" }, 54],
+  ["due", { en: "Due", ko: "\uB9C8\uAC10" }, 64]
 ];
-function Table({ nodes, onOpen }) {
+function Table({ nodes, onOpen, lang }) {
   const [sortKey, setSortKey] = (0, import_react4.useState)("key");
   const [sortDir, setSortDir] = (0, import_react4.useState)("asc");
   const rows = toTable(nodes, sortKey, sortDir);
@@ -13806,24 +13889,24 @@ function Table({ nodes, onOpen }) {
     }
   };
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { padding: "20px 22px", height: "100%", overflow: "auto" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h3", { style: { margin: "0 0 18px", fontSize: 14, fontWeight: 600 }, children: "\uD14C\uC774\uBE14 \xB7 List" }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h3", { style: { margin: "0 0 18px", fontSize: 14, fontWeight: 600 }, children: t("tableTitle", lang) }),
     /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { display: "flex", alignItems: "center", padding: "0 16px", height: 40, borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }, children: COLS.map(([k, label2, w]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { onClick: () => onSort(k), style: { width: k === "title" ? "auto" : w, flex: k === "title" ? 1 : "none", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 11, fontWeight: 600, color: sortKey === k ? "var(--text)" : "var(--text-3)", paddingLeft: k === "key" ? 48 : 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: label2 }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { display: "flex", alignItems: "center", padding: "0 16px", height: 40, borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }, children: COLS.map(([k, lbl, w]) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { onClick: () => onSort(k), style: { width: k === "title" ? "auto" : w, flex: k === "title" ? 1 : "none", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 11, fontWeight: 600, color: sortKey === k ? "var(--text)" : "var(--text-3)", paddingLeft: k === "key" ? 48 : 0 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: lbl[lang] ?? lbl.en }),
         sortKey === k && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 9, color: "var(--accent)" }, children: sortDir === "asc" ? "\u25B2" : "\u25BC" })
       ] }, k)) }),
       rows.map((r) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { onClick: () => onOpen(r.id), style: { display: "flex", alignItems: "center", padding: "0 16px", height: 44, borderBottom: "1px solid var(--grid)", cursor: "pointer", fontSize: 13 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { width: 48, flex: "none", display: "flex" }, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: typeBadge(r.type), children: typeLetter(r.type) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { width: 92, flex: "none", fontFamily: "var(--mono)", fontSize: 12, color: "var(--text-2)" }, children: r.key }),
         /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 12 }, children: r.title }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { width: 104, flex: "none" }, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: statusChip(r.status), children: sMeta(r.status).kr }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { width: 104, flex: "none" }, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: statusChip(r.status), children: resolveLabel(sMeta(r.status).label, lang) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { width: 120, flex: "none", display: "flex", alignItems: "center", gap: 7 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: avatar(r.assignee, 22), children: initials(r.assignee) }),
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 12, color: "var(--text-2)" }, children: userName(r.assignee) })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { width: 78, flex: "none", display: "flex", alignItems: "center", gap: 6 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: prDot(r.priority) }),
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 12, color: "var(--text-2)" }, children: PRIORITY[r.priority].kr })
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 12, color: "var(--text-2)" }, children: resolveLabel(PRIORITY[r.priority].label, lang) })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { width: 54, flex: "none" }, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: ptsBadge(), children: r.points }) }),
         /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { width: 64, flex: "none", fontSize: 12, color: "var(--text-2)", fontFamily: "var(--mono)" }, children: `${+r.due.split("-")[1]}/${+r.due.split("-")[2]}` })
@@ -13834,16 +13917,17 @@ function Table({ nodes, onOpen }) {
 
 // src/view/Calendar.tsx
 var import_jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
-function Calendar({ nodes, onOpen }) {
+function Calendar({ nodes, onOpen, lang }) {
   const c = toCalendar(nodes);
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { padding: "20px 22px", height: "100%", overflow: "auto" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("h3", { style: { margin: "0 0 18px", fontSize: 14, fontWeight: 600 }, children: [
-      c.monthLabel,
-      " \xB7 \uB9C8\uAC10 \uAE30\uC900"
+      resolveLabel(c.monthLabel, lang),
+      " ",
+      t("byDueLabel", lang)
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid var(--border)" }, children: c.weekdays.map((w) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { padding: "9px 12px", fontSize: 11, fontWeight: 600, color: "var(--text-3)", borderRight: "1px solid var(--grid)" }, children: [
-        w.kr,
+        w.ko,
         " ",
         /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { fontWeight: 400 }, children: w.en })
       ] }, w.en)) }),
@@ -13860,14 +13944,14 @@ function Calendar({ nodes, onOpen }) {
 
 // src/view/Modal.tsx
 var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
-var label = (t) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("label", { style: { display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 6 }, children: t });
+var label = (t2) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("label", { style: { display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 6 }, children: t2 });
 var field = { width: "100%", height: 38, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" };
-function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView }) {
+function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView, lang }) {
   const isCreate = mode === "create";
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const isForm = isCreate || isEdit;
-  const title = isCreate ? "\uC0C8 \uC774\uC288 \xB7 New issue" : isEdit ? "\uC774\uC288 \uD3B8\uC9D1 \xB7 Edit" : "\uC774\uC288 \uC0C1\uC138 \xB7 Detail";
+  const title = isCreate ? t("modalTitleCreate", lang) : isEdit ? t("modalTitleEdit", lang) : t("modalTitleDetail", lang);
   const canSave = draft.title.trim().length > 0;
   const hist = editing ? histItems(editing) : [];
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(10,12,18,.42)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .15s ease" }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { onClick: (e) => e.stopPropagation(), style: { width: 480, maxWidth: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-lg)", maxHeight: "88vh", display: "flex", flexDirection: "column", animation: "drawerIn .18s cubic-bezier(.2,.8,.2,1)" }, children: [
@@ -13879,48 +13963,40 @@ function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDe
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { padding: 18, overflow: "auto" }, children: [
       isForm && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { marginBottom: 15 }, children: [
-          label("\uC81C\uBAA9 \xB7 Title"),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("input", { value: draft.title, onChange: (e) => setField("title", e.target.value), placeholder: "\uBB34\uC5C7\uC744 \uD574\uC57C \uD558\uB098\uC694?", style: { ...field, height: 38, fontSize: 14 } })
+          label(t("fieldTitle", lang)),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("input", { value: draft.title, onChange: (e) => setField("title", e.target.value), placeholder: t("titlePlaceholderModal", lang), style: { ...field, height: 38, fontSize: 14 } })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { marginBottom: 15 }, children: [
-          label("\uC124\uBA85 \xB7 Description"),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("textarea", { value: draft.body, onChange: (e) => setField("body", e.target.value), placeholder: "\uC0C1\uC138 \uB0B4\uC6A9, \uC778\uC218 \uC870\uAC74 \uB4F1", style: { ...field, height: "auto", minHeight: 88, padding: "10px 12px", resize: "vertical", lineHeight: 1.55 } })
+          label(t("fieldDesc", lang)),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("textarea", { value: draft.body, onChange: (e) => setField("body", e.target.value), placeholder: t("bodyPlaceholder", lang), style: { ...field, height: "auto", minHeight: 88, padding: "10px 12px", resize: "vertical", lineHeight: 1.55 } })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px 12px" }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
-            label("\uC720\uD615 \xB7 Type"),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.type, onChange: (e) => setField("type", e.target.value), style: field, children: ["task", "story", "bug", "epic"].map((t) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("option", { value: t, children: [
-              TYPES[t].letter,
+            label(t("fieldType", lang)),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.type, onChange: (e) => setField("type", e.target.value), style: field, children: ["task", "story", "bug", "epic"].map((tp) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("option", { value: tp, children: [
+              TYPES[tp].letter,
               " \xB7 ",
-              t
-            ] }, t)) })
+              tp
+            ] }, tp)) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
-            label("\uC0C1\uD0DC \xB7 Status"),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.status, onChange: (e) => setField("status", e.target.value), style: field, children: STATUSES.map((s) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("option", { value: s.id, children: [
-              s.label,
-              " \xB7 ",
-              s.kr
-            ] }, s.id)) })
+            label(t("fieldStatus", lang)),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.status, onChange: (e) => setField("status", e.target.value), style: field, children: STATUSES.map((s) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("option", { value: s.id, children: resolveLabel(s.label, lang) }, s.id)) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
-            label("\uB2F4\uB2F9\uC790 \xB7 Assignee"),
+            label(t("fieldAssignee", lang)),
             /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.assignee, onChange: (e) => setField("assignee", e.target.value), style: field, children: Object.keys(USERS).map((k) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("option", { value: k, children: USERS[k].name }, k)) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
-            label("\uC6B0\uC120\uC21C\uC704 \xB7 Priority"),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.priority, onChange: (e) => setField("priority", e.target.value), style: field, children: Object.keys(PRIORITY).map((k) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("option", { value: k, children: [
-              PRIORITY[k].label,
-              " \xB7 ",
-              PRIORITY[k].kr
-            ] }, k)) })
+            label(t("fieldPriority", lang)),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("select", { value: draft.priority, onChange: (e) => setField("priority", e.target.value), style: field, children: Object.keys(PRIORITY).map((k) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("option", { value: k, children: resolveLabel(PRIORITY[k].label, lang) }, k)) })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
-            label("\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8 \xB7 SP"),
+            label(t("fieldPoints", lang)),
             /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("input", { type: "number", min: 0, value: draft.points, onChange: (e) => setField("points", Number(e.target.value) || 0), style: { ...field, fontFamily: "var(--mono)", padding: "0 12px" } })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { children: [
-            label("\uB9C8\uAC10 \xB7 Due"),
+            label(t("fieldDue", lang)),
             /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("input", { type: "date", value: draft.due, onChange: (e) => setField("due", e.target.value), style: { ...field, fontFamily: "var(--mono)", padding: "0 11px" } })
           ] })
         ] })
@@ -13928,36 +14004,36 @@ function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDe
       isView && editing && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: typeBadge(editing.type), children: typeLetter(editing.type) }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: statusChip(editing.status), children: sMeta(editing.status).kr })
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: statusChip(editing.status), children: resolveLabel(sMeta(editing.status).label, lang) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("h2", { style: { margin: "0 0 14px", fontSize: 18, fontWeight: 600, lineHeight: 1.35 }, children: editing.title || "(\uC81C\uBAA9 \uC5C6\uC74C)" }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 8 }, children: "\uC124\uBA85 \xB7 Description" }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { margin: "0 0 22px", fontSize: 13.5, lineHeight: 1.6, color: editing.body ? "var(--text-2)" : "var(--text-3)", whiteSpace: "pre-wrap", fontStyle: editing.body ? "normal" : "italic" }, children: editing.body || "\uC124\uBA85\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4 \xB7 No description yet" }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("h2", { style: { margin: "0 0 14px", fontSize: 18, fontWeight: 600, lineHeight: 1.35 }, children: editing.title || t("noTitle", lang) }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 8 }, children: t("fieldDesc", lang) }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { style: { margin: "0 0 22px", fontSize: 13.5, lineHeight: 1.6, color: editing.body ? "var(--text-2)" : "var(--text-3)", whiteSpace: "pre-wrap", fontStyle: editing.body ? "normal" : "italic" }, children: editing.body || t("noBody", lang) }),
         /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 12px" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Meta, { k: "\uB2F4\uB2F9\uC790", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Meta, { k: t("metaAssignee", lang), children: [
             /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: avatar(editing.assignee, 24), children: initials(editing.assignee) }),
             /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 13 }, children: userName(editing.assignee) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Meta, { k: "\uC6B0\uC120\uC21C\uC704", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(Meta, { k: t("metaPriority", lang), children: [
             /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: prDot(editing.priority) }),
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 13 }, children: PRIORITY[editing.priority].label })
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 13 }, children: resolveLabel(PRIORITY[editing.priority].label, lang) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Meta, { k: "\uC2A4\uD1A0\uB9AC \uD3EC\uC778\uD2B8", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { fontSize: 13, fontFamily: "var(--mono)", fontWeight: 600 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Meta, { k: t("metaPoints", lang), children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { style: { fontSize: 13, fontFamily: "var(--mono)", fontWeight: 600 }, children: [
             editing.points,
             " SP"
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Meta, { k: "\uB9C8\uAC10", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 13, fontFamily: "var(--mono)" }, children: editing.due }) })
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Meta, { k: t("metaDue", lang), children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 13, fontFamily: "var(--mono)" }, children: editing.due }) })
         ] })
       ] }),
       editing && hist.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 14 }, children: "\uC0C1\uD0DC \uC804\uD658 \uC774\uB825 \xB7 History" }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 14 }, children: t("historyLabel", lang) }),
         hist.map((hh, i) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", gap: 12, paddingBottom: 16 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { width: 10, height: 10, borderRadius: "50%", background: hh.color, flex: "none", marginTop: 3 } }),
           /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { flex: 1 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }, children: hh.created ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 12.5, fontWeight: 600 }, children: "\uC774\uC288 \uC0DD\uC131\uB428 \xB7 Created" }) : /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: statusChip(hh.from), children: sMeta(hh.from).kr }),
+            /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }, children: hh.created ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { fontSize: 12.5, fontWeight: 600 }, children: t("historyCreated", lang) }) : /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: statusChip(hh.from), children: resolveLabel(sMeta(hh.from).label, lang) }),
               /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: { color: "var(--text-3)" }, children: "\u2192" }),
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: statusChip(hh.to), children: sMeta(hh.to).kr })
+              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { style: statusChip(hh.to), children: resolveLabel(sMeta(hh.to).label, lang) })
             ] }) }),
             /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { fontSize: 11, color: "var(--text-3)", marginTop: 4 }, children: [
               hh.by,
@@ -13969,19 +14045,19 @@ function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDe
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "14px 18px", borderTop: "1px solid var(--border)", flex: "none" }, children: [
-      editing && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onDelete, style: { padding: "8px 14px", border: "1px solid var(--border)", borderRadius: 8, background: "transparent", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: "\uC0AD\uC81C" }),
+      editing && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onDelete, style: { padding: "8px 14px", border: "1px solid var(--border)", borderRadius: 8, background: "transparent", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }, children: t("btnDelete", lang) }),
       /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8 }, children: [
         isView && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onClose, style: btnGhost, children: "\uB2EB\uAE30" }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onEnterEdit, style: btnPrimary, children: "\uC218\uC815 \xB7 Edit" })
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onClose, style: btnGhost, children: t("btnClose", lang) }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onEnterEdit, style: btnPrimary, children: t("btnEdit", lang) })
         ] }),
         isEdit && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onBackToView, style: btnGhost, children: "\uCDE8\uC18C" }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onSave, style: { ...btnPrimary, opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }, children: "\uC800\uC7A5 \xB7 Save" })
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onBackToView, style: btnGhost, children: t("btnCancel", lang) }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onSave, style: { ...btnPrimary, opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }, children: t("btnSave", lang) })
         ] }),
         isCreate && /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onClose, style: btnGhost, children: "\uCDE8\uC18C" }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onCreate, style: { ...btnPrimary, opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }, children: "\uC774\uC288 \uB9CC\uB4E4\uAE30" })
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onClose, style: btnGhost, children: t("btnCancel", lang) }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { onClick: onCreate, style: { ...btnPrimary, opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }, children: t("btnCreate", lang) })
         ] })
       ] })
     ] })
@@ -14007,15 +14083,6 @@ var dispose = (d) => {
   if (typeof d === "function") d();
   else d?.dispose?.();
 };
-var TABS = [
-  ["outline", "Outliner", "\uC544\uC6C3\uB77C\uC774\uB108"],
-  ["board", "Kanban", "\uCE78\uBC18"],
-  ["gantt", "Gantt", "\uAC04\uD2B8"],
-  ["timeline", "Timeline", "\uD0C0\uC784\uB77C\uC778"],
-  ["tree", "Tree", "\uD2B8\uB9AC"],
-  ["table", "Table", "\uD14C\uC774\uBE14"],
-  ["calendar", "Calendar", "\uCE98\uB9B0\uB354"]
-];
 var blankDraft = () => ({ title: "", body: "", type: "task", status: "todo", assignee: "me", priority: "medium", points: 3, start: TODAY, due: RANGE_END });
 function App({ store: store2, app }) {
   const nodes = useNodes(store2);
@@ -14027,11 +14094,16 @@ function App({ store: store2, app }) {
   const [mode, setMode] = (0, import_react5.useState)("create");
   const [editingId, setEditingId] = (0, import_react5.useState)(null);
   const [draft, setDraft] = (0, import_react5.useState)(blankDraft);
+  const [lang, setLang] = (0, import_react5.useState)(() => app?.locale?.() ?? "ko");
   (0, import_react5.useEffect)(() => {
     const d = app?.bus?.on?.("kanban:nav", (p) => {
       setFocusId(p?.focusId ?? null);
       if (p?.view) setView(p.view);
     });
+    return () => dispose(d);
+  }, [app]);
+  (0, import_react5.useEffect)(() => {
+    const d = app?.on?.("locale.changed", (p) => setLang(p.language));
     return () => dispose(d);
   }, [app]);
   if (!store2) return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { padding: 24, color: "#888" }, children: "store \uC900\uBE44 \uC911\u2026" });
@@ -14078,28 +14150,32 @@ function App({ store: store2, app }) {
   };
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "kanban-root", style: rootStyle(), children: [
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("header", { style: { display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("nav", { style: { display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }, children: TABS.map(([id, lbl]) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("button", { onClick: () => setView(id), style: tabStyle(view === id), children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" } }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { children: lbl })
-      ] }, id)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("nav", { style: { display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }, children: VIEW_TABS.map(({ id, en, ko }) => {
+        const lbl = lang === "ko" ? ko : en;
+        return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("button", { onClick: () => setView(id), style: tabStyle(view === id), children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { children: lbl })
+        ] }, id);
+      }) }),
       /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flex: "none" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("button", { onClick: () => openCreate("todo"), style: { height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { fontSize: 17, lineHeight: 1, marginTop: -1 }, children: "+" }),
-          " \uC0C8 \uC774\uC288"
+          " ",
+          t("newIssueBtn", lang)
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "\uAC80\uC0C9 \xB7 search", style: { height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" } })
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: t("searchPlaceholder", lang), style: { height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" } })
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("main", { style: { flex: 1, minHeight: 0, position: "relative" }, children: [
-      view === "outline" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Outline, { store: store2, nodes, focusId, setFocusId, onOpen: openDetail }),
-      view === "board" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Board, { store: store2, nodes, focusId, setFocusId, scope, setScope, search, onOpen: openDetail, onCreate: openCreate }),
-      view === "tree" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Tree, { nodes, focusId, setFocusId, onOpen: openDetail }),
-      view === "gantt" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Gantt, { nodes, onOpen: openDetail }),
-      view === "timeline" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Timeline, { nodes, onOpen: openDetail }),
-      view === "table" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Table, { nodes, onOpen: openDetail }),
-      view === "calendar" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Calendar, { nodes, onOpen: openDetail })
+      view === "outline" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Outline, { store: store2, nodes, focusId, setFocusId, onOpen: openDetail, lang }),
+      view === "board" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Board, { store: store2, nodes, focusId, setFocusId, scope, setScope, search, onOpen: openDetail, onCreate: openCreate, lang }),
+      view === "tree" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Tree, { nodes, focusId, setFocusId, onOpen: openDetail, lang }),
+      view === "gantt" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Gantt, { nodes, onOpen: openDetail, lang }),
+      view === "timeline" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Timeline, { nodes, onOpen: openDetail, lang }),
+      view === "table" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Table, { nodes, onOpen: openDetail, lang }),
+      view === "calendar" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Calendar, { nodes, onOpen: openDetail, lang })
     ] }),
-    modalOpen && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Modal, { mode, draft, editing, setField, onClose: () => setModalOpen(false), onSave: saveEdit, onCreate: createIssue, onDelete: del, onEnterEdit: enterEdit, onBackToView: () => setMode("view") })
+    modalOpen && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Modal, { mode, draft, editing, setField, onClose: () => setModalOpen(false), onSave: saveEdit, onCreate: createIssue, onDelete: del, onEnterEdit: enterEdit, onBackToView: () => setMode("view"), lang })
   ] });
 }
 var tabStyle = (active) => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
@@ -14709,7 +14785,6 @@ function registerCommands(ctx, store2) {
         columns: STATUSES.map((s) => ({
           id: s.id,
           label: s.label,
-          kr: s.kr,
           color: s.color,
           wip: s.wip ?? null,
           count: items.filter((i) => i.status === s.id).length

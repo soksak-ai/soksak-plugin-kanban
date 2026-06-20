@@ -1,19 +1,28 @@
 // 참조 상수 — 디자인(Kanban Flow Board.dc.html)에서 그대로 포팅. 컬럼(STATUSES)은 고정 5개.
 import type { StatusId, NodeType, PriorityId } from "@/types";
 
+export interface L10nLabel {
+  en: string;
+  ko: string;
+}
+
+/** 현재 언어에 맞는 label 문자열 반환. 매핑 없으면 en fallback. */
+export function resolveLabel(label: L10nLabel, lang: string): string {
+  return (label as unknown as Record<string, string>)[lang] ?? label.en;
+}
+
 export interface StatusMeta {
   id: StatusId;
-  label: string;
-  kr: string;
+  label: L10nLabel;
   color: string;
   wip?: number;
 }
 export const STATUSES: StatusMeta[] = [
-  { id: "backlog", label: "Backlog", kr: "백로그", color: "#94a3b8" },
-  { id: "todo", label: "To Do", kr: "예정", color: "#3b82f6" },
-  { id: "inprogress", label: "In Progress", kr: "진행 중", color: "#f59e0b", wip: 3 },
-  { id: "review", label: "In Review", kr: "리뷰", color: "#8b5cf6", wip: 3 },
-  { id: "done", label: "Done", kr: "완료", color: "#10b981" },
+  { id: "backlog", label: { en: "Backlog", ko: "백로그" }, color: "#94a3b8" },
+  { id: "todo", label: { en: "To Do", ko: "예정" }, color: "#3b82f6" },
+  { id: "inprogress", label: { en: "In Progress", ko: "진행 중" }, color: "#f59e0b", wip: 3 },
+  { id: "review", label: { en: "In Review", ko: "리뷰" }, color: "#8b5cf6", wip: 3 },
+  { id: "done", label: { en: "Done", ko: "완료" }, color: "#10b981" },
 ];
 
 export interface UserMeta {
@@ -32,16 +41,15 @@ export const USERS: Record<string, UserMeta> = {
 };
 
 export interface PriorityMeta {
-  kr: string;
-  label: string;
+  label: L10nLabel;
   color: string;
   rank: number;
 }
 export const PRIORITY: Record<PriorityId, PriorityMeta> = {
-  highest: { kr: "최상", label: "Highest", color: "#dc2626", rank: 4 },
-  high: { kr: "높음", label: "High", color: "#f97316", rank: 3 },
-  medium: { kr: "보통", label: "Medium", color: "#eab308", rank: 2 },
-  low: { kr: "낮음", label: "Low", color: "#3b82f6", rank: 1 },
+  highest: { label: { en: "Highest", ko: "최상" }, color: "#dc2626", rank: 4 },
+  high: { label: { en: "High", ko: "높음" }, color: "#f97316", rank: 3 },
+  medium: { label: { en: "Medium", ko: "보통" }, color: "#eab308", rank: 2 },
+  low: { label: { en: "Low", ko: "낮음" }, color: "#3b82f6", rank: 1 },
 };
 
 export interface TypeMeta {

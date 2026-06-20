@@ -2,8 +2,9 @@
 import type { Node } from "@/types";
 import { toTimeline } from "@/core/projections";
 import { avatar, initials, statusChip, sMeta } from "@/view/ui";
+import { resolveLabel } from "@/refs";
 
-export default function Timeline({ nodes, onOpen }: { nodes: Node[]; onOpen: (id: string) => void }) {
+export default function Timeline({ nodes, onOpen, lang }: { nodes: Node[]; onOpen: (id: string) => void; lang: string }) {
   const groups = toTimeline(nodes);
   return (
     <div style={{ padding: "20px 22px", height: "100%", overflow: "auto" }}>
@@ -22,9 +23,9 @@ export default function Timeline({ nodes, onOpen }: { nodes: Node[]; onOpen: (id
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--text-3)" }}>{ev.key}</span>
-                    <span style={statusChip(ev.from)}>{sMeta(ev.from).kr}</span>
+                    <span style={statusChip(ev.from)}>{resolveLabel(sMeta(ev.from).label, lang)}</span>
                     <span style={{ color: "var(--text-3)" }}>→</span>
-                    <span style={statusChip(ev.to)}>{sMeta(ev.to).kr}</span>
+                    <span style={statusChip(ev.to)}>{resolveLabel(sMeta(ev.to).label, lang)}</span>
                   </div>
                   <div style={{ fontSize: 12.5, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.title}</div>
                 </div>

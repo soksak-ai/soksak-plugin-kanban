@@ -10,6 +10,7 @@ import { byId } from "@/core/tree";
 import { insertNode, removeNode } from "@/core/algebra";
 import { useNodes } from "@/view/useStore";
 import { rootStyle } from "@/view/ui";
+import { t, VIEW_TABS } from "@/view/i18n";
 import Outline from "@/view/Outline";
 import Board from "@/view/Board";
 import Tree from "@/view/Tree";
@@ -23,7 +24,11 @@ type Disp = { dispose(): void } | (() => void);
 interface AppProps {
   store: KanbanStore | null;
   // 테마는 플랫폼 CSS 변수 상속으로 자동 — app 은 focus/view 네비 버스에만 사용.
-  app?: { bus?: { on?: (topic: string, cb: (p: { focusId: string | null; view?: ViewId }) => void) => Disp } };
+  app?: {
+    bus?: { on?: (topic: string, cb: (p: { focusId: string | null; view?: ViewId }) => void) => Disp };
+    locale?: () => string;
+    on?: (event: string, cb: (p: { language: string }) => void) => Disp;
+  };
 }
 
 const dispose = (d: Disp | undefined) => {
@@ -31,15 +36,6 @@ const dispose = (d: Disp | undefined) => {
   else d?.dispose?.();
 };
 
-const TABS: [ViewId, string, string][] = [
-  ["outline", "Outliner", "아웃라이너"],
-  ["board", "Kanban", "칸반"],
-  ["gantt", "Gantt", "간트"],
-  ["timeline", "Timeline", "타임라인"],
-  ["tree", "Tree", "트리"],
-  ["table", "Table", "테이블"],
-  ["calendar", "Calendar", "캘린더"],
-];
 const blankDraft = (): Draft => ({ title: "", body: "", type: "task", status: "todo", assignee: "me", priority: "medium", points: 3, start: TODAY, due: RANGE_END });
 
 export default function App({ store, app }: AppProps) {
@@ -52,6 +48,7 @@ export default function App({ store, app }: AppProps) {
   const [mode, setMode] = useState<ModalMode>("create");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(blankDraft);
+  const [lang, setLang] = useState<string>(() => app?.locale?.() ?? "ko");
 
   // 명령 focus.set → GUI 관점(focus)·뷰 이동.
   useEffect(() => {
@@ -59,6 +56,12 @@ export default function App({ store, app }: AppProps) {
       setFocusId(p?.focusId ?? null);
       if (p?.view) setView(p.view);
     });
+    return () => dispose(d);
+  }, [app]);
+
+  // 로케일 변경 구독.
+  useEffect(() => {
+    const d = app?.on?.("locale.changed", (p) => setLang(p.language));
     return () => dispose(d);
   }, [app]);
 
@@ -111,31 +114,34 @@ export default function App({ store, app }: AppProps) {
       {/* TOP BAR */}
       <header style={{ display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }}>
         <nav style={{ display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }}>
-          {TABS.map(([id, lbl]) => (
-            <button key={id} onClick={() => setView(id)} style={tabStyle(view === id)}>
-              <span style={{ width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" }} />
-              <span>{lbl}</span>
-            </button>
-          ))}
+          {VIEW_TABS.map(({ id, en, ko }) => {
+            const lbl = lang === "ko" ? ko : en;
+            return (
+              <button key={id} onClick={() => setView(id as ViewId)} style={tabStyle(view === id as ViewId)}>
+                <span style={{ width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" }} />
+                <span>{lbl}</span>
+              </button>
+            );
+          })}
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
-          <button onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> 새 이슈</button>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="검색 · search" style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
+          <button onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> {t("newIssueBtn", lang)}</button>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPlaceholder", lang)} style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
         </div>
       </header>
 
       {/* MAIN */}
       <main style={{ flex: 1, minHeight: 0, position: "relative" }}>
-        {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
-        {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} onOpen={openDetail} onCreate={openCreate} />}
-        {view === "tree" && <Tree nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} />}
-        {view === "gantt" && <Gantt nodes={nodes} onOpen={openDetail} />}
-        {view === "timeline" && <Timeline nodes={nodes} onOpen={openDetail} />}
-        {view === "table" && <Table nodes={nodes} onOpen={openDetail} />}
-        {view === "calendar" && <Calendar nodes={nodes} onOpen={openDetail} />}
+        {view === "outline" && <Outline store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} lang={lang} />}
+        {view === "board" && <Board store={store} nodes={nodes} focusId={focusId} setFocusId={setFocusId} scope={scope} setScope={setScope} search={search} onOpen={openDetail} onCreate={openCreate} lang={lang} />}
+        {view === "tree" && <Tree nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} lang={lang} />}
+        {view === "gantt" && <Gantt nodes={nodes} onOpen={openDetail} lang={lang} />}
+        {view === "timeline" && <Timeline nodes={nodes} onOpen={openDetail} lang={lang} />}
+        {view === "table" && <Table nodes={nodes} onOpen={openDetail} lang={lang} />}
+        {view === "calendar" && <Calendar nodes={nodes} onOpen={openDetail} lang={lang} />}
       </main>
 
-      {modalOpen && <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} />}
+      {modalOpen && <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} lang={lang} />}
     </div>
   );
 }

@@ -2,8 +2,9 @@
 import type { Node } from "@/types";
 import { toGantt } from "@/core/projections";
 import { sMeta, hexA } from "@/view/ui";
+import { resolveLabel } from "@/refs";
 
-export default function Gantt({ nodes, onOpen }: { nodes: Node[]; onOpen: (id: string) => void }) {
+export default function Gantt({ nodes, onOpen, lang }: { nodes: Node[]; onOpen: (id: string) => void; lang: string }) {
   const g = toGantt(nodes);
   return (
     <div style={{ padding: "20px 22px", height: "100%", overflow: "auto" }}>
@@ -25,7 +26,7 @@ export default function Gantt({ nodes, onOpen }: { nodes: Node[]; onOpen: (id: s
           <div style={{ display: "flex", height: 34, borderBottom: "1px solid var(--border)" }}>
             {g.weeks.map((w, i) => (
               <div key={i} style={{ flex: 1, borderRight: "1px solid var(--grid)", display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 600 }}>{w.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 600 }}>{resolveLabel(w.label, lang)}</span>
                 <span style={{ fontSize: 9.5, color: "var(--text-3)" }}>{w.range}</span>
               </div>
             ))}
