@@ -2,7 +2,7 @@
 // 데이터 전용(색/스타일 없음 — 뷰가 refs 로 해석). 디자인 build* 로직 포팅.
 //   focus 스코프: Board / Outline / Tree (children(focus))
 //   전역: Gantt / Timeline / Table / Calendar / Flow / stats (디자인 동작 일치)
-import type { Node, NodeType, StatusId, ViewId } from "@/types";
+import type { Node, NodeType, StatusId, ViewId, Badge } from "@/types";
 import { STATUSES, STATUS_IDS, PRIORITY, RANGE_START, TODAY, TOTAL_DAYS } from "@/refs";
 import type { L10nLabel } from "@/refs";
 import {
@@ -20,6 +20,37 @@ import { dayIdx, fmtShort, staleInfo } from "@/core/dates";
 import type { SortKey } from "@/core/algebra";
 
 export const shortTitle = (n: Node): string => (n.title || "").split(" · ")[0] || n.key;
+
+// ── 드래프트 검증 집계(규칙 D) ──
+// 항목(badge 보유)만 판정 단위. 그룹·덩어리 부모는 자손 항목 badge 를 집계한다(감사).
+// 자기 자신은 제외 — 항목은 자기 badge 를 직접 단다(집계 아님 → null).
+export interface SubValidation {
+  pending: number; // 검수전
+  o: number; // 통과
+  x: number; // 검증 후 버림
+  f: number; // 치명
+  total: number; // 판정 단위(badge 보유 자손) 수
+  discard: boolean; // f≥1 → 덩어리 폐기 대상(개선·복제 재제출)
+}
+/** id 의 자손 중 badge 를 가진 항목들의 oxf 집계. badge 항목이 없으면 null. f≥1 → discard. */
+export function subValidation(nodes: Node[], id: string): SubValidation | null {
+  const items = descendantIds(nodes, id)
+    .map((x) => byId(nodes, x))
+    .filter((n): n is Node => n != null && n.badge != null);
+  if (!items.length) return null;
+  let pending = 0;
+  let o = 0;
+  let x = 0;
+  let f = 0;
+  for (const n of items) {
+    const b = n.badge as Badge;
+    if (b === "o") o++;
+    else if (b === "x") x++;
+    else if (b === "f") f++;
+    else pending++;
+  }
+  return { pending, o, x, f, total: items.length, discard: f >= 1 };
+}
 
 /** 비최상위(작업) 노드 = 디자인 children(). 전역 뷰·통계 대상. */
 const workItems = (nodes: Node[]): Node[] => nodes.filter((n) => n.parentId != null);
@@ -89,6 +120,9 @@ export interface CardVM {
   parentId: string | null;
   parentLabel: string;
   showPath: boolean;
+  badge: Badge | null; // 항목 자기 검증 배지(드래프트 항목)
+  isDraft: boolean; // 덩어리 부모
+  validation: SubValidation | null; // 그룹·덩어리 부모의 자손 oxf 집계(감사)
 }
 function cardVM(nodes: Node[], n: Node, focusId: string | null, scope: BoardScope): CardVM {
   const { days, stale } = staleInfo(n, TODAY);
@@ -115,6 +149,9 @@ function cardVM(nodes: Node[], n: Node, focusId: string | null, scope: BoardScop
     parentId: n.parentId,
     parentLabel: parent ? shortTitle(parent) : "",
     showPath: scope === "all" && !!parent && n.parentId !== (focusId ?? null),
+    badge: n.badge ?? null,
+    isDraft: n.isDraft === true,
+    validation: subValidation(nodes, n.id),
   };
 }
 
@@ -186,6 +223,9 @@ export interface OutlineRowVM {
   childCount: number;
   doneCount: number;
   progress: { done: number; total: number; pct: number } | null;
+  badge: Badge | null; // 항목 자기 검증 배지
+  isDraft: boolean; // 덩어리 부모
+  validation: SubValidation | null; // 자손 oxf 집계(그룹·덩어리 감사)
 }
 export function toOutlineRows(nodes: Node[], focusId: string | null = null): OutlineRowVM[] {
   const rows: OutlineRowVM[] = [];
@@ -211,6 +251,9 @@ export function toOutlineRows(nodes: Node[], focusId: string | null = null): Out
         childCount: kids.length,
         doneCount: kids.filter((k) => k.status === "done").length,
         progress: subProgress(nodes, n.id),
+        badge: n.badge ?? null,
+        isDraft: n.isDraft === true,
+        validation: subValidation(nodes, n.id),
       });
       walk(n.id, depth + 1);
     }

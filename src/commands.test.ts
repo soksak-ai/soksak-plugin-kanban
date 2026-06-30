@@ -233,3 +233,74 @@ describe("locked", () => {
     expect((await call("node.edit", { node: id(c), status: "done" })).ok).toBe(true);
   });
 });
+
+// 드래프트 모델(규칙 D) — 검증 배지(oxf)·덩어리(isDraft)·복제 계보(parentDraftId)·감사 집계·락인.
+describe("draft 모델", () => {
+  const id = (r: Record<string, unknown>) => r.nodeId as string;
+  const node = (r: Record<string, unknown>) => r.node as Record<string, unknown>;
+
+  it("기본값: 미설정 시 badge/isDraft/parentDraftId 없음(일반 노드)", async () => {
+    const a = await call("node.add", { title: "A" });
+    const got = node(await call("node.get", { node: id(a) }));
+    expect(got.badge).toBeUndefined();
+    expect(got.isDraft).toBeUndefined();
+    expect(got.parentDraftId).toBeUndefined();
+  });
+
+  it("node.add 로 badge 설정 → node.get 반환(검증 축)", async () => {
+    const a = await call("node.add", { title: "항목", badge: "검수전" });
+    expect(node(await call("node.get", { node: id(a) })).badge).toBe("검수전");
+    const b = await call("node.add", { title: "통과", badge: "o" });
+    expect(node(await call("node.get", { node: id(b) })).badge).toBe("o");
+  });
+
+  it("잘못된 badge 값은 무시(undefined)", async () => {
+    const a = await call("node.add", { title: "A", badge: "예정" });
+    expect(node(await call("node.get", { node: id(a) })).badge).toBeUndefined();
+  });
+
+  it("node.add 로 덩어리 부모(isDraft) + 복제 계보(parentDraftId)", async () => {
+    const v1 = await call("node.add", { title: "덩어리 v1", isDraft: true });
+    const v2 = await call("node.add", { title: "덩어리 v2", isDraft: true, parentDraftId: id(v1) });
+    const g2 = node(await call("node.get", { node: id(v2) }));
+    expect(g2.isDraft).toBe(true);
+    expect(g2.parentDraftId).toBe(id(v1));
+  });
+
+  it("node.edit 로 badge 갱신(검수전 → o)", async () => {
+    const a = await call("node.add", { title: "A", badge: "검수전" });
+    await call("node.edit", { node: id(a), badge: "o" });
+    expect(node(await call("node.get", { node: id(a) })).badge).toBe("o");
+  });
+
+  it("node.edit 로 f 판정해도 status 축과 무관(별개 축)", async () => {
+    const a = await call("node.add", { title: "A", badge: "검수전", status: "backlog" });
+    await call("node.edit", { node: id(a), badge: "f" });
+    const got = node(await call("node.get", { node: id(a) }));
+    expect(got.badge).toBe("f");
+    expect(got.status).toBe("backlog"); // 검증 배지는 status 를 건드리지 않는다
+  });
+
+  it("덩어리 부모 락인 → 드래프트 자식 자동 보호(board.move/분리 거부)", async () => {
+    const chunk = await call("node.add", { title: "덩어리", isDraft: true, locked: true });
+    const g = await call("node.add", { title: "기능분류", parentId: id(chunk) });
+    const item = await call("node.add", { title: "항목", parentId: id(g), badge: "검수전" });
+    expect((await call("board.move", { node: id(item), status: "done" })).ok).toBe(false);
+    const other = await call("node.add", { title: "딴 곳" });
+    expect((await call("outline.move", { node: id(item), parentId: id(other) })).ok).toBe(false);
+  });
+
+  it("view.get outline: 덩어리 부모는 감사 집계, 항목은 자기 배지", async () => {
+    const chunk = await call("node.add", { title: "덩어리", isDraft: true });
+    const g = await call("node.add", { title: "기능분류", parentId: id(chunk) });
+    await call("node.add", { title: "i1", parentId: id(g), badge: "o" });
+    await call("node.add", { title: "i2", parentId: id(g), badge: "f" });
+    const proj = (await call("view.get", { view: "outline", focus: "root" })).projection as {
+      rows: { id: string; badge: string | null; validation: { o: number; f: number; total: number; discard: boolean } | null }[];
+    };
+    const chunkRow = proj.rows.find((r) => r.id === id(chunk))!;
+    expect(chunkRow.validation).toMatchObject({ o: 1, f: 1, total: 2, discard: true });
+    const i1Row = proj.rows.find((r) => r.badge === "o")!;
+    expect(i1Row.validation).toBeNull(); // 항목은 집계 아님
+  });
+});

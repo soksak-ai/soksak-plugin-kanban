@@ -5,6 +5,8 @@
 export type StatusId = "backlog" | "todo" | "inprogress" | "review" | "done";
 export type NodeType = "epic" | "story" | "task" | "bug";
 export type PriorityId = "highest" | "high" | "medium" | "low";
+// 검증 배지 — status 와 별개 축(드래프트 항목 전용). 검수전=pending(기본) → o=통과 / x=검증 후 버림 / f=치명(f≥1 → 덩어리 폐기 대상).
+export type Badge = "검수전" | "o" | "x" | "f";
 
 /** 상태 전환 이력 한 건. */
 export interface HistoryEntry {
@@ -25,6 +27,9 @@ export interface Node {
   blockedBy?: string[]; // 의존: 이 노드들이 done 이어야 시작 가능(병렬/순차를 데이터로 표현)
   result?: string; // 실행 결과(워크플로 노드 완료 시 기록; 재실행 시 초기화)
   locked?: boolean; // 워크플로 파생 노드 — 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 전용)
+  badge?: Badge; // 검증 배지(드래프트 항목) — status 와 별개 축. 기본 검수전. 항목만 가진다(그룹·덩어리는 집계).
+  isDraft?: boolean; // 덩어리 부모 — 구체화 결과 백로그 덩어리(자식 oxf 감사 집계, 락인, 복제 계보 보유).
+  parentDraftId?: string | null; // 복제 계보 — 개선본 덩어리의 원본 덩어리 id(덩어리 수준만; 항목까지는 잇지 않음).
   type: NodeType;
   status: StatusId;
   assignee: string; // 멤버 id

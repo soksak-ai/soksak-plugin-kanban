@@ -13218,6 +13218,22 @@ function staleInfo(node, today) {
 
 // src/core/projections.ts
 var shortTitle = (n) => (n.title || "").split(" \xB7 ")[0] || n.key;
+function subValidation(nodes, id) {
+  const items = descendantIds(nodes, id).map((x2) => byId(nodes, x2)).filter((n) => n != null && n.badge != null);
+  if (!items.length) return null;
+  let pending = 0;
+  let o = 0;
+  let x = 0;
+  let f = 0;
+  for (const n of items) {
+    const b = n.badge;
+    if (b === "o") o++;
+    else if (b === "x") x++;
+    else if (b === "f") f++;
+    else pending++;
+  }
+  return { pending, o, x, f, total: items.length, discard: f >= 1 };
+}
 var workItems = (nodes) => nodes.filter((n) => n.parentId != null);
 function breadcrumb(nodes, focusId) {
   const chain = focusChain(nodes, focusId);
@@ -13267,7 +13283,10 @@ function cardVM(nodes, n, focusId, scope) {
     preview: kids.slice(0, 3).map((c) => ({ title: shortTitle(c), status: c.status })),
     parentId: n.parentId,
     parentLabel: parent ? shortTitle(parent) : "",
-    showPath: scope === "all" && !!parent && n.parentId !== (focusId ?? null)
+    showPath: scope === "all" && !!parent && n.parentId !== (focusId ?? null),
+    badge: n.badge ?? null,
+    isDraft: n.isDraft === true,
+    validation: subValidation(nodes, n.id)
   };
 }
 function leavesUnder(nodes, focusId) {
@@ -13321,7 +13340,10 @@ function toOutlineRows(nodes, focusId = null) {
         hasChildren: kids.length > 0,
         childCount: kids.length,
         doneCount: kids.filter((k) => k.status === "done").length,
-        progress: subProgress(nodes, n.id)
+        progress: subProgress(nodes, n.id),
+        badge: n.badge ?? null,
+        isDraft: n.isDraft === true,
+        validation: subValidation(nodes, n.id)
       });
       walk(n.id, depth + 1);
     }
@@ -14215,6 +14237,7 @@ var COLL = "nodes";
 var VALID_STATUS = ["backlog", "todo", "inprogress", "review", "done"];
 var VALID_TYPE = ["epic", "story", "task", "bug"];
 var VALID_PRIORITY = ["highest", "high", "medium", "low"];
+var VALID_BADGE = ["\uAC80\uC218\uC804", "o", "x", "f"];
 function asStr(v, d = "") {
   return typeof v === "string" ? v : d;
 }
@@ -14238,6 +14261,9 @@ function rowToNode(raw) {
     blockedBy: Array.isArray(r.blockedBy) ? r.blockedBy.filter((x) => typeof x === "string") : [],
     result: asStr(r.result),
     locked: r.locked === true,
+    badge: VALID_BADGE.includes(r.badge) ? r.badge : void 0,
+    isDraft: r.isDraft === true ? true : void 0,
+    parentDraftId: typeof r.parentDraftId === "string" ? r.parentDraftId : r.parentDraftId === null ? null : void 0,
     type,
     status,
     assignee: asStr(r.assignee, "me"),
@@ -14429,7 +14455,7 @@ function resolveParent(nodes, ref) {
   const r = resolve(nodes, ref);
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
-var compact = (n) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true });
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId });
 var LOCKED = { ok: false, error: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
 var isLockedTree = (nodes, n) => {
   let cur = n;
@@ -14446,6 +14472,7 @@ function registerCommands(ctx, store2) {
   const STATUS_ENUM = STATUS_IDS;
   const TYPE_ENUM = ["epic", "story", "task", "bug"];
   const PRIORITY_ENUM = ["highest", "high", "medium", "low"];
+  const BADGE_ENUM = ["\uAC80\uC218\uC804", "o", "x", "f"];
   const VIEW_ENUM = ["outline", "board", "gantt", "timeline", "tree", "table", "calendar"];
   const SORT_ENUM = ["key", "title", "priority", "points", "due", "status", "assignee"];
   sub("node.add", {
@@ -14462,7 +14489,10 @@ function registerCommands(ctx, store2) {
       after: { type: "string", description: "Insert after this sibling id/key" },
       body: { type: "string", description: "Body / \uC2E4\uD589 \uC9C0\uC2DC(prompt/schema)" },
       blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC804\uBD80 done \uC774\uC5B4\uC57C \uC2DC\uC791)" },
-      locked: { type: "boolean", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uBCF4\uD638(\uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uBD84\uB9AC\xB7\uC0AD\uC81C \uAE08\uC9C0)" }
+      locked: { type: "boolean", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uBCF4\uD638(\uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uBD84\uB9AC\xB7\uC0AD\uC81C \uAE08\uC9C0)" },
+      badge: { type: "string", description: "\uAC80\uC99D \uBC30\uC9C0(\uB4DC\uB798\uD504\uD2B8 \uD56D\uBAA9; status \uC640 \uBCC4\uAC1C \uCD95, \uAE30\uBCF8 \uAC80\uC218\uC804)", enum: BADGE_ENUM },
+      isDraft: { type: "boolean", description: "\uB369\uC5B4\uB9AC \uBD80\uBAA8(\uAD6C\uCCB4\uD654 \uBC31\uB85C\uADF8 \uB369\uC5B4\uB9AC; \uC790\uC2DD oxf \uAC10\uC0AC \uC9D1\uACC4)" },
+      parentDraftId: { type: "string", description: "\uBCF5\uC81C \uACC4\uBCF4 \u2014 \uAC1C\uC120\uBCF8 \uB369\uC5B4\uB9AC\uC758 \uC6D0\uBCF8 \uB369\uC5B4\uB9AC id(\uB369\uC5B4\uB9AC \uC218\uC900\uB9CC)" }
     },
     returns: "{ ok, nodeId, key }",
     examples: [`sok plugin.soksak-plugin-kanban.node.add '{"title":"\uC0C8 \uC791\uC5C5","parentId":"WMP-100"}'`],
@@ -14482,6 +14512,9 @@ function registerCommands(ctx, store2) {
         blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : [],
         result: "",
         locked: p.locked === true,
+        badge: BADGE_ENUM.includes(p.badge) ? p.badge : void 0,
+        isDraft: p.isDraft === true ? true : void 0,
+        parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : void 0,
         type: TYPE_ENUM.includes(p.type) ? p.type : par.id == null ? "epic" : "task",
         status: STATUS_ENUM.includes(p.status) ? p.status : "todo",
         assignee: typeof p.assignee === "string" ? p.assignee : "me",
@@ -14513,7 +14546,10 @@ function registerCommands(ctx, store2) {
       start: { type: "string", description: "Start date YYYY-MM-DD" },
       due: { type: "string", description: "Due date YYYY-MM-DD" },
       blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC758\uC874 \uBCC0\uACBD)" },
-      result: { type: "string", description: "\uC2E4\uD589 \uACB0\uACFC(\uC644\uB8CC \uAE30\uB85D; \uC7AC\uC2E4\uD589 \uC2DC '' \uB85C \uCD08\uAE30\uD654)" }
+      result: { type: "string", description: "\uC2E4\uD589 \uACB0\uACFC(\uC644\uB8CC \uAE30\uB85D; \uC7AC\uC2E4\uD589 \uC2DC '' \uB85C \uCD08\uAE30\uD654)" },
+      badge: { type: "string", description: "\uAC80\uC99D \uBC30\uC9C0(\uAC80\uC218\uC804 \u2192 o/x/f). status \uC640 \uBCC4\uAC1C \uCD95", enum: BADGE_ENUM },
+      isDraft: { type: "boolean", description: "\uB369\uC5B4\uB9AC \uBD80\uBAA8 \uD45C\uC2DC \uBCC0\uACBD" },
+      parentDraftId: { type: "string", description: "\uBCF5\uC81C \uACC4\uBCF4 \u2014 \uC6D0\uBCF8 \uB369\uC5B4\uB9AC id" }
     },
     returns: "{ ok, node }",
     handler: async (p) => {
@@ -14532,6 +14568,9 @@ function registerCommands(ctx, store2) {
             body: typeof p.body === "string" ? p.body : n.body,
             blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : n.blockedBy ?? [],
             result: typeof p.result === "string" ? p.result : n.result ?? "",
+            badge: BADGE_ENUM.includes(p.badge) ? p.badge : n.badge,
+            isDraft: typeof p.isDraft === "boolean" ? p.isDraft === true ? true : void 0 : n.isDraft,
+            parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : n.parentDraftId,
             type: TYPE_ENUM.includes(p.type) ? p.type : n.type,
             status: nextStatus,
             assignee: typeof p.assignee === "string" ? p.assignee : n.assignee,
