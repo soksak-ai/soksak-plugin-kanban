@@ -140,7 +140,8 @@ export function setStatus(
   }));
 }
 
-/** 보드 이동 — 상태 변경 + 같은 (부모) 형제 중 position 으로 재배치. */
+/** 보드 이동 — 상태 변경 + **컬럼(같은 부모·같은 status) 내** position 으로 재배치.
+ *  position 은 타깃 컬럼 상대(0-based) — 다른 status 형제는 카운트하지 않는다(컬럼 뷰 = status 필터). */
 export function boardMove(
   nodes: Node[],
   id: string,
@@ -150,7 +151,14 @@ export function boardMove(
   position?: number,
 ): Node[] {
   let next = setStatus(nodes, id, status, by, today);
-  if (position != null) next = reorder(next, id, position);
+  if (position != null) {
+    const node = byId(next, id);
+    if (node) {
+      // 컬럼 = 같은 부모·같은 status 형제(자기 제외). filter 가 order 보존 → normalize 후 컬럼 뷰에서 position 에 위치.
+      const col = childrenOf(next, node.parentId).filter((s) => s.id !== id && s.status === status);
+      next = normalizeOrders(patch(next, id, (n) => ({ ...n, order: orderForPosition(col, position) })));
+    }
+  }
   return next;
 }
 

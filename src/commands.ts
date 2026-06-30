@@ -69,7 +69,7 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
 const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 // lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
@@ -122,6 +122,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const nodes = store.get();
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
+      // ① 락인 비대칭 방지: 잠긴 subtree 에 unlocked 노드 주입 금지(node.remove 불가·subValidation 오염). 워크플로 발행은 locked:true 시그니처라 허용.
+      if (par.id != null && p.locked !== true) {
+        const parentNode = byId(nodes, par.id);
+        if (parentNode && isLockedTree(nodes, parentNode)) return LOCKED;
+      }
       const afterRef = p.after != null ? resolve(nodes, p.after) : null;
       const now = Date.now();
       const node: Node = {
@@ -296,6 +301,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
       if (isLockedTree(store.get(), r.node)) return LOCKED;
+      // ① 주입 금지: indent 는 직전 형제의 자식이 된다 — 직전 형제가 잠긴 트리면 거부.
+      const sibs = childrenOf(store.get(), r.node.parentId);
+      const ix = sibs.findIndex((s) => s.id === r.node.id);
+      const prevSib = ix > 0 ? sibs[ix - 1] : null;
+      if (prevSib && isLockedTree(store.get(), prevSib)) return LOCKED;
       await store.apply((ns) => indent(ns, r.node.id));
       return { ok: true };
     },
@@ -329,6 +339,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       if (isLockedTree(store.get(), r.node)) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
+      // ① 주입 금지: unlocked 노드를 잠긴 subtree 로 이동 거부(source 가 locked 면 위에서 차단됨 — 여기 도달=unlocked).
+      if (par.id != null) {
+        const pn = byId(nodes, par.id);
+        if (pn && isLockedTree(nodes, pn)) return LOCKED;
+      }
       await store.apply((ns) => moveNode(ns, r.node.id, par.id, typeof p.position === "number" ? p.position : undefined));
       return { ok: true };
     },
@@ -344,6 +359,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store.get(), r.node)) return LOCKED; // ② reorder 도 드래그 이동 — lock 금지
       await store.apply((ns) => reorder(ns, r.node.id, typeof p.position === "number" ? p.position : 0));
       return { ok: true };
     },
@@ -380,6 +396,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store.get(), r.node)) return LOCKED; // ② reorder 도 드래그 이동 — lock 금지
       await store.apply((ns) => reorder(ns, r.node.id, typeof p.position === "number" ? p.position : 0));
       return { ok: true };
     },
