@@ -1,7 +1,7 @@
 // 스토어 — app.data(SQLite) 위 in-memory 미러. 단일 진실은 app.data "nodes" 컬렉션.
 // 변이: 순수 op 적용 → 낙관적 미러 갱신·notify → 변경분만 app.data 영속(diff). data.watch 로
 // 다른 창 변경 시 재수화. scope 는 init 시점 프로젝트로 고정(v1; 멀티프로젝트 전환은 범위 외).
-import type { Node, NodeType, StatusId, PriorityId } from "@/types";
+import type { Node, NodeType, StatusId, PriorityId, Badge } from "@/types";
 
 export interface DataApi {
   define(coll: string, opts: { indexes?: string[]; fts?: string[] }): Promise<void>;
@@ -25,6 +25,7 @@ const COLL = "nodes";
 const VALID_STATUS: StatusId[] = ["backlog", "todo", "inprogress", "review", "done"];
 const VALID_TYPE: NodeType[] = ["epic", "story", "task", "bug"];
 const VALID_PRIORITY: PriorityId[] = ["highest", "high", "medium", "low"];
+const VALID_BADGE: Badge[] = ["검수전", "o", "x", "f"];
 
 function asStr(v: unknown, d = ""): string {
   return typeof v === "string" ? v : d;
@@ -51,6 +52,9 @@ function rowToNode(raw: unknown): Node | null {
     blockedBy: Array.isArray(r.blockedBy) ? (r.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
     result: asStr(r.result),
     locked: r.locked === true,
+    badge: VALID_BADGE.includes(r.badge as Badge) ? (r.badge as Badge) : undefined,
+    isDraft: r.isDraft === true ? true : undefined,
+    parentDraftId: typeof r.parentDraftId === "string" ? r.parentDraftId : r.parentDraftId === null ? null : undefined,
     type,
     status,
     assignee: asStr(r.assignee, "me"),

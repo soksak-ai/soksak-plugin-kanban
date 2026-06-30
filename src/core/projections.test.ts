@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { Node, Badge } from "@/types";
 import { seedNodes } from "@/core/seed";
 import { depthOf } from "@/core/tree";
 import {
@@ -12,6 +13,7 @@ import {
   stats,
   breadcrumb,
   leavesUnder,
+  subValidation,
 } from "@/core/projections";
 
 const seed = seedNodes();
@@ -112,5 +114,87 @@ describe("전역 뷰 + 통계", () => {
     expect(f.nodes.length).toBe(5);
     expect(f.edges.length).toBe(4);
     expect(typeof f.rework).toBe("number");
+  });
+});
+
+// ── 드래프트 검증 집계(규칙 D) — 항목 oxf 를 그룹·덩어리 부모가 집계(감사) ──
+let dseq = 0;
+function mk(over: Partial<Node> & { id: string }): Node {
+  dseq++;
+  return {
+    id: over.id,
+    key: over.key ?? "K-" + over.id,
+    parentId: over.parentId ?? null,
+    order: over.order ?? 0,
+    title: over.title ?? over.id,
+    body: over.body ?? "",
+    blockedBy: over.blockedBy ?? [],
+    result: over.result ?? "",
+    locked: over.locked,
+    badge: over.badge,
+    isDraft: over.isDraft,
+    parentDraftId: over.parentDraftId,
+    type: over.type ?? "task",
+    status: over.status ?? "todo",
+    assignee: over.assignee ?? "me",
+    priority: over.priority ?? "medium",
+    points: over.points ?? 0,
+    start: over.start ?? "2026-06-01",
+    due: over.due ?? "2026-06-02",
+    collapsed: false,
+    history: [],
+    created: dseq,
+    updated: dseq,
+  };
+}
+
+// 덩어리(isDraft) > 그룹 2개 > 항목(badge). 항목만 badge 를 가진다(짝수=g1, 홀수=g2).
+function draftTree(itemBadges: Record<string, Badge>): Node[] {
+  const nodes: Node[] = [
+    mk({ id: "chunk", isDraft: true, status: "backlog", title: "덩어리" }),
+    mk({ id: "g1", parentId: "chunk", title: "기능분류1" }),
+    mk({ id: "g2", parentId: "chunk", title: "기능분류2" }),
+  ];
+  let i = 0;
+  for (const [id, badge] of Object.entries(itemBadges)) {
+    nodes.push(mk({ id, parentId: i % 2 === 0 ? "g1" : "g2", badge, title: id }));
+    i++;
+  }
+  return nodes;
+}
+
+describe("subValidation — 하위 항목 oxf 집계(감사)", () => {
+  it("badge 를 가진 자손이 없으면 null(항목 자신·일반 노드)", () => {
+    const nodes = [mk({ id: "leaf", badge: "o" })];
+    expect(subValidation(nodes, "leaf")).toBeNull();
+  });
+
+  it("그룹은 직계 항목 badge 를 집계", () => {
+    const nodes = draftTree({ a: "o", b: "x" }); // a→g1, b→g2
+    expect(subValidation(nodes, "g1")).toEqual({ pending: 0, o: 1, x: 0, f: 0, total: 1, discard: false });
+    expect(subValidation(nodes, "g2")).toEqual({ pending: 0, o: 0, x: 1, f: 0, total: 1, discard: false });
+  });
+
+  it("덩어리 부모는 전체 항목 badge 를 집계(감사)", () => {
+    const nodes = draftTree({ a: "o", b: "o", c: "x", d: "검수전" });
+    expect(subValidation(nodes, "chunk")).toEqual({ pending: 1, o: 2, x: 1, f: 0, total: 4, discard: false });
+  });
+
+  it("f≥1 이면 discard=true(덩어리 폐기 대상)", () => {
+    const audit = subValidation(draftTree({ a: "o", b: "f", c: "o" }), "chunk")!;
+    expect(audit.f).toBe(1);
+    expect(audit.discard).toBe(true);
+  });
+
+  it("f 가 여러 개여도 끝까지 집계(중단 없음)", () => {
+    const audit = subValidation(draftTree({ a: "f", b: "f", c: "o" }), "chunk")!;
+    expect(audit.f).toBe(2);
+    expect(audit.total).toBe(3);
+    expect(audit.discard).toBe(true);
+  });
+
+  it("badge 없는 자손(그룹·일반 노드)은 집계에서 제외", () => {
+    const audit = subValidation(draftTree({ a: "o" }), "chunk")!;
+    expect(audit.total).toBe(1); // 그룹 2개는 제외, 항목 a 만
   });
 });
