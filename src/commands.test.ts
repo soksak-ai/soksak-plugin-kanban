@@ -222,9 +222,9 @@ describe("locked", () => {
     expect((await call("board.move", { node: id(a), status: "done" })).ok).toBe(true);
   });
 
-  it("부모가 locked 면 자식의 이동·status 도 거부(상속)", async () => {
+  it("locked 부모의 locked 자식도 이동·status 거부(워크플로 발행: 자식도 locked)", async () => {
     const p = await call("node.add", { title: "P", locked: true });
-    const c = await call("node.add", { title: "C", parentId: id(p) });
+    const c = await call("node.add", { title: "C", parentId: id(p), locked: true });
     const o = await call("node.add", { title: "O" });
     expect((await call("outline.move", { node: id(c), parentId: id(o) })).ok).toBe(false);
     expect((await call("board.move", { node: id(c), status: "done" })).ok).toBe(false);
@@ -232,7 +232,7 @@ describe("locked", () => {
 
   it("locked 부모의 자식도 node.edit 는 허용(스케줄러)", async () => {
     const p = await call("node.add", { title: "P", locked: true });
-    const c = await call("node.add", { title: "C", parentId: id(p) });
+    const c = await call("node.add", { title: "C", parentId: id(p), locked: true });
     expect((await call("node.edit", { node: id(c), status: "done" })).ok).toBe(true);
   });
 });
@@ -304,10 +304,10 @@ describe("draft 모델", () => {
     expect(got.status).toBe("backlog"); // 검증 배지는 status 를 건드리지 않는다
   });
 
-  it("덩어리 부모 락인 → 드래프트 자식 자동 보호(board.move/분리 거부)", async () => {
+  it("덩어리 부모 락인 → 드래프트 자식 보호(워크플로 발행: 자식도 locked, board.move/분리 거부)", async () => {
     const chunk = await call("node.add", { title: "덩어리", isDraft: true, locked: true });
-    const g = await call("node.add", { title: "기능분류", parentId: id(chunk) });
-    const item = await call("node.add", { title: "항목", parentId: id(g), badge: "검수전" });
+    const g = await call("node.add", { title: "기능분류", parentId: id(chunk), locked: true });
+    const item = await call("node.add", { title: "항목", parentId: id(g), badge: "검수전", locked: true });
     expect((await call("board.move", { node: id(item), status: "done" })).ok).toBe(false);
     const other = await call("node.add", { title: "딴 곳" });
     expect((await call("outline.move", { node: id(item), parentId: id(other) })).ok).toBe(false);
@@ -395,5 +395,68 @@ describe("description 축(요건 설명, 사람용)", () => {
   it("description 미설정 시 undefined", async () => {
     const a = await call("node.add", { title: "T" });
     expect(node(await call("node.get", { node: id(a) })).description).toBeUndefined();
+  });
+});
+
+// 적대검증 confirmed 결함 — lock 불변식(규칙 D 락인) 비대칭·우회 + board position + start round-trip.
+describe("lock 불변식 + board position + start (적대검증 4)", () => {
+  const id = (r: Record<string, unknown>) => r.nodeId as string;
+  const node = (r: Record<string, unknown>) => r.node as Record<string, unknown>;
+
+  // ① destination lock 비대칭 — unlocked 노드를 잠긴 subtree 에 주입 금지(워크플로 locked 발행은 허용)
+  it("① node.add: locked 부모에 unlocked 자식 주입 거부", async () => {
+    const p = await call("node.add", { title: "덩어리", locked: true });
+    expect((await call("node.add", { title: "주입", parentId: id(p) })).ok).toBe(false);
+  });
+  it("① node.add: locked 부모에 locked:true 자식은 허용(워크플로 발행 시그니처)", async () => {
+    const p = await call("node.add", { title: "덩어리", locked: true });
+    expect((await call("node.add", { title: "워크플로 항목", parentId: id(p), locked: true })).ok).toBe(true);
+  });
+  it("① outline.move: unlocked 노드를 잠긴 트리로 이동(주입) 거부", async () => {
+    const p = await call("node.add", { title: "덩어리", locked: true });
+    const x = await call("node.add", { title: "외부" });
+    expect((await call("outline.move", { node: id(x), parentId: id(p) })).ok).toBe(false);
+  });
+  it("① outline.indent: 직전 형제가 잠긴 트리면(주입) 거부", async () => {
+    await call("node.add", { title: "덩어리", locked: true }); // top-level order0
+    const x = await call("node.add", { title: "외부" }); // top-level order1 → indent 시 덩어리 자식
+    expect((await call("outline.indent", { node: id(x) })).ok).toBe(false);
+  });
+
+  // ② reorder 도 드래그 이동 — lock 금지
+  it("② outline.reorder: locked 노드 거부", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    await call("node.add", { title: "B" });
+    expect((await call("outline.reorder", { node: id(a), position: 1 })).ok).toBe(false);
+  });
+  it("② board.reorder: locked 노드 거부", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    expect((await call("board.reorder", { node: id(a), position: 0 })).ok).toBe(false);
+  });
+
+  // ③ board.move position 은 컬럼(같은 status) 상대 — preceding 다른 status 형제 수만큼 어긋나면 안 됨
+  it("③ board.move position 은 컬럼 상대(preceding 다른 status 형제 무관)", async () => {
+    const par = await call("node.add", { title: "P" });
+    await call("node.add", { title: "B", parentId: id(par), status: "inprogress" });
+    await call("node.add", { title: "C", parentId: id(par), status: "inprogress" });
+    const a = await call("node.add", { title: "A", parentId: id(par), status: "todo" });
+    const d = await call("node.add", { title: "D", parentId: id(par), status: "todo" });
+    const e = await call("node.add", { title: "E", parentId: id(par), status: "backlog" });
+    expect((await call("board.move", { node: id(e), status: "todo", position: 1 })).ok).toBe(true);
+    const board = (await call("view.get", { view: "board", focus: id(par) })).projection as {
+      columns: { id: string; cards: { id: string }[] }[];
+    };
+    const todo = board.columns.find((col) => col.id === "todo")!;
+    // 컬럼 상대 1 → A 뒤, D 앞. (전역 상대였다면 [E,A,D] 로 어긋남)
+    expect(todo.cards.map((card) => card.id)).toEqual([id(a), id(e), id(d)]);
+  });
+
+  // ④ start round-trip — compact/node.get 이 start 노출
+  it("④ node.edit 로 쓴 start 를 node.get/list 가 읽음", async () => {
+    const a = await call("node.add", { title: "A" });
+    await call("node.edit", { node: id(a), start: "2026-06-10" });
+    expect(node(await call("node.get", { node: id(a) })).start).toBe("2026-06-10");
+    const listed = (await call("node.list")).nodes as { id: string; start?: string }[];
+    expect(listed.find((n) => n.id === id(a))!.start).toBe("2026-06-10");
   });
 });

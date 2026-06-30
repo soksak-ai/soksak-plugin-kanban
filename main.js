@@ -12980,7 +12980,13 @@ function setStatus(nodes, id, status, by, today) {
 }
 function boardMove(nodes, id, status, by, today, position) {
   let next = setStatus(nodes, id, status, by, today);
-  if (position != null) next = reorder(next, id, position);
+  if (position != null) {
+    const node = byId(next, id);
+    if (node) {
+      const col = childrenOf(next, node.parentId).filter((s) => s.id !== id && s.status === status);
+      next = normalizeOrders(patch(next, id, (n) => ({ ...n, order: orderForPosition(col, position) })));
+    }
+  }
   return next;
 }
 function sortChildren(nodes, parentId, by, dir = "asc") {
@@ -14517,7 +14523,7 @@ function resolveParent(nodes, ref) {
   const r = resolve(nodes, ref);
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
-var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 var LOCKED = { ok: false, error: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
 var isLockedTree = (nodes, n) => {
   let cur = n;
@@ -14564,6 +14570,10 @@ function registerCommands(ctx, store2) {
       const nodes = store2.get();
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
+      if (par.id != null && p.locked !== true) {
+        const parentNode = byId(nodes, par.id);
+        if (parentNode && isLockedTree(nodes, parentNode)) return LOCKED;
+      }
       const afterRef = p.after != null ? resolve(nodes, p.after) : null;
       const now = Date.now();
       const node = {
@@ -14731,6 +14741,10 @@ function registerCommands(ctx, store2) {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
       if (isLockedTree(store2.get(), r.node)) return LOCKED;
+      const sibs = childrenOf(store2.get(), r.node.parentId);
+      const ix = sibs.findIndex((s) => s.id === r.node.id);
+      const prevSib = ix > 0 ? sibs[ix - 1] : null;
+      if (prevSib && isLockedTree(store2.get(), prevSib)) return LOCKED;
       await store2.apply((ns) => indent(ns, r.node.id));
       return { ok: true };
     }
@@ -14764,6 +14778,10 @@ function registerCommands(ctx, store2) {
       if (isLockedTree(store2.get(), r.node)) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
+      if (par.id != null) {
+        const pn = byId(nodes, par.id);
+        if (pn && isLockedTree(nodes, pn)) return LOCKED;
+      }
       await store2.apply((ns) => moveNode(ns, r.node.id, par.id, typeof p.position === "number" ? p.position : void 0));
       return { ok: true };
     }
@@ -14779,6 +14797,7 @@ function registerCommands(ctx, store2) {
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       await store2.apply((ns) => reorder(ns, r.node.id, typeof p.position === "number" ? p.position : 0));
       return { ok: true };
     }
@@ -14813,6 +14832,7 @@ function registerCommands(ctx, store2) {
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       await store2.apply((ns) => reorder(ns, r.node.id, typeof p.position === "number" ? p.position : 0));
       return { ok: true };
     }
