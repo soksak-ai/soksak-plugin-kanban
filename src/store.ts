@@ -19,6 +19,8 @@ export interface Disposable {
 export interface AppLike {
   data?: DataApi;
   project?: { current?: () => { id: string; root: string | null } | null };
+  // 글로벌 이벤트 버스 — 노드 변이 시 "kanban:changed" 발화(워크플로 ② 트리거가 구독해 즉시 재반영).
+  bus?: { emit?: (topic: string, payload?: unknown) => void };
 }
 
 const COLL = "nodes";
@@ -86,6 +88,7 @@ export interface KanbanStore {
 
 export function createStore(app: AppLike): KanbanStore {
   const data = app.data;
+  const bus = app.bus;
   const scope: string = app.project?.current?.()?.id ?? "default";
   let nodes: Node[] = [];
   let writing = 0;
@@ -129,6 +132,9 @@ export function createStore(app: AppLike): KanbanStore {
       nodes = next;
       notify(); // 낙관적
       await persist(prev, next);
+      // ② 트리거: 변이(영속 완료) → 글로벌 버스 발화. app.data 는 플러그인 ns 한정이라
+      // 워크플로가 직접 watch 못 함 — 글로벌 bus 로만 변경을 알린다(사람 편집·명령 변이 즉시 반영).
+      bus?.emit?.("kanban:changed", { scope });
     },
     subscribe(cb) {
       subs.add(cb);
