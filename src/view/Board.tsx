@@ -9,6 +9,7 @@ import { byId, hasChildren } from "@/core/tree";
 import { setStatus } from "@/core/algebra";
 import { toBoard, type BoardScope, type CardVM } from "@/core/projections";
 import { avatar, initials, typeBadge, typeLetter, prDot, ptsBadge, sMeta } from "@/view/ui";
+import { ItemBadge, AuditBadge } from "@/view/badges";
 import ScopeStat from "@/view/ScopeStat";
 import { t } from "@/view/i18n";
 
@@ -112,6 +113,12 @@ function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill 
         {card.stale && <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,.14)", padding: "1px 6px", borderRadius: 6 }}>{card.staleDays}{t("staleDays", lang)}</span>}
       </div>
       <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4 }}>{card.title || t("noTitle", lang)}</div>
+      {/* 검증 축(드래프트): 덩어리·그룹=감사 집계, 항목=자기 oxf 배지 */}
+      {(card.validation || card.badge) && (
+        <div style={{ display: "flex" }}>
+          {card.validation ? <AuditBadge v={card.validation} lang={lang} /> : <ItemBadge badge={card.badge!} lang={lang} />}
+        </div>
+      )}
       {card.showPath && <span style={pathChip}>↳ {card.parentLabel}</span>}
       {card.hasChildren && (
         <>

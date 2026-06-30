@@ -1,5 +1,5 @@
 // 참조 상수 — 디자인(Kanban Flow Board.dc.html)에서 그대로 포팅. 컬럼(STATUSES)은 고정 5개.
-import type { StatusId, NodeType, PriorityId } from "@/types";
+import type { StatusId, NodeType, PriorityId, Badge } from "@/types";
 
 export interface L10nLabel {
   en: string;
@@ -51,6 +51,19 @@ export const PRIORITY: Record<PriorityId, PriorityMeta> = {
   medium: { label: { en: "Medium", ko: "보통" }, color: "#eab308", rank: 2 },
   low: { label: { en: "Low", ko: "낮음" }, color: "#3b82f6", rank: 1 },
 };
+
+// 검증 배지(드래프트) — status 와 별개 축. 검수전=대기 → o=통과 / x=버림 / f=치명.
+export interface BadgeMeta {
+  id: Badge;
+  label: L10nLabel;
+  color: string;
+}
+export const BADGES: BadgeMeta[] = [
+  { id: "검수전", label: { en: "Pending", ko: "검수전" }, color: "#94a3b8" },
+  { id: "o", label: { en: "Pass", ko: "통과" }, color: "#10b981" },
+  { id: "x", label: { en: "Dropped", ko: "버림" }, color: "#f59e0b" },
+  { id: "f", label: { en: "Fatal", ko: "치명" }, color: "#ef4444" },
+];
 
 export interface TypeMeta {
   letter: string;

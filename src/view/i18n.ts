@@ -65,6 +65,10 @@ const strings = {
   btnDelete: { en: "Delete", ko: "삭제" },
   // Board stale
   staleDays: { en: "d stale", ko: "일 정체" },
+  // Draft validation (oxf 검증 배지)
+  draftDiscard: { en: "discard", ko: "폐기" },
+  draftAuditTitle: { en: "Audit · validation tally", ko: "감사 · 검증 집계" },
+  draftItemTitle: { en: "Validation badge", ko: "검증 배지" },
 } as const;
 
 export type ViewI18nKey = keyof typeof strings;

@@ -9,6 +9,7 @@ import { byId, hasChildren } from "@/core/tree";
 import { insertNode, indent, outdent, removeNode, setStatus } from "@/core/algebra";
 import { toOutlineRows, breadcrumb } from "@/core/projections";
 import { avatar, initials, statusChip, sMeta, hexA } from "@/view/ui";
+import { ItemBadge, AuditBadge } from "@/view/badges";
 import ScopeStat from "@/view/ScopeStat";
 import { t } from "@/view/i18n";
 
@@ -176,9 +177,14 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen, lan
                   onKeyDown={(e) => onKey(e, row.id)}
                   style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: row.isEpic ? 14 : 13, fontWeight: row.isEpic ? 700 : 500, color: "var(--text)", padding: "4px 0", letterSpacing: "-.01em" }}
                 />
-                {!row.isEpic && (
+                {/* 검증 축(드래프트): 덩어리·그룹=감사 집계, 항목=자기 배지. 그 외 일반 노드=status 칩. */}
+                {row.validation ? (
+                  <AuditBadge v={row.validation} lang={lang} />
+                ) : row.badge ? (
+                  <ItemBadge badge={row.badge} lang={lang} />
+                ) : !row.isEpic ? (
                   <span onClick={() => cycleStatus(row.id)} title={t("statusChangeTitle", lang)} style={{ cursor: "pointer", ...statusChip(row.status) }}>{resolveLabel(m.label, lang)}</span>
-                )}
+                ) : null}
                 <button onClick={() => setFocusId(row.id)} title={t("drillInTitle", lang)} style={drillStyle}>{row.hasChildren ? `▦ ${row.doneCount}/${row.childCount}` : t("drillInBoard", lang)}</button>
                 <span onClick={() => onOpen(row.id)} style={{ fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }}>{row.key}</span>
                 <span style={avatar(row.assignee, 20)}>{initials(row.assignee)}</span>
