@@ -14330,6 +14330,7 @@ function disposeOf(d) {
 }
 function createStore(app) {
   const data = app.data;
+  const bus = app.bus;
   const scope = app.project?.current?.()?.id ?? "default";
   let nodes = [];
   let writing = 0;
@@ -14370,6 +14371,7 @@ function createStore(app) {
       nodes = next;
       notify();
       await persist(prev, next);
+      bus?.emit?.("kanban:changed", { scope });
     },
     subscribe(cb) {
       subs.add(cb);

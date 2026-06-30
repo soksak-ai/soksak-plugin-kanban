@@ -33,10 +33,12 @@ function mockApp() {
       return () => {};
     },
   };
-  return { data, project: { current: () => null }, bus: { emit: () => {} } };
+  const emits: string[] = [];
+  return { data, project: { current: () => null }, bus: { emit: (topic: string) => emits.push(topic) }, emits };
 }
 
 let handlers: Map<string, (p: Record<string, unknown>, ctx?: unknown) => Promise<object> | object>;
+let busEmits: string[];
 const call = async (name: string, params: Record<string, unknown> = {}) => {
   const h = handlers.get(name);
   if (!h) throw new Error("no command: " + name);
@@ -45,6 +47,7 @@ const call = async (name: string, params: Record<string, unknown> = {}) => {
 
 beforeEach(async () => {
   const app = mockApp();
+  busEmits = app.emits;
   handlers = new Map();
   const ctx = {
     app: {
@@ -302,5 +305,44 @@ describe("draft 모델", () => {
     expect(chunkRow.validation).toMatchObject({ o: 1, f: 1, total: 2, discard: true });
     const i1Row = proj.rows.find((r) => r.badge === "o")!;
     expect(i1Row.validation).toBeNull(); // 항목은 집계 아님
+  });
+});
+
+// ② 트리거 — 노드 변이마다 글로벌 bus 로 "kanban:changed" 발화(워크플로가 구독해 즉시 재반영).
+describe("bus kanban:changed (② 트리거)", () => {
+  const id = (r: Record<string, unknown>) => r.nodeId as string;
+
+  it("node.add → kanban:changed 발화", async () => {
+    busEmits.length = 0;
+    await call("node.add", { title: "A" });
+    expect(busEmits.filter((t) => t === "kanban:changed").length).toBeGreaterThan(0);
+  });
+
+  it("node.edit → kanban:changed 발화", async () => {
+    const a = await call("node.add", { title: "A" });
+    busEmits.length = 0;
+    await call("node.edit", { node: id(a), status: "done" });
+    expect(busEmits).toContain("kanban:changed");
+  });
+
+  it("node.remove → kanban:changed 발화", async () => {
+    const a = await call("node.add", { title: "A" });
+    busEmits.length = 0;
+    await call("node.remove", { node: id(a) });
+    expect(busEmits).toContain("kanban:changed");
+  });
+
+  it("board.move/outline.move 등 변이도 발화", async () => {
+    const a = await call("node.add", { title: "A" });
+    busEmits.length = 0;
+    await call("board.move", { node: id(a), status: "inprogress" });
+    expect(busEmits).toContain("kanban:changed");
+  });
+
+  it("거부된 변이(locked)는 발화 안 함", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    busEmits.length = 0;
+    await call("node.remove", { node: id(a) }); // LOCKED → store.apply 호출 안 됨
+    expect(busEmits).not.toContain("kanban:changed");
   });
 });
