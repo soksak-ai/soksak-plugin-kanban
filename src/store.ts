@@ -48,6 +48,8 @@ function rowToNode(raw: unknown): Node | null {
     order: asNum(r.order, 0),
     title: asStr(r.title),
     body: asStr(r.body),
+    blockedBy: Array.isArray(r.blockedBy) ? (r.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
+    result: asStr(r.result),
     type,
     status,
     assignee: asStr(r.assignee, "me"),

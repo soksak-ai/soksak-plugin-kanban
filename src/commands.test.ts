@@ -143,3 +143,48 @@ describe("명령 전면 — 헤드리스 E2E", () => {
     expect((await call("node.list")).nodes).toEqual([]);
   });
 });
+
+// 워크플로 의존(blockedBy)·결과(result) — 태스크 DAG 스케줄러용 확장.
+describe("blockedBy / result", () => {
+  const id = (r: Record<string, unknown>) => r.nodeId as string;
+  const node = (r: Record<string, unknown>) => r.node as Record<string, unknown>;
+
+  it("기본값: 미설정 시 blockedBy=[] · result=''", async () => {
+    const a = await call("node.add", { title: "A" });
+    const got = await call("node.get", { node: id(a) });
+    expect(node(got).blockedBy).toEqual([]);
+    expect(node(got).result).toBe("");
+  });
+
+  it("node.add 로 blockedBy 설정 → node.get 이 반환(관계 표시)", async () => {
+    const a = await call("node.add", { title: "A" });
+    const b = await call("node.add", { title: "B", blockedBy: [id(a)] });
+    const got = await call("node.get", { node: id(b) });
+    expect(node(got).blockedBy).toEqual([id(a)]);
+  });
+
+  it("node.edit 로 result 기록 + status 전환(실행 완료)", async () => {
+    const a = await call("node.add", { title: "A" });
+    await call("node.edit", { node: id(a), result: "R", status: "done" });
+    const got = await call("node.get", { node: id(a) });
+    expect(node(got).result).toBe("R");
+    expect(node(got).status).toBe("done");
+  });
+
+  it("node.edit 로 blockedBy 갱신(의존 변경)", async () => {
+    const a = await call("node.add", { title: "A" });
+    const b = await call("node.add", { title: "B" });
+    await call("node.edit", { node: id(b), blockedBy: [id(a)] });
+    const got = await call("node.get", { node: id(b) });
+    expect(node(got).blockedBy).toEqual([id(a)]);
+  });
+
+  it("재실행: status→todo · result 초기화 가능", async () => {
+    const a = await call("node.add", { title: "A" });
+    await call("node.edit", { node: id(a), result: "R", status: "done" });
+    await call("node.edit", { node: id(a), result: "", status: "todo" });
+    const got = await call("node.get", { node: id(a) });
+    expect(node(got).status).toBe("todo");
+    expect(node(got).result).toBe("");
+  });
+});

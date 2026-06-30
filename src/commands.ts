@@ -69,7 +69,7 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [] });
 
 export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   const cmds = ctx.app.commands;
@@ -95,6 +95,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
       points: { type: "number", description: "Story points" },
       after: { type: "string", description: "Insert after this sibling id/key" },
+      body: { type: "string", description: "Body / 실행 지시(prompt/schema)" },
+      blockedBy: { type: "string[]", description: "선행 의존 노드 id 배열(전부 done 이어야 시작)" },
     },
     returns: "{ ok, nodeId, key }",
     examples: ['sok plugin.soksak-plugin-kanban.node.add \'{"title":"새 작업","parentId":"WMP-100"}\''],
@@ -110,7 +112,9 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         parentId: par.id,
         order: 0,
         title: typeof p.title === "string" ? p.title : "새 항목",
-        body: "",
+        body: typeof p.body === "string" ? p.body : "",
+        blockedBy: Array.isArray(p.blockedBy) ? (p.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
+        result: "",
         type: (TYPE_ENUM.includes(p.type as NodeType) ? p.type : par.id == null ? "epic" : "task") as NodeType,
         status: (STATUS_ENUM.includes(p.status as StatusId) ? p.status : "todo") as StatusId,
         assignee: typeof p.assignee === "string" ? p.assignee : "me",
@@ -143,6 +147,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       points: { type: "number", description: "Story points" },
       start: { type: "string", description: "Start date YYYY-MM-DD" },
       due: { type: "string", description: "Due date YYYY-MM-DD" },
+      blockedBy: { type: "string[]", description: "선행 의존 노드 id 배열(의존 변경)" },
+      result: { type: "string", description: "실행 결과(완료 기록; 재실행 시 '' 로 초기화)" },
     },
     returns: "{ ok, node }",
     handler: async (p) => {
@@ -159,6 +165,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
             ...n,
             title: typeof p.title === "string" ? p.title : n.title,
             body: typeof p.body === "string" ? p.body : n.body,
+            blockedBy: Array.isArray(p.blockedBy) ? (p.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : (n.blockedBy ?? []),
+            result: typeof p.result === "string" ? p.result : (n.result ?? ""),
             type: TYPE_ENUM.includes(p.type as NodeType) ? (p.type as NodeType) : n.type,
             status: nextStatus,
             assignee: typeof p.assignee === "string" ? p.assignee : n.assignee,
@@ -206,7 +214,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
-      const out: Record<string, unknown> = { ok: true, node: { ...compact(r.node), body: r.node.body, history: r.node.history } };
+      const out: Record<string, unknown> = { ok: true, node: { ...compact(r.node), body: r.node.body, result: r.node.result ?? "", history: r.node.history } };
       if (p.withChildren === true) out.children = childrenOf(nodes, r.node.id).map(compact);
       return out;
     },
