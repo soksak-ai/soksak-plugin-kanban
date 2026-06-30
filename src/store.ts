@@ -50,6 +50,7 @@ function rowToNode(raw: unknown): Node | null {
     body: asStr(r.body),
     blockedBy: Array.isArray(r.blockedBy) ? (r.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
     result: asStr(r.result),
+    locked: r.locked === true,
     type,
     status,
     assignee: asStr(r.assignee, "me"),
