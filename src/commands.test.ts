@@ -366,3 +366,34 @@ describe("bus kanban:changed (② 트리거)", () => {
     expect(busEmits).not.toContain("kanban:changed");
   });
 });
+
+// description — 규칙 B 3축: title(요건명) + description(사람용 설명) + body(exec-one 입력). description 추가.
+describe("description 축(요건 설명, 사람용)", () => {
+  const id = (r: Record<string, unknown>) => r.nodeId as string;
+  const node = (r: Record<string, unknown>) => r.node as Record<string, unknown>;
+
+  it("node.add description → node.get + node.list(compact) 노출", async () => {
+    const a = await call("node.add", { title: "재고 동기화", description: "주문 시 캐니스터 슬롯 재고를 차감한다" });
+    expect(node(await call("node.get", { node: id(a) })).description).toBe("주문 시 캐니스터 슬롯 재고를 차감한다");
+    const listed = (await call("node.list")).nodes as { id: string; description?: string }[];
+    expect(listed.find((n) => n.id === id(a))!.description).toBe("주문 시 캐니스터 슬롯 재고를 차감한다");
+  });
+
+  it("description(표시)과 body(exec-one 입력)는 별개 축", async () => {
+    const a = await call("node.add", { title: "T", description: "사람용 요건 설명", body: '{"prompt":"검증"}' });
+    const g = await call("node.get", { node: id(a) });
+    expect(node(g).description).toBe("사람용 요건 설명");
+    expect((g.node as Record<string, unknown>).body).toBe('{"prompt":"검증"}'); // body 는 그대로(exec 입력)
+  });
+
+  it("node.edit 로 description 갱신", async () => {
+    const a = await call("node.add", { title: "T", description: "v1" });
+    await call("node.edit", { node: id(a), description: "v2" });
+    expect(node(await call("node.get", { node: id(a) })).description).toBe("v2");
+  });
+
+  it("description 미설정 시 undefined", async () => {
+    const a = await call("node.add", { title: "T" });
+    expect(node(await call("node.get", { node: id(a) })).description).toBeUndefined();
+  });
+});
