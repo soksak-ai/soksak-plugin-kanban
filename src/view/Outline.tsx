@@ -177,6 +177,8 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen, lan
                   onKeyDown={(e) => onKey(e, row.id)}
                   style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: row.isEpic ? 14 : 13, fontWeight: row.isEpic ? 700 : 500, color: "var(--text)", padding: "4px 0", letterSpacing: "-.01em" }}
                 />
+                {/* 요건 설명(사람용 부제) — 흐린 인라인. body(exec 입력)는 표시 안 함. */}
+                {row.description && <span title={row.description} style={{ flex: "0 1 auto", minWidth: 0, fontSize: 11.5, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.description}</span>}
                 {/* 검증 축(드래프트): 덩어리·그룹=감사 집계, 항목=자기 배지. 그 외 일반 노드=status 칩. */}
                 {row.validation ? (
                   <AuditBadge v={row.validation} lang={lang} nodeKey={row.key || row.id} />
