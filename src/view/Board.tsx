@@ -116,7 +116,7 @@ function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill 
       {/* 검증 축(드래프트): 덩어리·그룹=감사 집계, 항목=자기 oxf 배지 */}
       {(card.validation || card.badge) && (
         <div style={{ display: "flex" }}>
-          {card.validation ? <AuditBadge v={card.validation} lang={lang} /> : <ItemBadge badge={card.badge!} lang={lang} />}
+          {card.validation ? <AuditBadge v={card.validation} lang={lang} nodeKey={card.key} /> : <ItemBadge badge={card.badge!} lang={lang} nodeKey={card.key} />}
         </div>
       )}
       {card.showPath && <span style={pathChip}>↳ {card.parentLabel}</span>}

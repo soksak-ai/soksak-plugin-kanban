@@ -13481,26 +13481,33 @@ function projectView(nodes, view, focusId = null, opts = {}) {
   }
 }
 
+// src/view/nodePaths.ts
+var BADGE_LATIN = { "\uAC80\uC218\uC804": "pending", o: "o", x: "x", f: "f" };
+var badgeNodePath = (key, badge) => `badge/${key.toLowerCase()}/${BADGE_LATIN[badge] ?? "pending"}`;
+var auditNodePath = (key, v) => `audit/${key.toLowerCase()}/p${v.pending}.o${v.o}.x${v.x}.f${v.f}`;
+
 // src/view/badges.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
 var bMeta = (id) => BADGES.find((b) => b.id === id);
 var AUDIT_ORDER = ["o", "x", "f", "\uAC80\uC218\uC804"];
-function ItemBadge({ badge, lang }) {
+function ItemBadge({ badge, lang, nodeKey }) {
   const m = bMeta(badge);
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
     "span",
     {
+      ...nodeKey ? { "data-node": badgeNodePath(nodeKey, badge) } : {},
       title: t("draftItemTitle", lang),
       style: { display: "inline-flex", alignItems: "center", padding: "2px 9px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: hexA(m.color, 0.14), color: m.color, flex: "none" },
       children: resolveLabel(m.label, lang)
     }
   );
 }
-function AuditBadge({ v, lang }) {
+function AuditBadge({ v, lang, nodeKey }) {
   const fColor = bMeta("f").color;
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
     "span",
     {
+      ...nodeKey ? { "data-node": auditNodePath(nodeKey, v) } : {},
       title: t("draftAuditTitle", lang),
       style: { display: "inline-flex", alignItems: "center", gap: 7, padding: "2px 9px", borderRadius: 99, fontSize: 11, fontWeight: 600, flex: "none", border: v.discard ? `1px solid ${fColor}` : "1px solid var(--border)", background: v.discard ? hexA(fColor, 0.1) : "var(--surface-2)" },
       children: [
@@ -13682,7 +13689,7 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen, lang }) {
               },
               row.id
             ),
-            row.validation ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AuditBadge, { v: row.validation, lang }) : row.badge ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ItemBadge, { badge: row.badge, lang }) : !row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => cycleStatus(row.id), title: t("statusChangeTitle", lang), style: { cursor: "pointer", ...statusChip(row.status) }, children: resolveLabel(m.label, lang) }) : null,
+            row.validation ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AuditBadge, { v: row.validation, lang, nodeKey: row.key || row.id }) : row.badge ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ItemBadge, { badge: row.badge, lang, nodeKey: row.key || row.id }) : !row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => cycleStatus(row.id), title: t("statusChangeTitle", lang), style: { cursor: "pointer", ...statusChip(row.status) }, children: resolveLabel(m.label, lang) }) : null,
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: drillStyle, children: row.hasChildren ? `\u25A6 ${row.doneCount}/${row.childCount}` : t("drillInBoard", lang) }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => onOpen(row.id), style: { fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }, children: row.key }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: avatar(row.assignee, 20), children: initials(row.assignee) })
@@ -13793,7 +13800,7 @@ function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill 
           ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 13, fontWeight: 500, lineHeight: 1.4 }, children: card.title || t("noTitle", lang) }),
-        (card.validation || card.badge) && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { display: "flex" }, children: card.validation ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuditBadge, { v: card.validation, lang }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ItemBadge, { badge: card.badge, lang }) }),
+        (card.validation || card.badge) && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { display: "flex" }, children: card.validation ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuditBadge, { v: card.validation, lang, nodeKey: card.key }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ItemBadge, { badge: card.badge, lang, nodeKey: card.key }) }),
         card.showPath && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: pathChip, children: [
           "\u21B3 ",
           card.parentLabel
