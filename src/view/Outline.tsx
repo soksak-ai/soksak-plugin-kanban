@@ -157,7 +157,7 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen, lan
         {rows.map((row) => {
           const m = sMeta(row.status);
           return (
-            <div key={row.id} style={{ display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }}>
+            <div key={row.id} data-node={`row/${(row.key || row.id).toLowerCase()}`} style={{ display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }}>
               {Array.from({ length: row.depth }).map((_, k) => (
                 <span key={k} style={{ width: 22, flex: "none", alignSelf: "stretch", borderRight: "1.5px solid var(--border)" }} />
               ))}
