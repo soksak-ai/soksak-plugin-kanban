@@ -30,6 +30,7 @@ export interface Node {
   badge?: Badge; // 검증 배지(드래프트 항목) — status 와 별개 축. 기본 검수전. 항목만 가진다(그룹·덩어리는 집계).
   isDraft?: boolean; // 덩어리 부모 — 구체화 결과 백로그 덩어리(자식 oxf 감사 집계, 락인, 복제 계보 보유).
   parentDraftId?: string | null; // 복제 계보 — 개선본 덩어리의 원본 덩어리 id(덩어리 수준만; 항목까지는 잇지 않음).
+  kind?: string; // 워크플로 노드 종류 마커(chunk/group/item/task 등). 칸반은 해석 안 하고 round-trip만 — reconcile 가 검증할 항목(item) vs 실행할 stage 노드(task)를 가른다.
   type: NodeType;
   status: StatusId;
   assignee: string; // 멤버 id

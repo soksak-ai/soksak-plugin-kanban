@@ -270,6 +270,26 @@ describe("draft 모델", () => {
     expect(g2.parentDraftId).toBe(id(v1));
   });
 
+  // kind — 워크플로 노드 종류 마커(chunk/group/item/task). 칸반은 해석 안 하고 round-trip만.
+  // reconcile 가 compact 에서 읽어 "검증할 드래프트 항목(item) vs 실행할 stage 노드(task)" 를 가른다.
+  it("node.add kind → node.get + node.list(compact) 에 노출", async () => {
+    const a = await call("node.add", { title: "Generate", kind: "task" });
+    expect(node(await call("node.get", { node: id(a) })).kind).toBe("task");
+    const listed = (await call("node.list")).nodes as { id: string; kind?: string }[];
+    expect(listed.find((n) => n.id === id(a))!.kind).toBe("task"); // compact 에 kind 노출(reconcile 가 읽음)
+  });
+
+  it("kind 미설정 시 undefined(일반 노드)", async () => {
+    const a = await call("node.add", { title: "A" });
+    expect(node(await call("node.get", { node: id(a) })).kind).toBeUndefined();
+  });
+
+  it("node.edit 로 kind 갱신", async () => {
+    const a = await call("node.add", { title: "A", kind: "item" });
+    await call("node.edit", { node: id(a), kind: "group" });
+    expect(node(await call("node.get", { node: id(a) })).kind).toBe("group");
+  });
+
   it("node.edit 로 badge 갱신(검수전 → o)", async () => {
     const a = await call("node.add", { title: "A", badge: "검수전" });
     await call("node.edit", { node: id(a), badge: "o" });

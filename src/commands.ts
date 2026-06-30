@@ -69,7 +69,7 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
 const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 // lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
@@ -113,6 +113,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       badge: { type: "string", description: "검증 배지(드래프트 항목; status 와 별개 축, 기본 검수전)", enum: BADGE_ENUM },
       isDraft: { type: "boolean", description: "덩어리 부모(구체화 백로그 덩어리; 자식 oxf 감사 집계)" },
       parentDraftId: { type: "string", description: "복제 계보 — 개선본 덩어리의 원본 덩어리 id(덩어리 수준만)" },
+      kind: { type: "string", description: "워크플로 노드 종류 마커(chunk/group/item/task 등; reconcile 가 항목 vs stage 구분)" },
     },
     returns: "{ ok, nodeId, key }",
     examples: ['sok plugin.soksak-plugin-kanban.node.add \'{"title":"새 작업","parentId":"WMP-100"}\''],
@@ -135,6 +136,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         badge: BADGE_ENUM.includes(p.badge as Badge) ? (p.badge as Badge) : undefined,
         isDraft: p.isDraft === true ? true : undefined,
         parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : undefined,
+        kind: typeof p.kind === "string" && p.kind ? p.kind : undefined,
         type: (TYPE_ENUM.includes(p.type as NodeType) ? p.type : par.id == null ? "epic" : "task") as NodeType,
         status: (STATUS_ENUM.includes(p.status as StatusId) ? p.status : "todo") as StatusId,
         assignee: typeof p.assignee === "string" ? p.assignee : "me",
@@ -172,6 +174,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       badge: { type: "string", description: "검증 배지(검수전 → o/x/f). status 와 별개 축", enum: BADGE_ENUM },
       isDraft: { type: "boolean", description: "덩어리 부모 표시 변경" },
       parentDraftId: { type: "string", description: "복제 계보 — 원본 덩어리 id" },
+      kind: { type: "string", description: "워크플로 노드 종류 마커(chunk/group/item/task 등)" },
     },
     returns: "{ ok, node }",
     handler: async (p) => {
@@ -193,6 +196,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
             badge: BADGE_ENUM.includes(p.badge as Badge) ? (p.badge as Badge) : n.badge,
             isDraft: typeof p.isDraft === "boolean" ? (p.isDraft === true ? true : undefined) : n.isDraft,
             parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : n.parentDraftId,
+            kind: typeof p.kind === "string" && p.kind ? p.kind : n.kind,
             type: TYPE_ENUM.includes(p.type as NodeType) ? (p.type as NodeType) : n.type,
             status: nextStatus,
             assignee: typeof p.assignee === "string" ? p.assignee : n.assignee,

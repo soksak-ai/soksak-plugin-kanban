@@ -57,6 +57,7 @@ function rowToNode(raw: unknown): Node | null {
     badge: VALID_BADGE.includes(r.badge as Badge) ? (r.badge as Badge) : undefined,
     isDraft: r.isDraft === true ? true : undefined,
     parentDraftId: typeof r.parentDraftId === "string" ? r.parentDraftId : r.parentDraftId === null ? null : undefined,
+    kind: typeof r.kind === "string" && r.kind ? r.kind : undefined,
     type,
     status,
     assignee: asStr(r.assignee, "me"),
