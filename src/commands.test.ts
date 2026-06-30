@@ -218,4 +218,18 @@ describe("locked", () => {
     const a = await call("node.add", { title: "A" });
     expect((await call("board.move", { node: id(a), status: "done" })).ok).toBe(true);
   });
+
+  it("부모가 locked 면 자식의 이동·status 도 거부(상속)", async () => {
+    const p = await call("node.add", { title: "P", locked: true });
+    const c = await call("node.add", { title: "C", parentId: id(p) });
+    const o = await call("node.add", { title: "O" });
+    expect((await call("outline.move", { node: id(c), parentId: id(o) })).ok).toBe(false);
+    expect((await call("board.move", { node: id(c), status: "done" })).ok).toBe(false);
+  });
+
+  it("locked 부모의 자식도 node.edit 는 허용(스케줄러)", async () => {
+    const p = await call("node.add", { title: "P", locked: true });
+    const c = await call("node.add", { title: "C", parentId: id(p) });
+    expect((await call("node.edit", { node: id(c), status: "done" })).ok).toBe(true);
+  });
 });
