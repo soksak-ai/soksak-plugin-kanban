@@ -104,6 +104,7 @@ export interface CardVM {
   id: string;
   key: string;
   title: string;
+  description: string; // 요건 설명(사람용 부제). body(exec 입력)와 별개.
   type: NodeType; // 실효 타입
   status: StatusId;
   priority: Node["priority"];
@@ -133,6 +134,7 @@ function cardVM(nodes: Node[], n: Node, focusId: string | null, scope: BoardScop
     id: n.id,
     key: n.key,
     title: n.title,
+    description: n.description ?? "",
     type: effectiveType(n, depthOf(nodes, n.id)),
     status: n.status,
     priority: n.priority,
@@ -214,6 +216,7 @@ export interface OutlineRowVM {
   id: string;
   key: string;
   title: string;
+  description: string; // 요건 설명(사람용 부제). body(exec 입력)와 별개.
   depth: number;
   isEpic: boolean;
   type: NodeType;
@@ -242,6 +245,7 @@ export function toOutlineRows(nodes: Node[], focusId: string | null = null): Out
         id: n.id,
         key: n.key,
         title: n.title,
+        description: n.description ?? "",
         depth,
         isEpic,
         type: effectiveType(n, gdepth),

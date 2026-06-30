@@ -13278,6 +13278,7 @@ function cardVM(nodes, n, focusId, scope) {
     id: n.id,
     key: n.key,
     title: n.title,
+    description: n.description ?? "",
     type: effectiveType(n, depthOf(nodes, n.id)),
     status: n.status,
     priority: n.priority,
@@ -13342,6 +13343,7 @@ function toOutlineRows(nodes, focusId = null) {
         id: n.id,
         key: n.key,
         title: n.title,
+        description: n.description ?? "",
         depth,
         isEpic,
         type: effectiveType(n, gdepth),
@@ -13689,6 +13691,7 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen, lang }) {
               },
               row.id
             ),
+            row.description && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { title: row.description, style: { flex: "0 1 auto", minWidth: 0, fontSize: 11.5, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: row.description }),
             row.validation ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AuditBadge, { v: row.validation, lang, nodeKey: row.key || row.id }) : row.badge ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ItemBadge, { badge: row.badge, lang, nodeKey: row.key || row.id }) : !row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => cycleStatus(row.id), title: t("statusChangeTitle", lang), style: { cursor: "pointer", ...statusChip(row.status) }, children: resolveLabel(m.label, lang) }) : null,
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: drillStyle, children: row.hasChildren ? `\u25A6 ${row.doneCount}/${row.childCount}` : t("drillInBoard", lang) }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => onOpen(row.id), style: { fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }, children: row.key }),
@@ -13800,6 +13803,7 @@ function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill 
           ] })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 13, fontWeight: 500, lineHeight: 1.4 }, children: card.title || t("noTitle", lang) }),
+        card.description && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 11.5, color: "var(--text-2)", lineHeight: 1.45 }, children: card.description }),
         (card.validation || card.badge) && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { display: "flex" }, children: card.validation ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(AuditBadge, { v: card.validation, lang, nodeKey: card.key }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ItemBadge, { badge: card.badge, lang, nodeKey: card.key }) }),
         card.showPath && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: pathChip, children: [
           "\u21B3 ",

@@ -113,6 +113,8 @@ function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill 
         {card.stale && <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,.14)", padding: "1px 6px", borderRadius: 6 }}>{card.staleDays}{t("staleDays", lang)}</span>}
       </div>
       <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4 }}>{card.title || t("noTitle", lang)}</div>
+      {/* 요건 설명(사람용 부제) — body(exec 입력)는 표시 안 함 */}
+      {card.description && <div style={{ fontSize: 11.5, color: "var(--text-2)", lineHeight: 1.45 }}>{card.description}</div>}
       {/* 검증 축(드래프트): 덩어리·그룹=감사 집계, 항목=자기 oxf 배지 */}
       {(card.validation || card.badge) && (
         <div style={{ display: "flex" }}>
