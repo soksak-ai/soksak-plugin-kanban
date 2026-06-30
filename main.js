@@ -13598,7 +13598,7 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen, lang }) {
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { ref: containerRef, style: { maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }, children: [
       rows.map((row) => {
         const m = sMeta(row.status);
-        return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { "data-node": `row/${(row.key || row.id).toLowerCase()}`, style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
           Array.from({ length: row.depth }).map((_, k) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { width: 22, flex: "none", alignSelf: "stretch", borderRight: "1.5px solid var(--border)" } }, k)),
           /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 9, padding: "0 10px 0 8px" }, children: [
             row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }, children: "E" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: { width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 } }),
@@ -14235,6 +14235,9 @@ function rowToNode(raw) {
     order: asNum(r.order, 0),
     title: asStr(r.title),
     body: asStr(r.body),
+    blockedBy: Array.isArray(r.blockedBy) ? r.blockedBy.filter((x) => typeof x === "string") : [],
+    result: asStr(r.result),
+    locked: r.locked === true,
     type,
     status,
     assignee: asStr(r.assignee, "me"),
@@ -14426,7 +14429,16 @@ function resolveParent(nodes, ref) {
   const r = resolve(nodes, ref);
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
-var compact = (n) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due });
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true });
+var LOCKED = { ok: false, error: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
+var isLockedTree = (nodes, n) => {
+  let cur = n;
+  while (cur) {
+    if (cur.locked) return true;
+    cur = cur.parentId ? byId(nodes, cur.parentId) : void 0;
+  }
+  return false;
+};
 function registerCommands(ctx, store2) {
   const cmds = ctx.app.commands;
   if (!cmds) return;
@@ -14447,7 +14459,10 @@ function registerCommands(ctx, store2) {
       assignee: { type: "string", description: "Assignee id" },
       priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
       points: { type: "number", description: "Story points" },
-      after: { type: "string", description: "Insert after this sibling id/key" }
+      after: { type: "string", description: "Insert after this sibling id/key" },
+      body: { type: "string", description: "Body / \uC2E4\uD589 \uC9C0\uC2DC(prompt/schema)" },
+      blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC804\uBD80 done \uC774\uC5B4\uC57C \uC2DC\uC791)" },
+      locked: { type: "boolean", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uBCF4\uD638(\uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uBD84\uB9AC\xB7\uC0AD\uC81C \uAE08\uC9C0)" }
     },
     returns: "{ ok, nodeId, key }",
     examples: [`sok plugin.soksak-plugin-kanban.node.add '{"title":"\uC0C8 \uC791\uC5C5","parentId":"WMP-100"}'`],
@@ -14463,7 +14478,10 @@ function registerCommands(ctx, store2) {
         parentId: par.id,
         order: 0,
         title: typeof p.title === "string" ? p.title : "\uC0C8 \uD56D\uBAA9",
-        body: "",
+        body: typeof p.body === "string" ? p.body : "",
+        blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : [],
+        result: "",
+        locked: p.locked === true,
         type: TYPE_ENUM.includes(p.type) ? p.type : par.id == null ? "epic" : "task",
         status: STATUS_ENUM.includes(p.status) ? p.status : "todo",
         assignee: typeof p.assignee === "string" ? p.assignee : "me",
@@ -14493,7 +14511,9 @@ function registerCommands(ctx, store2) {
       priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
       points: { type: "number", description: "Story points" },
       start: { type: "string", description: "Start date YYYY-MM-DD" },
-      due: { type: "string", description: "Due date YYYY-MM-DD" }
+      due: { type: "string", description: "Due date YYYY-MM-DD" },
+      blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC758\uC874 \uBCC0\uACBD)" },
+      result: { type: "string", description: "\uC2E4\uD589 \uACB0\uACFC(\uC644\uB8CC \uAE30\uB85D; \uC7AC\uC2E4\uD589 \uC2DC '' \uB85C \uCD08\uAE30\uD654)" }
     },
     returns: "{ ok, node }",
     handler: async (p) => {
@@ -14510,6 +14530,8 @@ function registerCommands(ctx, store2) {
             ...n,
             title: typeof p.title === "string" ? p.title : n.title,
             body: typeof p.body === "string" ? p.body : n.body,
+            blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : n.blockedBy ?? [],
+            result: typeof p.result === "string" ? p.result : n.result ?? "",
             type: TYPE_ENUM.includes(p.type) ? p.type : n.type,
             status: nextStatus,
             assignee: typeof p.assignee === "string" ? p.assignee : n.assignee,
@@ -14538,6 +14560,7 @@ function registerCommands(ctx, store2) {
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       const before = store2.get().length;
       await store2.apply((ns) => removeNode(ns, r.node.id, p.promoteChildren === true));
       return { ok: true, removed: before - store2.get().length };
@@ -14555,7 +14578,7 @@ function registerCommands(ctx, store2) {
       const nodes = store2.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
-      const out = { ok: true, node: { ...compact(r.node), body: r.node.body, history: r.node.history } };
+      const out = { ok: true, node: { ...compact(r.node), body: r.node.body, result: r.node.result ?? "", history: r.node.history } };
       if (p.withChildren === true) out.children = childrenOf(nodes, r.node.id).map(compact);
       return out;
     }
@@ -14598,6 +14621,7 @@ function registerCommands(ctx, store2) {
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       await store2.apply((ns) => indent(ns, r.node.id));
       return { ok: true };
     }
@@ -14610,6 +14634,7 @@ function registerCommands(ctx, store2) {
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       await store2.apply((ns) => outdent(ns, r.node.id));
       return { ok: true };
     }
@@ -14627,6 +14652,7 @@ function registerCommands(ctx, store2) {
       const nodes = store2.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
       await store2.apply((ns) => moveNode(ns, r.node.id, par.id, typeof p.position === "number" ? p.position : void 0));
@@ -14661,6 +14687,7 @@ function registerCommands(ctx, store2) {
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
+      if (isLockedTree(store2.get(), r.node)) return LOCKED;
       if (!STATUS_ENUM.includes(p.status)) return { ok: false, error: `invalid status: '${p.status}'` };
       await store2.apply((ns) => boardMove(ns, r.node.id, p.status, "me", TODAY, typeof p.position === "number" ? p.position : void 0));
       return { ok: true };
