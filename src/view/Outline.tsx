@@ -179,9 +179,9 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen, lan
                 />
                 {/* 검증 축(드래프트): 덩어리·그룹=감사 집계, 항목=자기 배지. 그 외 일반 노드=status 칩. */}
                 {row.validation ? (
-                  <AuditBadge v={row.validation} lang={lang} />
+                  <AuditBadge v={row.validation} lang={lang} nodeKey={row.key || row.id} />
                 ) : row.badge ? (
-                  <ItemBadge badge={row.badge} lang={lang} />
+                  <ItemBadge badge={row.badge} lang={lang} nodeKey={row.key || row.id} />
                 ) : !row.isEpic ? (
                   <span onClick={() => cycleStatus(row.id)} title={t("statusChangeTitle", lang)} style={{ cursor: "pointer", ...statusChip(row.status) }}>{resolveLabel(m.label, lang)}</span>
                 ) : null}

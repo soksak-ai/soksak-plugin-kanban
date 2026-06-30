@@ -5,15 +5,17 @@ import type { SubValidation } from "@/core/projections";
 import { BADGES, resolveLabel } from "@/refs";
 import { hexA } from "@/view/ui";
 import { t } from "@/view/i18n";
+import { badgeNodePath, auditNodePath } from "@/view/nodePaths";
 
 const bMeta = (id: Badge) => BADGES.find((b) => b.id === id)!;
 const AUDIT_ORDER: Badge[] = ["o", "x", "f", "검수전"];
 
-/** 항목 자기 검증 배지(검수전 → o/x/f). status 칩 대신 단다. */
-export function ItemBadge({ badge, lang }: { badge: Badge; lang: string }) {
+/** 항목 자기 검증 배지(검수전 → o/x/f). status 칩 대신 단다. nodeKey 주면 ui.tree 에 배지 값 노출(DOM 검증). */
+export function ItemBadge({ badge, lang, nodeKey }: { badge: Badge; lang: string; nodeKey?: string }) {
   const m = bMeta(badge);
   return (
     <span
+      {...(nodeKey ? { "data-node": badgeNodePath(nodeKey, badge) } : {})}
       title={t("draftItemTitle", lang)}
       style={{ display: "inline-flex", alignItems: "center", padding: "2px 9px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: hexA(m.color, 0.14), color: m.color, flex: "none" }}
     >
@@ -22,11 +24,12 @@ export function ItemBadge({ badge, lang }: { badge: Badge; lang: string }) {
   );
 }
 
-/** 그룹·덩어리 부모 감사 집계 — o/x/f/검수전 카운트. f≥1 → 폐기 강조(붉은 테두리 + 폐기 태그). */
-export function AuditBadge({ v, lang }: { v: SubValidation; lang: string }) {
+/** 그룹·덩어리 부모 감사 집계 — o/x/f/검수전 카운트. f≥1 → 폐기 강조. nodeKey 주면 ui.tree 에 집계 노출(DOM 검증). */
+export function AuditBadge({ v, lang, nodeKey }: { v: SubValidation; lang: string; nodeKey?: string }) {
   const fColor = bMeta("f").color;
   return (
     <span
+      {...(nodeKey ? { "data-node": auditNodePath(nodeKey, v) } : {})}
       title={t("draftAuditTitle", lang)}
       style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "2px 9px", borderRadius: 99, fontSize: 11, fontWeight: 600, flex: "none", border: v.discard ? `1px solid ${fColor}` : "1px solid var(--border)", background: v.discard ? hexA(fColor, 0.1) : "var(--surface-2)" }}
     >

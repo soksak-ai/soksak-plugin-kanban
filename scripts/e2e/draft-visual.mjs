@@ -149,14 +149,27 @@ async function main() {
   await rpc(P + "focus.set", { node: "root", view: "outline" }).catch(() => {});
   await sleep(300);
   const tree = val(await rpc("ui.tree"));
-  const kanbanRows = (tree.nodes || []).filter((n) => /soksak-plugin-kanban.*\/node\/row\//.test(n.address));
+  const addrs = (tree.nodes || []).map((n) => n.address);
+  const kanbanRows = addrs.filter((a) => /soksak-plugin-kanban.*\/node\/row\//.test(a));
   warnIf(kanbanRows.length > 0, `ui.tree 에 칸반 행 노출 (${kanbanRows.length}개)`, tree.count);
   if (kanbanRows.length > 0) {
     // 모든 덩어리/그룹/항목 key 가 행 주소로 렌더됐는지 교차.
     const allNodes = [chunkNode, ...groups, ...items];
-    const addrKeys = new Set(kanbanRows.map((n) => n.address.split("/node/row/")[1]));
-    const missing = allNodes.filter((n) => !addrKeys.has(String(n.key).toLowerCase()));
+    const rowKeys = new Set(kanbanRows.map((a) => a.split("/node/row/")[1]));
+    const missing = allNodes.filter((n) => !rowKeys.has(String(n.key).toLowerCase()));
     warnIf(missing.length === 0, "모든 덩어리/그룹/항목 행이 DOM 에 렌더", missing.map((n) => n.key));
+
+    // DOM-레벨 배지 검증: 항목 배지(badge/<key>/<값>) + 덩어리 감사(audit/<key>/p.o.x.f) 주소 노출.
+    // 배지 값 라틴 매핑(검수전→pending; o/x/f 그대로) — NODE_PATH_RE 가 한글/대문자 금지.
+    const LATIN = { 검수전: "pending", o: "o", x: "x", f: "f" };
+    const hasAddr = (suffix) => addrs.some((a) => a.endsWith("/node/" + suffix));
+    const badMissing = items.filter((i) => !hasAddr(`badge/${String(i.key).toLowerCase()}/${LATIN[i.badge]}`));
+    warnIf(badMissing.length === 0, "항목 oxf 배지가 DOM 주소로 노출(값까지 검증)", badMissing.map((i) => `${i.key}:${i.badge}`));
+    // 덩어리 감사 집계 주소(f 카운트 → 폐기 파싱).
+    const f = items.filter((i) => i.badge === "f").length;
+    const auditAddr = addrs.find((a) => a.includes(`/node/audit/${String(chunkNode.key).toLowerCase()}/`));
+    warnIf(!!auditAddr, "덩어리 감사 집계가 DOM 주소로 노출", auditAddr);
+    if (auditAddr) warnIf(auditAddr.includes(`.f${f}`), `감사 주소의 f 카운트 = ${f}(f>0 → 폐기)`, auditAddr);
   }
 
   // ── (3) 시각 캡처: window.snapshot → PNG(사람 눈검사·회귀) ──
