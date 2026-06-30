@@ -21,7 +21,9 @@ export interface Node {
   parentId: string | null; // ── 구조 ①: 부모 참조 (null = 최상위)
   order: number; // ── 구조 ②: 같은 parentId 형제 중 위치(0..n-1)
   title: string;
-  body: string; // 구체화 본문
+  body: string; // 구체화 본문 (워크플로: 실행 지시 — prompt/schema/tools)
+  blockedBy?: string[]; // 의존: 이 노드들이 done 이어야 시작 가능(병렬/순차를 데이터로 표현)
+  result?: string; // 실행 결과(워크플로 노드 완료 시 기록; 재실행 시 초기화)
   type: NodeType;
   status: StatusId;
   assignee: string; // 멤버 id
