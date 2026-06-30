@@ -188,3 +188,34 @@ describe("blockedBy / result", () => {
     expect(node(got).result).toBe("");
   });
 });
+
+// 워크플로 파생 노드 보호 — 사람의 드래그 이동·트리 분리 거부(스케줄러 충돌·그룹 게이트 깨짐 방지).
+describe("locked", () => {
+  const id = (r: Record<string, unknown>) => r.nodeId as string;
+
+  it("locked 노드는 board.move(드래그 status) 거부", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    expect((await call("board.move", { node: id(a), status: "done" })).ok).toBe(false);
+  });
+
+  it("locked 노드는 outline.move(트리 분리) 거부", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    const b = await call("node.add", { title: "B" });
+    expect((await call("outline.move", { node: id(a), parentId: id(b) })).ok).toBe(false);
+  });
+
+  it("locked 노드는 node.remove 거부", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    expect((await call("node.remove", { node: id(a) })).ok).toBe(false);
+  });
+
+  it("locked 노드도 node.edit 는 허용(스케줄러·재실행)", async () => {
+    const a = await call("node.add", { title: "A", locked: true });
+    expect((await call("node.edit", { node: id(a), status: "done" })).ok).toBe(true);
+  });
+
+  it("unlocked 노드는 board.move 허용", async () => {
+    const a = await call("node.add", { title: "A" });
+    expect((await call("board.move", { node: id(a), status: "done" })).ok).toBe(true);
+  });
+});

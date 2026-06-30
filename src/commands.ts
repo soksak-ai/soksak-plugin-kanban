@@ -69,7 +69,9 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [] });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true });
+// 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
+const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 
 export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   const cmds = ctx.app.commands;
@@ -97,6 +99,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       after: { type: "string", description: "Insert after this sibling id/key" },
       body: { type: "string", description: "Body / 실행 지시(prompt/schema)" },
       blockedBy: { type: "string[]", description: "선행 의존 노드 id 배열(전부 done 이어야 시작)" },
+      locked: { type: "boolean", description: "워크플로 노드 보호(드래그 이동·분리·삭제 금지)" },
     },
     returns: "{ ok, nodeId, key }",
     examples: ['sok plugin.soksak-plugin-kanban.node.add \'{"title":"새 작업","parentId":"WMP-100"}\''],
@@ -115,6 +118,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         body: typeof p.body === "string" ? p.body : "",
         blockedBy: Array.isArray(p.blockedBy) ? (p.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
         result: "",
+        locked: p.locked === true,
         type: (TYPE_ENUM.includes(p.type as NodeType) ? p.type : par.id == null ? "epic" : "task") as NodeType,
         status: (STATUS_ENUM.includes(p.status as StatusId) ? p.status : "todo") as StatusId,
         assignee: typeof p.assignee === "string" ? p.assignee : "me",
@@ -196,6 +200,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
+      if (r.node.locked) return LOCKED;
       const before = store.get().length;
       await store.apply((ns) => removeNode(ns, r.node.id, p.promoteChildren === true));
       return { ok: true, removed: before - store.get().length };
@@ -260,6 +265,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
+      if (r.node.locked) return LOCKED;
       await store.apply((ns) => indent(ns, r.node.id));
       return { ok: true };
     },
@@ -272,6 +278,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
+      if (r.node.locked) return LOCKED;
       await store.apply((ns) => outdent(ns, r.node.id));
       return { ok: true };
     },
@@ -289,6 +296,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
+      if (r.node.locked) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
       await store.apply((ns) => moveNode(ns, r.node.id, par.id, typeof p.position === "number" ? p.position : undefined));
@@ -325,6 +333,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
+      if (r.node.locked) return LOCKED;
       if (!STATUS_ENUM.includes(p.status as StatusId)) return { ok: false, error: `invalid status: '${p.status}'` };
       await store.apply((ns) => boardMove(ns, r.node.id, p.status as StatusId, "me", TODAY, typeof p.position === "number" ? p.position : undefined));
       return { ok: true };
