@@ -50,6 +50,7 @@ function rowToNode(raw: unknown): Node | null {
     parentId: typeof r.parentId === "string" ? r.parentId : null,
     order: asNum(r.order, 0),
     title: asStr(r.title),
+    description: typeof r.description === "string" ? r.description : undefined,
     body: asStr(r.body),
     blockedBy: Array.isArray(r.blockedBy) ? (r.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
     result: asStr(r.result),

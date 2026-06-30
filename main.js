@@ -14311,6 +14311,7 @@ function rowToNode(raw) {
     parentId: typeof r.parentId === "string" ? r.parentId : null,
     order: asNum(r.order, 0),
     title: asStr(r.title),
+    description: typeof r.description === "string" ? r.description : void 0,
     body: asStr(r.body),
     blockedBy: Array.isArray(r.blockedBy) ? r.blockedBy.filter((x) => typeof x === "string") : [],
     result: asStr(r.result),
@@ -14512,7 +14513,7 @@ function resolveParent(nodes, ref) {
   const r = resolve(nodes, ref);
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
-var compact = (n) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 var LOCKED = { ok: false, error: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
 var isLockedTree = (nodes, n) => {
   let cur = n;
@@ -14544,7 +14545,8 @@ function registerCommands(ctx, store2) {
       priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
       points: { type: "number", description: "Story points" },
       after: { type: "string", description: "Insert after this sibling id/key" },
-      body: { type: "string", description: "Body / \uC2E4\uD589 \uC9C0\uC2DC(prompt/schema)" },
+      description: { type: "string", description: "\uC694\uAC74 \uC124\uBA85(\uC0AC\uB78C\uC6A9 \uBD80\uC81C \u2014 \uCE78\uBC18 \uD45C\uC2DC). body \uC640 \uBCC4\uAC1C: body \uB294 exec-one \uC2E4\uD589 \uC785\uB825(\uD45C\uC2DC X)" },
+      body: { type: "string", description: "Body / exec-one \uC2E4\uD589 \uC9C0\uC2DC(prompt/schema; \uC0AC\uB78C \uD45C\uC2DC X)" },
       blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC804\uBD80 done \uC774\uC5B4\uC57C \uC2DC\uC791)" },
       locked: { type: "boolean", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uBCF4\uD638(\uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uBD84\uB9AC\xB7\uC0AD\uC81C \uAE08\uC9C0)" },
       badge: { type: "string", description: "\uAC80\uC99D \uBC30\uC9C0(\uB4DC\uB798\uD504\uD2B8 \uD56D\uBAA9; status \uC640 \uBCC4\uAC1C \uCD95, \uAE30\uBCF8 \uAC80\uC218\uC804)", enum: BADGE_ENUM },
@@ -14566,6 +14568,7 @@ function registerCommands(ctx, store2) {
         parentId: par.id,
         order: 0,
         title: typeof p.title === "string" ? p.title : "\uC0C8 \uD56D\uBAA9",
+        description: typeof p.description === "string" ? p.description : void 0,
         body: typeof p.body === "string" ? p.body : "",
         blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : [],
         result: "",
@@ -14596,7 +14599,8 @@ function registerCommands(ctx, store2) {
     params: {
       node: { type: "string", description: "Node id or key", required: true },
       title: { type: "string", description: "New title" },
-      body: { type: "string", description: "Body / description text" },
+      description: { type: "string", description: "\uC694\uAC74 \uC124\uBA85(\uC0AC\uB78C\uC6A9 \uBD80\uC81C \u2014 \uCE78\uBC18 \uD45C\uC2DC; body \uC640 \uBCC4\uAC1C)" },
+      body: { type: "string", description: "Body / exec-one \uC2E4\uD589 \uC785\uB825(prompt/schema; \uD45C\uC2DC X)" },
       type: { type: "string", description: "Node type", enum: TYPE_ENUM },
       status: { type: "string", description: "New status (appends history entry on change)", enum: STATUS_ENUM },
       assignee: { type: "string", description: "Assignee id" },
@@ -14625,6 +14629,7 @@ function registerCommands(ctx, store2) {
           return {
             ...n,
             title: typeof p.title === "string" ? p.title : n.title,
+            description: typeof p.description === "string" ? p.description : n.description,
             body: typeof p.body === "string" ? p.body : n.body,
             blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : n.blockedBy ?? [],
             result: typeof p.result === "string" ? p.result : n.result ?? "",

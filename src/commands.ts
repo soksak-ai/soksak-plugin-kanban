@@ -69,7 +69,7 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
 const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 // lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
@@ -107,7 +107,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       priority: { type: "string", description: "Priority level", enum: PRIORITY_ENUM },
       points: { type: "number", description: "Story points" },
       after: { type: "string", description: "Insert after this sibling id/key" },
-      body: { type: "string", description: "Body / 실행 지시(prompt/schema)" },
+      description: { type: "string", description: "요건 설명(사람용 부제 — 칸반 표시). body 와 별개: body 는 exec-one 실행 입력(표시 X)" },
+      body: { type: "string", description: "Body / exec-one 실행 지시(prompt/schema; 사람 표시 X)" },
       blockedBy: { type: "string[]", description: "선행 의존 노드 id 배열(전부 done 이어야 시작)" },
       locked: { type: "boolean", description: "워크플로 노드 보호(드래그 이동·분리·삭제 금지)" },
       badge: { type: "string", description: "검증 배지(드래프트 항목; status 와 별개 축, 기본 검수전)", enum: BADGE_ENUM },
@@ -129,6 +130,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         parentId: par.id,
         order: 0,
         title: typeof p.title === "string" ? p.title : "새 항목",
+        description: typeof p.description === "string" ? p.description : undefined,
         body: typeof p.body === "string" ? p.body : "",
         blockedBy: Array.isArray(p.blockedBy) ? (p.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : [],
         result: "",
@@ -161,7 +163,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     params: {
       node: { type: "string", description: "Node id or key", required: true },
       title: { type: "string", description: "New title" },
-      body: { type: "string", description: "Body / description text" },
+      description: { type: "string", description: "요건 설명(사람용 부제 — 칸반 표시; body 와 별개)" },
+      body: { type: "string", description: "Body / exec-one 실행 입력(prompt/schema; 표시 X)" },
       type: { type: "string", description: "Node type", enum: TYPE_ENUM },
       status: { type: "string", description: "New status (appends history entry on change)", enum: STATUS_ENUM },
       assignee: { type: "string", description: "Assignee id" },
@@ -190,6 +193,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
           return {
             ...n,
             title: typeof p.title === "string" ? p.title : n.title,
+            description: typeof p.description === "string" ? p.description : n.description,
             body: typeof p.body === "string" ? p.body : n.body,
             blockedBy: Array.isArray(p.blockedBy) ? (p.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : (n.blockedBy ?? []),
             result: typeof p.result === "string" ? p.result : (n.result ?? ""),
