@@ -72,6 +72,15 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
 const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
 const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
+// lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
+const isLockedTree = (nodes: Node[], n: Node): boolean => {
+  let cur: Node | null | undefined = n;
+  while (cur) {
+    if (cur.locked) return true;
+    cur = cur.parentId ? byId(nodes, cur.parentId) : undefined;
+  }
+  return false;
+};
 
 export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   const cmds = ctx.app.commands;
@@ -200,7 +209,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
-      if (r.node.locked) return LOCKED;
+      if (isLockedTree(store.get(), r.node)) return LOCKED;
       const before = store.get().length;
       await store.apply((ns) => removeNode(ns, r.node.id, p.promoteChildren === true));
       return { ok: true, removed: before - store.get().length };
@@ -265,7 +274,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
-      if (r.node.locked) return LOCKED;
+      if (isLockedTree(store.get(), r.node)) return LOCKED;
       await store.apply((ns) => indent(ns, r.node.id));
       return { ok: true };
     },
@@ -278,7 +287,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
-      if (r.node.locked) return LOCKED;
+      if (isLockedTree(store.get(), r.node)) return LOCKED;
       await store.apply((ns) => outdent(ns, r.node.id));
       return { ok: true };
     },
@@ -296,7 +305,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
-      if (r.node.locked) return LOCKED;
+      if (isLockedTree(store.get(), r.node)) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
       if (!par.ok) return { ok: false, error: par.error };
       await store.apply((ns) => moveNode(ns, r.node.id, par.id, typeof p.position === "number" ? p.position : undefined));
@@ -333,7 +342,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
-      if (r.node.locked) return LOCKED;
+      if (isLockedTree(store.get(), r.node)) return LOCKED;
       if (!STATUS_ENUM.includes(p.status as StatusId)) return { ok: false, error: `invalid status: '${p.status}'` };
       await store.apply((ns) => boardMove(ns, r.node.id, p.status as StatusId, "me", TODAY, typeof p.position === "number" ? p.position : undefined));
       return { ok: true };
