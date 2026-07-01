@@ -14298,6 +14298,7 @@ var GLOBAL_CSS = `
 
 // src/store.ts
 var COLL = "nodes";
+var PROMPTS_COLL = "prompts";
 var VALID_STATUS = ["backlog", "todo", "inprogress", "review", "done"];
 var VALID_TYPE = ["epic", "story", "task", "bug"];
 var VALID_PRIORITY = ["highest", "high", "medium", "low"];
@@ -14327,6 +14328,8 @@ function rowToNode(raw) {
     result: asStr(r.result),
     locked: r.locked === true,
     badge: VALID_BADGE.includes(r.badge) ? r.badge : void 0,
+    origin: typeof r.origin === "string" ? r.origin : void 0,
+    category: typeof r.category === "string" ? r.category : void 0,
     isDraft: r.isDraft === true ? true : void 0,
     parentDraftId: typeof r.parentDraftId === "string" ? r.parentDraftId : r.parentDraftId === null ? null : void 0,
     kind: typeof r.kind === "string" && r.kind ? r.kind : void 0,
@@ -14413,10 +14416,22 @@ function createStore(app) {
         indexes: ["parentId", "order", "status", "assignee", "priority", "due", "type"],
         fts: ["key", "title", "body"]
       });
+      await data.define(PROMPTS_COLL, {});
       await hydrate();
       watchSub = data.watch(COLL, { scope }, () => {
         if (writing === 0) void hydrate();
       });
+    },
+    // 템플릿 upsert — id=hash 라 같은 해시 재삽입은 동일 텍스트 덮어씀 = dedup(내용이 해시로 결정론적).
+    async putPrompt(hash, value) {
+      if (!data) return;
+      await data.put(PROMPTS_COLL, { id: hash, hash, value }, { scope, id: hash });
+    },
+    async getPrompt(hash) {
+      if (!data) return null;
+      const rows = await data.query(PROMPTS_COLL, { scope, where: { id: hash }, limit: 1 });
+      const row = rows[0];
+      return row ? row.value ?? null : null;
     },
     dispose() {
       if (watchSub) disposeOf(watchSub);
@@ -14508,6 +14523,11 @@ function seedNodes(now = 0) {
 }
 
 // src/commands.ts
+var sha256 = async (s) => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+};
+var bindVars = (tmpl, vars) => tmpl.replace(/\{\{(\w+)\}\}/g, (_m, k) => k in vars ? String(vars[k]) : `{{${k}}}`);
 function resolve(nodes, ref) {
   const s = String(ref ?? "");
   const direct = byId(nodes, s);
@@ -14523,7 +14543,7 @@ function resolveParent(nodes, ref) {
   const r = resolve(nodes, ref);
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
-var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 var LOCKED = { ok: false, error: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
 var isLockedTree = (nodes, n) => {
   let cur = n;
@@ -14543,6 +14563,53 @@ function registerCommands(ctx, store2) {
   const BADGE_ENUM = ["\uAC80\uC218\uC804", "o", "x", "f"];
   const VIEW_ENUM = ["outline", "board", "gantt", "timeline", "tree", "table", "calendar"];
   const SORT_ENUM = ["key", "title", "priority", "points", "due", "status", "assignee"];
+  sub("prompt.put", {
+    description: "\uCF58\uD150\uCE20 \uC8FC\uC18C(sha256) store \u2014 JSON \uAC12(\uBB38\uC790\uC5F4 \uD15C\uD50C\uB9BF/directive \uB610\uB294 \uAC1D\uCCB4 schema) \uC800\uC7A5\xB7dedup. hash \uBC18\uD658. \uAC12\uC740 \uB124\uC774\uD2F0\uBE0C \uBCF4\uAD00(stringify \uC655\uBCF5 \uC5C6\uC74C).",
+    params: {
+      value: { type: "json", description: "\uC800\uC7A5 \uAC12(\uBB38\uC790\uC5F4 \uB610\uB294 \uAC1D\uCCB4). \uBB38\uC790\uC5F4=sha256(raw), \uAC1D\uCCB4=sha256(JSON)." },
+      text: { type: "string", description: "(\uD558\uC704\uD638\uD658) \uBB38\uC790\uC5F4 \uAC12 \uBCC4\uCE6D" }
+    },
+    returns: "{ ok, hash }",
+    handler: async (p) => {
+      const value = p.value !== void 0 ? p.value : p.text;
+      if (value == null || value === "") return { ok: false, error: "value \uD544\uC218" };
+      const canon = typeof value === "string" ? value : JSON.stringify(value);
+      const hash = await sha256(canon);
+      await store2.putPrompt(hash, value);
+      return { ok: true, hash };
+    }
+  });
+  sub("prompt.get", {
+    description: "hash \uB85C \uC800\uC7A5 \uAC12 \uC870\uD68C(\uB124\uC774\uD2F0\uBE0C JSON \u2014 \uBB38\uC790\uC5F4/\uAC1D\uCCB4). \uC18C\uBE44 \uC2DC\uC810 \uC870\uB9BD\uC6A9.",
+    params: { hash: { type: "string", description: "\uCF58\uD150\uCE20 \uC8FC\uC18C sha256", required: true } },
+    returns: "{ ok, value, text }",
+    handler: async (p) => {
+      const value = typeof p.hash === "string" ? await store2.getPrompt(p.hash) : null;
+      return { ok: true, value, text: typeof value === "string" ? value : void 0 };
+    }
+  });
+  sub("prompt.resolve", {
+    description: "promptHash + vars(+refs) \u2192 \uC644\uC131 \uD504\uB86C\uD504\uD2B8. {{key}}\u2192vars(\uC778\uB77C\uC778 \uC791\uC740 \uAC12) \uB610\uB294 refs(\uCF58\uD150\uCE20 \uC8FC\uC18C deref). exec-one\xB7UI \uACF5\uC6A9 \uC870\uB9BD.",
+    params: {
+      hash: { type: "string", description: "\uD504\uB86C\uD504\uD2B8 \uD15C\uD50C\uB9BF sha256", required: true },
+      vars: { type: "json", description: "{{key}} \uC778\uB77C\uC778 \uBC14\uC778\uB529(\uC791\uC740 per-item \uAC12)" },
+      refs: { type: "json", description: "{{key}} \u2192 \uCF58\uD150\uCE20 \uC8FC\uC18C hash. \uD070 \uACF5\uC720\uAC12(directive \uB4F1)\uC740 \uC800\uC7A5\uC18C\uC5D0 1\uD589\uB9CC, \uB178\uB4DC\uB294 hash \uCC38\uC870 \u2014 \uC18C\uBE44 \uC2DC\uC810 deref(\uC911\uBCF5 \uC81C\uAC70)." }
+    },
+    returns: "{ ok, prompt }",
+    handler: async (p) => {
+      const tmpl = typeof p.hash === "string" ? await store2.getPrompt(p.hash) : null;
+      if (typeof tmpl !== "string") return { ok: false, error: "\uD15C\uD50C\uB9BF \uBBF8\uBC1C\uACAC(\uB610\uB294 \uBE44\uBB38\uC790\uC5F4)", prompt: null };
+      const vars = { ...p.vars && typeof p.vars === "object" ? p.vars : {} };
+      const refs = p.refs && typeof p.refs === "object" ? p.refs : {};
+      for (const [k, h2] of Object.entries(refs)) {
+        if (typeof h2 !== "string") continue;
+        const t2 = await store2.getPrompt(h2);
+        if (t2 == null) return { ok: false, error: `ref \uBBF8\uBC1C\uACAC(${k}=${h2.slice(0, 12)})`, prompt: null };
+        vars[k] = t2;
+      }
+      return { ok: true, prompt: bindVars(tmpl, vars) };
+    }
+  });
   sub("node.add", {
     description: "Add a node to the tree. Omit parentId to add at root level. Inserts after the sibling specified by 'after'.",
     triggers: { ko: "\uB178\uB4DC \uCD94\uAC00 \uD56D\uBAA9 \uC0DD\uC131 \uC774\uC288 \uB9CC\uB4E4\uAE30" },
@@ -14560,6 +14627,8 @@ function registerCommands(ctx, store2) {
       blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC804\uBD80 done \uC774\uC5B4\uC57C \uC2DC\uC791)" },
       locked: { type: "boolean", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uBCF4\uD638(\uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uBD84\uB9AC\xB7\uC0AD\uC81C \uAE08\uC9C0)" },
       badge: { type: "string", description: "\uAC80\uC99D \uBC30\uC9C0(\uB4DC\uB798\uD504\uD2B8 \uD56D\uBAA9; status \uC640 \uBCC4\uAC1C \uCD95, \uAE30\uBCF8 \uAC80\uC218\uC804)", enum: BADGE_ENUM },
+      origin: { type: "string", description: "\uC694\uAC74 \uCD9C\uCC98(user/agent/search) \u2014 \uADDC\uCE59 D \uCD9C\uCC98 \uCD94\uC801" },
+      category: { type: "string", description: "\uBD84\uB958 \uCE74\uD14C\uACE0\uB9AC \u2014 classify stage \uAC00 \uC644\uC131 \uC6D0\uC7A5 \uBCF4\uACE0 \uBD80\uC5EC(node.edit). generate \uB294 \uC548 \uBD99\uC784(\uD3C9\uD0C4)" },
       isDraft: { type: "boolean", description: "\uB369\uC5B4\uB9AC \uBD80\uBAA8(\uAD6C\uCCB4\uD654 \uBC31\uB85C\uADF8 \uB369\uC5B4\uB9AC; \uC790\uC2DD oxf \uAC10\uC0AC \uC9D1\uACC4)" },
       parentDraftId: { type: "string", description: "\uBCF5\uC81C \uACC4\uBCF4 \u2014 \uAC1C\uC120\uBCF8 \uB369\uC5B4\uB9AC\uC758 \uC6D0\uBCF8 \uB369\uC5B4\uB9AC id(\uB369\uC5B4\uB9AC \uC218\uC900\uB9CC)" },
       kind: { type: "string", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uC885\uB958 \uB9C8\uCEE4(chunk/group/item/task \uB4F1; reconcile \uAC00 \uD56D\uBAA9 vs stage \uAD6C\uBD84)" }
@@ -14588,6 +14657,8 @@ function registerCommands(ctx, store2) {
         result: "",
         locked: p.locked === true,
         badge: BADGE_ENUM.includes(p.badge) ? p.badge : void 0,
+        origin: typeof p.origin === "string" ? p.origin : void 0,
+        category: typeof p.category === "string" ? p.category : void 0,
         isDraft: p.isDraft === true ? true : void 0,
         parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : void 0,
         kind: typeof p.kind === "string" && p.kind ? p.kind : void 0,
@@ -14625,6 +14696,8 @@ function registerCommands(ctx, store2) {
       blockedBy: { type: "string[]", description: "\uC120\uD589 \uC758\uC874 \uB178\uB4DC id \uBC30\uC5F4(\uC758\uC874 \uBCC0\uACBD)" },
       result: { type: "string", description: "\uC2E4\uD589 \uACB0\uACFC(\uC644\uB8CC \uAE30\uB85D; \uC7AC\uC2E4\uD589 \uC2DC '' \uB85C \uCD08\uAE30\uD654)" },
       badge: { type: "string", description: "\uAC80\uC99D \uBC30\uC9C0(\uAC80\uC218\uC804 \u2192 o/x/f). status \uC640 \uBCC4\uAC1C \uCD95", enum: BADGE_ENUM },
+      origin: { type: "string", description: "\uC694\uAC74 \uCD9C\uCC98 \uAC31\uC2E0(user/agent/search)" },
+      category: { type: "string", description: "\uBD84\uB958 \uCE74\uD14C\uACE0\uB9AC \uAC31\uC2E0 \u2014 classify stage \uAC00 \uC644\uC131 \uC6D0\uC7A5 \uBCF4\uACE0 \uAC01 \uD56D\uBAA9\uC5D0 \uBD80\uC5EC" },
       isDraft: { type: "boolean", description: "\uB369\uC5B4\uB9AC \uBD80\uBAA8 \uD45C\uC2DC \uBCC0\uACBD" },
       parentDraftId: { type: "string", description: "\uBCF5\uC81C \uACC4\uBCF4 \u2014 \uC6D0\uBCF8 \uB369\uC5B4\uB9AC id" },
       kind: { type: "string", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uC885\uB958 \uB9C8\uCEE4(chunk/group/item/task \uB4F1)" }
@@ -14648,6 +14721,8 @@ function registerCommands(ctx, store2) {
             blockedBy: Array.isArray(p.blockedBy) ? p.blockedBy.filter((x) => typeof x === "string") : n.blockedBy ?? [],
             result: typeof p.result === "string" ? p.result : n.result ?? "",
             badge: BADGE_ENUM.includes(p.badge) ? p.badge : n.badge,
+            origin: typeof p.origin === "string" ? p.origin : n.origin,
+            category: typeof p.category === "string" ? p.category : n.category,
             isDraft: typeof p.isDraft === "boolean" ? p.isDraft === true ? true : void 0 : n.isDraft,
             parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : n.parentDraftId,
             kind: typeof p.kind === "string" && p.kind ? p.kind : n.kind,

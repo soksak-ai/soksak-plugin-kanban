@@ -16,10 +16,14 @@ import {
   type SortKey,
 } from "@/core/algebra";
 import { projectView, stats, toTimeline, breadcrumb, shortTitle } from "@/core/projections";
-import { createHash } from "node:crypto";
 
 // 프롬프트 템플릿의 콘텐츠 주소(sha256) — 여기가 해시 계산의 단일 진실(Rust 엔 sha 없음, workflow 는 텍스트만 relay).
-const sha256 = (s: string): string => createHash("sha256").update(s, "utf8").digest("hex");
+// Web Crypto(globalThis.crypto.subtle) 사용 — node:crypto 불요(esbuild platform:"browser" 빌드 통과), node·브라우저 공통.
+// node:crypto 와 동일 sha256 값(검증됨). async 지만 유일 호출처(prompt.put)가 async 핸들러라 파급 없음.
+const sha256 = async (s: string): Promise<string> => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+};
 // {{key}} 마커를 vars 로 치환 — 소비 시점 조립(exec-one·UI 공유). 미정의 키는 마커 보존(loud 아님).
 const bindVars = (tmpl: string, vars: Record<string, unknown>): string =>
   tmpl.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => (k in vars ? String(vars[k]) : `{{${k}}}`));
@@ -113,7 +117,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const value = p.value !== undefined ? p.value : p.text;
       if (value == null || value === "") return { ok: false, error: "value 필수" };
       const canon = typeof value === "string" ? value : JSON.stringify(value);
-      const hash = sha256(canon);
+      const hash = await sha256(canon);
       await store.putPrompt(hash, value);
       return { ok: true, hash };
     },
