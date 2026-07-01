@@ -29,6 +29,8 @@ export interface Node {
   result?: string; // 실행 결과(워크플로 노드 완료 시 기록; 재실행 시 초기화)
   locked?: boolean; // 워크플로 파생 노드 — 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 전용)
   badge?: Badge; // 검증 배지(드래프트 항목) — status 와 별개 축. 기본 검수전. 항목만 가진다(그룹·덩어리는 집계).
+  origin?: string; // 요건 출처(user/agent/search) — 규칙 D 출처 추적. 항목 본질 메타(GEN it.origin → verify 갱신).
+  category?: string; // 분류 카테고리 — classify stage 가 완성 원장(hunt 후) 보고 각 항목에 부여(node.edit). generate 는 안 붙임(평탄).
   isDraft?: boolean; // 덩어리 부모 — 구체화 결과 백로그 덩어리(자식 oxf 감사 집계, 락인, 복제 계보 보유).
   parentDraftId?: string | null; // 복제 계보 — 개선본 덩어리의 원본 덩어리 id(덩어리 수준만; 항목까지는 잇지 않음).
   kind?: string; // 워크플로 노드 종류 마커(chunk/group/item/task 등). 칸반은 해석 안 하고 round-trip만 — reconcile 가 검증할 항목(item) vs 실행할 stage 노드(task)를 가른다.
