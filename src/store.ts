@@ -24,6 +24,7 @@ export interface AppLike {
 }
 
 const COLL = "nodes";
+const PROMPTS_COLL = "prompts"; // 콘텐츠 주소화 프롬프트 템플릿(id=sha256). node 는 promptHash 로 FK 참조.
 const VALID_STATUS: StatusId[] = ["backlog", "todo", "inprogress", "review", "done"];
 const VALID_TYPE: NodeType[] = ["epic", "story", "task", "bug"];
 const VALID_PRIORITY: PriorityId[] = ["highest", "high", "medium", "low"];
@@ -56,6 +57,7 @@ function rowToNode(raw: unknown): Node | null {
     result: asStr(r.result),
     locked: r.locked === true,
     badge: VALID_BADGE.includes(r.badge as Badge) ? (r.badge as Badge) : undefined,
+    origin: typeof r.origin === "string" ? r.origin : undefined,
     isDraft: r.isDraft === true ? true : undefined,
     parentDraftId: typeof r.parentDraftId === "string" ? r.parentDraftId : r.parentDraftId === null ? null : undefined,
     kind: typeof r.kind === "string" && r.kind ? r.kind : undefined,
@@ -86,6 +88,10 @@ export interface KanbanStore {
   genId(): string;
   init(): Promise<void>;
   dispose(): void;
+  // 콘텐츠 주소화 store — JSON 값(문자열=템플릿/directive, 객체=schema)을 sha256(hash) 키로 dedup 저장(전 draft·전 item 공유).
+  // node 는 hash(FK)만 보유, 조립은 소비 시점(exec-one·UI). data.put id=hash = ON CONFLICT dedup. 값은 네이티브 보관(stringify 왕복 없음).
+  putPrompt(hash: string, value: unknown): Promise<void>;
+  getPrompt(hash: string): Promise<unknown>;
 }
 
 export function createStore(app: AppLike): KanbanStore {
@@ -159,10 +165,23 @@ export function createStore(app: AppLike): KanbanStore {
         indexes: ["parentId", "order", "status", "assignee", "priority", "due", "type"],
         fts: ["key", "title", "body"],
       });
+      // 프롬프트 store — id=sha256 키. 미러 없음(content-addressed, 직접 조회). fts=text(감사·검색).
+      await data.define(PROMPTS_COLL, {});
       await hydrate();
       watchSub = data.watch(COLL, { scope }, () => {
         if (writing === 0) void hydrate();
       });
+    },
+    // 템플릿 upsert — id=hash 라 같은 해시 재삽입은 동일 텍스트 덮어씀 = dedup(내용이 해시로 결정론적).
+    async putPrompt(hash, value) {
+      if (!data) return;
+      await data.put(PROMPTS_COLL, { id: hash, hash, value }, { scope, id: hash });
+    },
+    async getPrompt(hash) {
+      if (!data) return null;
+      const rows = await data.query(PROMPTS_COLL, { scope, where: { id: hash }, limit: 1 });
+      const row = rows[0] as { value?: unknown } | undefined;
+      return row ? row.value ?? null : null;
     },
     dispose() {
       if (watchSub) disposeOf(watchSub);

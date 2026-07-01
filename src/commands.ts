@@ -103,22 +103,29 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
 
   // ── 프롬프트 템플릿 store(콘텐츠 주소화) — 정규화: 템플릿 1벌 저장, node 는 promptHash 참조 ──
   sub("prompt.put", {
-    description: "프롬프트 템플릿을 콘텐츠 주소(sha256)로 저장·dedup. hash 반환 — node 는 이 hash 를 promptHash 로 참조.",
-    params: { text: { type: "string", description: "프롬프트 템플릿 텍스트({{key}} 마커 포함)", required: true } },
+    description: "콘텐츠 주소(sha256) store — JSON 값(문자열 템플릿/directive 또는 객체 schema) 저장·dedup. hash 반환. 값은 네이티브 보관(stringify 왕복 없음).",
+    params: {
+      value: { type: "json", description: "저장 값(문자열 또는 객체). 문자열=sha256(raw), 객체=sha256(JSON)." },
+      text: { type: "string", description: "(하위호환) 문자열 값 별칭" },
+    },
     returns: "{ ok, hash }",
     handler: async (p) => {
-      const text = typeof p.text === "string" ? p.text : "";
-      if (!text) return { ok: false, error: "text 필수" };
-      const hash = sha256(text);
-      await store.putPrompt(hash, text);
+      const value = p.value !== undefined ? p.value : p.text;
+      if (value == null || value === "") return { ok: false, error: "value 필수" };
+      const canon = typeof value === "string" ? value : JSON.stringify(value);
+      const hash = sha256(canon);
+      await store.putPrompt(hash, value);
       return { ok: true, hash };
     },
   });
   sub("prompt.get", {
-    description: "promptHash 로 템플릿 텍스트 조회(소비 시점 조립용).",
-    params: { hash: { type: "string", description: "프롬프트 템플릿 sha256", required: true } },
-    returns: "{ ok, text }",
-    handler: async (p) => ({ ok: true, text: typeof p.hash === "string" ? await store.getPrompt(p.hash) : null }),
+    description: "hash 로 저장 값 조회(네이티브 JSON — 문자열/객체). 소비 시점 조립용.",
+    params: { hash: { type: "string", description: "콘텐츠 주소 sha256", required: true } },
+    returns: "{ ok, value, text }",
+    handler: async (p) => {
+      const value = typeof p.hash === "string" ? await store.getPrompt(p.hash) : null;
+      return { ok: true, value, text: typeof value === "string" ? value : undefined };
+    },
   });
   sub("prompt.resolve", {
     description: "promptHash + vars(+refs) → 완성 프롬프트. {{key}}→vars(인라인 작은 값) 또는 refs(콘텐츠 주소 deref). exec-one·UI 공용 조립.",
@@ -130,7 +137,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     returns: "{ ok, prompt }",
     handler: async (p) => {
       const tmpl = typeof p.hash === "string" ? await store.getPrompt(p.hash) : null;
-      if (tmpl == null) return { ok: false, error: "템플릿 미발견", prompt: null };
+      if (typeof tmpl !== "string") return { ok: false, error: "템플릿 미발견(또는 비문자열)", prompt: null };
       const vars: Record<string, unknown> = { ...(p.vars && typeof p.vars === "object" ? (p.vars as Record<string, unknown>) : {}) };
       // refs: {{key}} 를 콘텐츠 주소(hash)에서 deref — 큰 공유값(directive)은 prompts 저장소 1행, 노드는 hash 만 보유.
       const refs = p.refs && typeof p.refs === "object" ? (p.refs as Record<string, unknown>) : {};
