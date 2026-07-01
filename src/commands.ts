@@ -16,6 +16,13 @@ import {
   type SortKey,
 } from "@/core/algebra";
 import { projectView, stats, toTimeline, breadcrumb, shortTitle } from "@/core/projections";
+import { createHash } from "node:crypto";
+
+// 프롬프트 템플릿의 콘텐츠 주소(sha256) — 여기가 해시 계산의 단일 진실(Rust 엔 sha 없음, workflow 는 텍스트만 relay).
+const sha256 = (s: string): string => createHash("sha256").update(s, "utf8").digest("hex");
+// {{key}} 마커를 vars 로 치환 — 소비 시점 조립(exec-one·UI 공유). 미정의 키는 마커 보존(loud 아님).
+const bindVars = (tmpl: string, vars: Record<string, unknown>): string =>
+  tmpl.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => (k in vars ? String(vars[k]) : `{{${k}}}`));
 import { seedNodes } from "@/core/seed";
 
 interface ParamSpec {
@@ -69,7 +76,7 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, origin: n.origin, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
 const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 // lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
@@ -94,6 +101,49 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
   const VIEW_ENUM: ViewId[] = ["outline", "board", "gantt", "timeline", "tree", "table", "calendar"];
   const SORT_ENUM: SortKey[] = ["key", "title", "priority", "points", "due", "status", "assignee"];
 
+  // ── 프롬프트 템플릿 store(콘텐츠 주소화) — 정규화: 템플릿 1벌 저장, node 는 promptHash 참조 ──
+  sub("prompt.put", {
+    description: "프롬프트 템플릿을 콘텐츠 주소(sha256)로 저장·dedup. hash 반환 — node 는 이 hash 를 promptHash 로 참조.",
+    params: { text: { type: "string", description: "프롬프트 템플릿 텍스트({{key}} 마커 포함)", required: true } },
+    returns: "{ ok, hash }",
+    handler: async (p) => {
+      const text = typeof p.text === "string" ? p.text : "";
+      if (!text) return { ok: false, error: "text 필수" };
+      const hash = sha256(text);
+      await store.putPrompt(hash, text);
+      return { ok: true, hash };
+    },
+  });
+  sub("prompt.get", {
+    description: "promptHash 로 템플릿 텍스트 조회(소비 시점 조립용).",
+    params: { hash: { type: "string", description: "프롬프트 템플릿 sha256", required: true } },
+    returns: "{ ok, text }",
+    handler: async (p) => ({ ok: true, text: typeof p.hash === "string" ? await store.getPrompt(p.hash) : null }),
+  });
+  sub("prompt.resolve", {
+    description: "promptHash + vars(+refs) → 완성 프롬프트. {{key}}→vars(인라인 작은 값) 또는 refs(콘텐츠 주소 deref). exec-one·UI 공용 조립.",
+    params: {
+      hash: { type: "string", description: "프롬프트 템플릿 sha256", required: true },
+      vars: { type: "json", description: "{{key}} 인라인 바인딩(작은 per-item 값)" },
+      refs: { type: "json", description: "{{key}} → 콘텐츠 주소 hash. 큰 공유값(directive 등)은 저장소에 1행만, 노드는 hash 참조 — 소비 시점 deref(중복 제거)." },
+    },
+    returns: "{ ok, prompt }",
+    handler: async (p) => {
+      const tmpl = typeof p.hash === "string" ? await store.getPrompt(p.hash) : null;
+      if (tmpl == null) return { ok: false, error: "템플릿 미발견", prompt: null };
+      const vars: Record<string, unknown> = { ...(p.vars && typeof p.vars === "object" ? (p.vars as Record<string, unknown>) : {}) };
+      // refs: {{key}} 를 콘텐츠 주소(hash)에서 deref — 큰 공유값(directive)은 prompts 저장소 1행, 노드는 hash 만 보유.
+      const refs = p.refs && typeof p.refs === "object" ? (p.refs as Record<string, unknown>) : {};
+      for (const [k, h] of Object.entries(refs)) {
+        if (typeof h !== "string") continue;
+        const t = await store.getPrompt(h);
+        if (t == null) return { ok: false, error: `ref 미발견(${k}=${h.slice(0, 12)})`, prompt: null };
+        vars[k] = t;
+      }
+      return { ok: true, prompt: bindVars(tmpl, vars) };
+    },
+  });
+
   // ── 노드(내용/식별) ──
   sub("node.add", {
     description: "Add a node to the tree. Omit parentId to add at root level. Inserts after the sibling specified by 'after'.",
@@ -112,6 +162,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       blockedBy: { type: "string[]", description: "선행 의존 노드 id 배열(전부 done 이어야 시작)" },
       locked: { type: "boolean", description: "워크플로 노드 보호(드래그 이동·분리·삭제 금지)" },
       badge: { type: "string", description: "검증 배지(드래프트 항목; status 와 별개 축, 기본 검수전)", enum: BADGE_ENUM },
+      origin: { type: "string", description: "요건 출처(user/agent/search) — 규칙 D 출처 추적" },
       isDraft: { type: "boolean", description: "덩어리 부모(구체화 백로그 덩어리; 자식 oxf 감사 집계)" },
       parentDraftId: { type: "string", description: "복제 계보 — 개선본 덩어리의 원본 덩어리 id(덩어리 수준만)" },
       kind: { type: "string", description: "워크플로 노드 종류 마커(chunk/group/item/task 등; reconcile 가 항목 vs stage 구분)" },
@@ -141,6 +192,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         result: "",
         locked: p.locked === true,
         badge: BADGE_ENUM.includes(p.badge as Badge) ? (p.badge as Badge) : undefined,
+        origin: typeof p.origin === "string" ? p.origin : undefined,
         isDraft: p.isDraft === true ? true : undefined,
         parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : undefined,
         kind: typeof p.kind === "string" && p.kind ? p.kind : undefined,
@@ -180,6 +232,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       blockedBy: { type: "string[]", description: "선행 의존 노드 id 배열(의존 변경)" },
       result: { type: "string", description: "실행 결과(완료 기록; 재실행 시 '' 로 초기화)" },
       badge: { type: "string", description: "검증 배지(검수전 → o/x/f). status 와 별개 축", enum: BADGE_ENUM },
+      origin: { type: "string", description: "요건 출처 갱신(user/agent/search)" },
       isDraft: { type: "boolean", description: "덩어리 부모 표시 변경" },
       parentDraftId: { type: "string", description: "복제 계보 — 원본 덩어리 id" },
       kind: { type: "string", description: "워크플로 노드 종류 마커(chunk/group/item/task 등)" },
@@ -203,6 +256,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
             blockedBy: Array.isArray(p.blockedBy) ? (p.blockedBy as unknown[]).filter((x): x is string => typeof x === "string") : (n.blockedBy ?? []),
             result: typeof p.result === "string" ? p.result : (n.result ?? ""),
             badge: BADGE_ENUM.includes(p.badge as Badge) ? (p.badge as Badge) : n.badge,
+            origin: typeof p.origin === "string" ? p.origin : n.origin,
             isDraft: typeof p.isDraft === "boolean" ? (p.isDraft === true ? true : undefined) : n.isDraft,
             parentDraftId: typeof p.parentDraftId === "string" ? p.parentDraftId : n.parentDraftId,
             kind: typeof p.kind === "string" && p.kind ? p.kind : n.kind,
