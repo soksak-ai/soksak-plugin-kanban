@@ -183,6 +183,27 @@
           "ko": "브레드크럼",
           "en": "Breadcrumb"
         }
+      },
+      {
+        "name": "prompt.put",
+        "title": {
+          "ko": "프롬프트 저장(콘텐츠 주소화 — sha256 dedup)",
+          "en": "Put prompt (content-addressed, sha256 dedup)"
+        }
+      },
+      {
+        "name": "prompt.get",
+        "title": {
+          "ko": "프롬프트 조회(해시)",
+          "en": "Get prompt by hash"
+        }
+      },
+      {
+        "name": "prompt.resolve",
+        "title": {
+          "ko": "프롬프트 조립({{key}} 치환 — vars/refs)",
+          "en": "Resolve prompt template (vars/refs)"
+        }
       }
     ],
     "programs": [
