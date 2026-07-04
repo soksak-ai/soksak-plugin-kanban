@@ -38,171 +38,171 @@
       {
         "name": "ping",
         "title": {
-          "ko": "플러그인 적재/버전 확인(E2E)",
-          "en": "Ping (load/version check)"
+          "ko": "플러그인 상태를 점검합니다",
+          "en": "Pings the plugin"
         }
       },
       {
         "name": "node.add",
         "title": {
-          "ko": "노드 추가",
-          "en": "Add Node"
+          "ko": "칸반 항목을 추가합니다",
+          "en": "Adds a kanban item"
         }
       },
       {
         "name": "node.edit",
         "title": {
-          "ko": "노드 수정",
-          "en": "Edit Node"
+          "ko": "칸반 항목을 수정합니다",
+          "en": "Edits a kanban item"
         }
       },
       {
         "name": "node.remove",
         "title": {
-          "ko": "노드 삭제",
-          "en": "Remove Node"
+          "ko": "칸반 항목을 삭제합니다",
+          "en": "Removes a kanban item"
         },
         "danger": "destructive"
       },
       {
         "name": "node.get",
         "title": {
-          "ko": "노드 조회",
-          "en": "Get Node"
+          "ko": "칸반 항목을 조회합니다",
+          "en": "Reads a kanban item"
         }
       },
       {
         "name": "node.list",
         "title": {
-          "ko": "노드 목록",
-          "en": "List Nodes"
+          "ko": "칸반 항목을 나열합니다",
+          "en": "Lists kanban items"
         }
       },
       {
         "name": "outline.indent",
         "title": {
-          "ko": "들여쓰기(Tab)",
-          "en": "Indent (Tab)"
+          "ko": "항목을 들여씁니다",
+          "en": "Indents an item"
         }
       },
       {
         "name": "outline.outdent",
         "title": {
-          "ko": "내어쓰기(Shift+Tab)",
-          "en": "Outdent (Shift+Tab)"
+          "ko": "항목을 내어씁니다",
+          "en": "Outdents an item"
         }
       },
       {
         "name": "outline.move",
         "title": {
-          "ko": "노드 이동(reparent)",
-          "en": "Move Node (reparent)"
+          "ko": "항목을 옮깁니다",
+          "en": "Moves an item"
         }
       },
       {
         "name": "outline.reorder",
         "title": {
-          "ko": "형제 순서 변경",
-          "en": "Reorder Siblings"
+          "ko": "항목 순서를 바꿉니다",
+          "en": "Reorders items"
         }
       },
       {
         "name": "board.move",
         "title": {
-          "ko": "보드 이동(상태 변경)",
-          "en": "Move on Board (change status)"
+          "ko": "보드에서 항목을 옮깁니다",
+          "en": "Moves an item on the board"
         }
       },
       {
         "name": "board.reorder",
         "title": {
-          "ko": "보드 칸 내 순서 변경",
-          "en": "Reorder within Column"
+          "ko": "보드 순서를 바꿉니다",
+          "en": "Reorders the board"
         }
       },
       {
         "name": "board.sort",
         "title": {
-          "ko": "보드 정렬",
-          "en": "Sort Board"
+          "ko": "보드를 정렬합니다",
+          "en": "Sorts the board"
         }
       },
       {
         "name": "focus.set",
         "title": {
-          "ko": "관점(focus) 이동",
-          "en": "Set Focus"
+          "ko": "포커스를 지정합니다",
+          "en": "Sets the focus"
         }
       },
       {
         "name": "view.get",
         "title": {
-          "ko": "뷰 투영 조회",
-          "en": "Get View Projection"
+          "ko": "뷰 상태를 조회합니다",
+          "en": "Reads the view state"
         }
       },
       {
         "name": "stats",
         "title": {
-          "ko": "진행 통계",
-          "en": "Progress Stats"
+          "ko": "통계를 조회합니다",
+          "en": "Reads statistics"
         }
       },
       {
         "name": "timeline",
         "title": {
-          "ko": "상태 전환 타임라인",
-          "en": "Status Transition Timeline"
+          "ko": "타임라인을 조회합니다",
+          "en": "Reads the timeline"
         }
       },
       {
         "name": "column.list",
         "title": {
-          "ko": "컬럼 목록",
-          "en": "List Columns"
+          "ko": "컬럼을 조회합니다",
+          "en": "Lists columns"
         }
       },
       {
         "name": "seed",
         "title": {
-          "ko": "데모 트리 적재",
-          "en": "Seed Demo Tree"
+          "ko": "예시 데이터를 채웁니다",
+          "en": "Seeds sample data"
         }
       },
       {
         "name": "reset",
         "title": {
-          "ko": "전체 삭제",
-          "en": "Reset All"
+          "ko": "보드를 초기화합니다",
+          "en": "Resets the board"
         },
         "danger": "destructive"
       },
       {
         "name": "breadcrumb",
         "title": {
-          "ko": "브레드크럼",
-          "en": "Breadcrumb"
+          "ko": "경로를 조회합니다",
+          "en": "Reads the breadcrumb"
         }
       },
       {
         "name": "prompt.put",
         "title": {
-          "ko": "프롬프트 저장(콘텐츠 주소화 — sha256 dedup)",
-          "en": "Put prompt (content-addressed, sha256 dedup)"
+          "ko": "프롬프트를 저장합니다",
+          "en": "Stores a prompt"
         }
       },
       {
         "name": "prompt.get",
         "title": {
-          "ko": "프롬프트 조회(해시)",
-          "en": "Get prompt by hash"
+          "ko": "프롬프트를 조회합니다",
+          "en": "Reads a prompt"
         }
       },
       {
         "name": "prompt.resolve",
         "title": {
-          "ko": "프롬프트 조립({{key}} 치환 — vars/refs)",
-          "en": "Resolve prompt template (vars/refs)"
+          "ko": "프롬프트를 조립합니다",
+          "en": "Resolves a prompt"
         }
       }
     ],
