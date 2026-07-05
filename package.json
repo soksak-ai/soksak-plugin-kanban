@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "doctor": "soksak-plugin-doctor",
-    "prepublishOnly": "npm run doctor"
+    "prepublishOnly": "npm run build && npx --yes soksak-plugin-doctor ."
   },
   "dependencies": {
     "react": "^19.2.0",

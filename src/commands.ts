@@ -43,6 +43,8 @@ interface CommandSpec {
   returns?: string;
   danger?: "destructive" | "inject";
   examples?: readonly string[];
+  // 성공 결과(data)를 한 문장으로 요약 — 코어 message 프로토콜(command.message).
+  message?: (d: any) => string;
   handler: (params: Record<string, unknown>, ctx?: unknown) => Promise<object> | object;
 }
 interface CommandsApi {
@@ -56,7 +58,7 @@ interface AppCtx {
   subscriptions: Array<{ dispose(): void } | (() => void)>;
 }
 
-type Resolved = { ok: true; node: Node } | { ok: false; error: string; did_you_mean?: string[]; candidates?: string[] };
+type Resolved = { ok: true; node: Node } | { ok: false; code: string; message: string; did_you_mean?: string[]; candidates?: string[] };
 
 /** id 또는 key 로 노드 해석. 모호/미존재 시 후보 제시. */
 function resolve(nodes: Node[], ref: unknown): Resolved {
@@ -65,24 +67,24 @@ function resolve(nodes: Node[], ref: unknown): Resolved {
   if (direct) return { ok: true, node: direct };
   const byKey = nodes.filter((n) => n.key.toLowerCase() === s.toLowerCase());
   if (byKey.length === 1) return { ok: true, node: byKey[0] };
-  if (byKey.length > 1) return { ok: false, error: `ambiguous key: '${s}'`, candidates: byKey.map((n) => n.id) };
+  if (byKey.length > 1) return { ok: false, code: "AMBIGUOUS", message: `ambiguous key: '${s}'`, candidates: byKey.map((n) => n.id) };
   const fuzzy = nodes
     .filter((n) => n.key.toLowerCase().includes(s.toLowerCase()) || n.title.toLowerCase().includes(s.toLowerCase()))
     .slice(0, 5)
     .map((n) => n.key);
-  return { ok: false, error: `node not found: '${s}'`, did_you_mean: fuzzy };
+  return { ok: false, code: "NOT_FOUND", message: `node not found: '${s}'`, did_you_mean: fuzzy };
 }
 
 /** parentId 파라미터(생략/빈문자/'root'/null → 최상위) 해석. */
-function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | null } | { ok: false; error: string } {
+function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | null } | { ok: false; code: string; message: string } {
   if (ref == null || ref === "" || ref === "root" || ref === "null") return { ok: true, id: null };
   const r = resolve(nodes, ref);
-  return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
+  return r.ok ? { ok: true, id: r.node.id } : { ok: false, code: r.code, message: r.message };
 }
 
 const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
-const LOCKED = { ok: false as const, error: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
+const LOCKED = { ok: false as const, code: "LOCKED", message: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 // lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
 const isLockedTree = (nodes: Node[], n: Node): boolean => {
   let cur: Node | null | undefined = n;
@@ -113,9 +115,10 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       text: { type: "string", description: "(하위호환) 문자열 값 별칭" },
     },
     returns: "{ ok, hash }",
+    message: (d) => `프롬프트를 저장했습니다 (${String(d.hash).slice(0, 12)})`,
     handler: async (p) => {
       const value = p.value !== undefined ? p.value : p.text;
-      if (value == null || value === "") return { ok: false, error: "value 필수" };
+      if (value == null || value === "") return { ok: false, code: "INVALID_INPUT", message: "value 필수" };
       const canon = typeof value === "string" ? value : JSON.stringify(value);
       const hash = await sha256(canon);
       await store.putPrompt(hash, value);
@@ -126,6 +129,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     description: "hash 로 저장 값 조회(네이티브 JSON — 문자열/객체). 소비 시점 조립용.",
     params: { hash: { type: "string", description: "콘텐츠 주소 sha256", required: true } },
     returns: "{ ok, value, text }",
+    message: (d) => (d.value == null ? "저장된 값이 없습니다" : "값을 조회했습니다"),
     handler: async (p) => {
       const value = typeof p.hash === "string" ? await store.getPrompt(p.hash) : null;
       return { ok: true, value, text: typeof value === "string" ? value : undefined };
@@ -139,16 +143,17 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       refs: { type: "json", description: "{{key}} → 콘텐츠 주소 hash. 큰 공유값(directive 등)은 저장소에 1행만, 노드는 hash 참조 — 소비 시점 deref(중복 제거)." },
     },
     returns: "{ ok, prompt }",
+    message: () => "프롬프트를 완성했습니다",
     handler: async (p) => {
       const tmpl = typeof p.hash === "string" ? await store.getPrompt(p.hash) : null;
-      if (typeof tmpl !== "string") return { ok: false, error: "템플릿 미발견(또는 비문자열)", prompt: null };
+      if (typeof tmpl !== "string") return { ok: false, code: "NOT_FOUND", message: "템플릿 미발견(또는 비문자열)", prompt: null };
       const vars: Record<string, unknown> = { ...(p.vars && typeof p.vars === "object" ? (p.vars as Record<string, unknown>) : {}) };
       // refs: {{key}} 를 콘텐츠 주소(hash)에서 deref — 큰 공유값(directive)은 prompts 저장소 1행, 노드는 hash 만 보유.
       const refs = p.refs && typeof p.refs === "object" ? (p.refs as Record<string, unknown>) : {};
       for (const [k, h] of Object.entries(refs)) {
         if (typeof h !== "string") continue;
         const t = await store.getPrompt(h);
-        if (t == null) return { ok: false, error: `ref 미발견(${k}=${h.slice(0, 12)})`, prompt: null };
+        if (t == null) return { ok: false, code: "NOT_FOUND", message: `ref 미발견(${k}=${h.slice(0, 12)})`, prompt: null };
         vars[k] = t;
       }
       return { ok: true, prompt: bindVars(tmpl, vars) };
@@ -181,10 +186,11 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok, nodeId, key }",
     examples: ['sok plugin.soksak-plugin-kanban.node.add \'{"title":"새 작업","parentId":"WMP-100"}\''],
+    message: (d) => `${d.key} 노드를 추가했습니다`,
     handler: async (p) => {
       const nodes = store.get();
       const par = resolveParent(nodes, p.parentId);
-      if (!par.ok) return { ok: false, error: par.error };
+      if (!par.ok) return par;
       // ① 락인 비대칭 방지: 잠긴 subtree 에 unlocked 노드 주입 금지(node.remove 불가·subValidation 오염). 워크플로 발행은 locked:true 시그니처라 허용.
       if (par.id != null && p.locked !== true) {
         const parentNode = byId(nodes, par.id);
@@ -252,6 +258,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       kind: { type: "string", description: "워크플로 노드 종류 마커(chunk/group/item/task 등)" },
     },
     returns: "{ ok, node }",
+    message: (d) => `${d.node?.key ?? "노드"}를 수정했습니다`,
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -301,6 +308,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok, removed }",
     danger: "destructive",
+    message: (d) => `${d.removed}개 노드를 삭제했습니다`,
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -319,6 +327,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       withChildren: { type: "boolean", description: "Include direct children in the response" },
     },
     returns: "{ ok, node, children? }",
+    message: (d) => `${d.node?.key ?? "노드"} 노드를 조회했습니다`,
     handler: (p) => {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
@@ -341,11 +350,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       limit: { type: "number", description: "Maximum number of results (default 200)" },
     },
     returns: "{ ok, nodes }",
+    message: (d) => `${(d.nodes ?? []).length}개 노드`,
     handler: (p) => {
       let nodes = store.get();
       if (p.parentId != null && p.parentId !== "") {
         const par = resolveParent(nodes, p.parentId);
-        if (!par.ok) return { ok: false, error: par.error };
+        if (!par.ok) return par;
         nodes = nodes.filter((n) => n.parentId === par.id);
       }
       if (typeof p.status === "string") nodes = nodes.filter((n) => n.status === p.status);
@@ -366,6 +376,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     triggers: { ko: "들여쓰기 indent 하위로 자식 트리" },
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
+    message: () => "들여쓰기했습니다",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -384,6 +395,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     triggers: { ko: "내어쓰기 outdent 상위로 부모 올리기" },
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
+    message: () => "내어쓰기했습니다",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -401,13 +413,14 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       position: { type: "number", description: "0-based position among siblings (omit to append at end)" },
     },
     returns: "{ ok }",
+    message: () => "노드를 이동했습니다",
     handler: async (p) => {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
       if (isLockedTree(store.get(), r.node)) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
-      if (!par.ok) return { ok: false, error: par.error };
+      if (!par.ok) return par;
       // ① 주입 금지: unlocked 노드를 잠긴 subtree 로 이동 거부(source 가 locked 면 위에서 차단됨 — 여기 도달=unlocked).
       if (par.id != null) {
         const pn = byId(nodes, par.id);
@@ -425,6 +438,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       position: { type: "number", description: "Target 0-based position among siblings", required: true },
     },
     returns: "{ ok }",
+    message: () => "순서를 변경했습니다",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -445,11 +459,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok }",
     examples: ['sok plugin.soksak-plugin-kanban.board.move \'{"node":"WMP-103","status":"inprogress"}\''],
+    message: () => "카드를 다른 컬럼으로 옮겼습니다",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
       if (isLockedTree(store.get(), r.node)) return LOCKED;
-      if (!STATUS_ENUM.includes(p.status as StatusId)) return { ok: false, error: `invalid status: '${p.status}'` };
+      if (!STATUS_ENUM.includes(p.status as StatusId)) return { ok: false, code: "INVALID_INPUT", message: `invalid status: '${p.status}'` };
       await store.apply((ns) => boardMove(ns, r.node.id, p.status as StatusId, "me", TODAY, typeof p.position === "number" ? p.position : undefined));
       return { ok: true };
     },
@@ -462,6 +477,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       position: { type: "number", description: "Target 0-based position within the column", required: true },
     },
     returns: "{ ok }",
+    message: () => "카드 순서를 변경했습니다",
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -479,11 +495,12 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       dir: { type: "string", description: "Sort direction asc or desc (default asc)", enum: ["asc", "desc"] },
     },
     returns: "{ ok, order }",
+    message: (d) => `${(d.order ?? []).length}개를 정렬했습니다`,
     handler: async (p) => {
       const nodes = store.get();
       const par = resolveParent(nodes, p.parentId);
-      if (!par.ok) return { ok: false, error: par.error };
-      if (!SORT_ENUM.includes(p.by as SortKey)) return { ok: false, error: `invalid sort key: '${p.by}'` };
+      if (!par.ok) return par;
+      if (!SORT_ENUM.includes(p.by as SortKey)) return { ok: false, code: "INVALID_INPUT", message: `invalid sort key: '${p.by}'` };
       const dir = p.dir === "desc" ? "desc" : "asc";
       await store.apply((ns) => sortChildren(ns, par.id, p.by as SortKey, dir));
       return { ok: true, order: childrenOf(store.get(), par.id).map((n) => n.key) };
@@ -499,6 +516,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       view: { type: "string", description: "View to switch to simultaneously", enum: VIEW_ENUM },
     },
     returns: "{ ok, focusId, view }",
+    message: (d) => (d.focusId ? "포커스를 이동했습니다" : "최상위로 이동했습니다"),
     handler: (p) => {
       const nodes = store.get();
       let focusId: string | null = null;
@@ -527,9 +545,10 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok, view, projection }",
     examples: ['sok plugin.soksak-plugin-kanban.view.get \'{"view":"board","focus":"WMP-100"}\''],
+    message: (d) => `${d.view} 뷰를 투영했습니다`,
     handler: (p) => {
       const nodes = store.get();
-      if (!VIEW_ENUM.includes(p.view as ViewId)) return { ok: false, error: `invalid view: '${p.view}'` };
+      if (!VIEW_ENUM.includes(p.view as ViewId)) return { ok: false, code: "INVALID_INPUT", message: `invalid view: '${p.view}'` };
       let focusId: string | null = null;
       if (p.focus != null && p.focus !== "" && p.focus !== "root") {
         const r = resolve(nodes, p.focus);
@@ -551,6 +570,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     triggers: { ko: "통계 진행 완료율 포인트 병목 현황" },
     params: { focus: { type: "string", description: "Root node id or key to scope stats (omit for all nodes)" } },
     returns: "{ ok, stats }",
+    message: (d) => `총 ${d.stats?.total ?? 0}개 노드 현황`,
     handler: (p) => {
       const nodes = store.get();
       let focusId: string | null = null;
@@ -567,6 +587,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     description: "Return the status-transition timeline grouped by date in descending order. Useful for reviewing recent activity.",
     triggers: { ko: "타임라인 timeline 활동 히스토리 상태 전환" },
     returns: "{ ok, groups }",
+    message: (d) => `${(d.groups ?? []).length}개 날짜의 활동`,
     handler: () => ({ ok: true, groups: toTimeline(store.get()) }),
   });
 
@@ -574,6 +595,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     description: "List all board columns (statuses) with their metadata and current card count.",
     triggers: { ko: "컬럼 목록 보드 상태 칸 현황" },
     returns: "{ ok, columns }",
+    message: (d) => `${(d.columns ?? []).length}개 컬럼`,
     handler: () => {
       const items = store.get().filter((n) => n.parentId != null);
       return {
@@ -595,6 +617,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     triggers: { ko: "시드 데모 샘플 초기 데이터 seed" },
     params: { force: { type: "boolean", description: "Replace existing data with the demo tree" } },
     returns: "{ ok, count, skipped? }",
+    message: (d) => (d.skipped ? `이미 ${d.count}개가 있어 건너뜀` : `${d.count}개 노드를 생성했습니다`),
     handler: async (p) => {
       const cur = store.get();
       if (cur.length && p.force !== true) return { ok: true, skipped: true, count: cur.length };
@@ -608,6 +631,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     triggers: { ko: "초기화 리셋 전체 삭제 비우기" },
     returns: "{ ok, removed }",
     danger: "destructive",
+    message: (d) => `${d.removed}개를 삭제하고 초기화했습니다`,
     handler: async () => {
       const before = store.get().length;
       await store.apply(() => []);
@@ -620,6 +644,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     triggers: { ko: "브레드크럼 경로 위치 ancestors 탐색" },
     params: { focus: { type: "string", description: "Node id or key to trace ancestors for" } },
     returns: "{ ok, crumbs }",
+    message: (d) => `${d.label ?? "전체"} 경로`,
     handler: (p) => {
       const nodes = store.get();
       let focusId: string | null = null;

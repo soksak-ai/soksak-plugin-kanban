@@ -14534,17 +14534,17 @@ function resolve(nodes, ref) {
   if (direct) return { ok: true, node: direct };
   const byKey = nodes.filter((n) => n.key.toLowerCase() === s.toLowerCase());
   if (byKey.length === 1) return { ok: true, node: byKey[0] };
-  if (byKey.length > 1) return { ok: false, error: `ambiguous key: '${s}'`, candidates: byKey.map((n) => n.id) };
+  if (byKey.length > 1) return { ok: false, code: "AMBIGUOUS", message: `ambiguous key: '${s}'`, candidates: byKey.map((n) => n.id) };
   const fuzzy = nodes.filter((n) => n.key.toLowerCase().includes(s.toLowerCase()) || n.title.toLowerCase().includes(s.toLowerCase())).slice(0, 5).map((n) => n.key);
-  return { ok: false, error: `node not found: '${s}'`, did_you_mean: fuzzy };
+  return { ok: false, code: "NOT_FOUND", message: `node not found: '${s}'`, did_you_mean: fuzzy };
 }
 function resolveParent(nodes, ref) {
   if (ref == null || ref === "" || ref === "root" || ref === "null") return { ok: true, id: null };
   const r = resolve(nodes, ref);
-  return r.ok ? { ok: true, id: r.node.id } : { ok: false, error: r.error };
+  return r.ok ? { ok: true, id: r.node.id } : { ok: false, code: r.code, message: r.message };
 }
 var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
-var LOCKED = { ok: false, error: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
+var LOCKED = { ok: false, code: "LOCKED", message: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
 var isLockedTree = (nodes, n) => {
   let cur = n;
   while (cur) {
@@ -14570,9 +14570,10 @@ function registerCommands(ctx, store2) {
       text: { type: "string", description: "(\uD558\uC704\uD638\uD658) \uBB38\uC790\uC5F4 \uAC12 \uBCC4\uCE6D" }
     },
     returns: "{ ok, hash }",
+    message: (d) => `\uD504\uB86C\uD504\uD2B8\uB97C \uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4 (${String(d.hash).slice(0, 12)})`,
     handler: async (p) => {
       const value = p.value !== void 0 ? p.value : p.text;
-      if (value == null || value === "") return { ok: false, error: "value \uD544\uC218" };
+      if (value == null || value === "") return { ok: false, code: "INVALID_INPUT", message: "value \uD544\uC218" };
       const canon = typeof value === "string" ? value : JSON.stringify(value);
       const hash = await sha256(canon);
       await store2.putPrompt(hash, value);
@@ -14583,6 +14584,7 @@ function registerCommands(ctx, store2) {
     description: "hash \uB85C \uC800\uC7A5 \uAC12 \uC870\uD68C(\uB124\uC774\uD2F0\uBE0C JSON \u2014 \uBB38\uC790\uC5F4/\uAC1D\uCCB4). \uC18C\uBE44 \uC2DC\uC810 \uC870\uB9BD\uC6A9.",
     params: { hash: { type: "string", description: "\uCF58\uD150\uCE20 \uC8FC\uC18C sha256", required: true } },
     returns: "{ ok, value, text }",
+    message: (d) => d.value == null ? "\uC800\uC7A5\uB41C \uAC12\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" : "\uAC12\uC744 \uC870\uD68C\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const value = typeof p.hash === "string" ? await store2.getPrompt(p.hash) : null;
       return { ok: true, value, text: typeof value === "string" ? value : void 0 };
@@ -14596,15 +14598,16 @@ function registerCommands(ctx, store2) {
       refs: { type: "json", description: "{{key}} \u2192 \uCF58\uD150\uCE20 \uC8FC\uC18C hash. \uD070 \uACF5\uC720\uAC12(directive \uB4F1)\uC740 \uC800\uC7A5\uC18C\uC5D0 1\uD589\uB9CC, \uB178\uB4DC\uB294 hash \uCC38\uC870 \u2014 \uC18C\uBE44 \uC2DC\uC810 deref(\uC911\uBCF5 \uC81C\uAC70)." }
     },
     returns: "{ ok, prompt }",
+    message: () => "\uD504\uB86C\uD504\uD2B8\uB97C \uC644\uC131\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const tmpl = typeof p.hash === "string" ? await store2.getPrompt(p.hash) : null;
-      if (typeof tmpl !== "string") return { ok: false, error: "\uD15C\uD50C\uB9BF \uBBF8\uBC1C\uACAC(\uB610\uB294 \uBE44\uBB38\uC790\uC5F4)", prompt: null };
+      if (typeof tmpl !== "string") return { ok: false, code: "NOT_FOUND", message: "\uD15C\uD50C\uB9BF \uBBF8\uBC1C\uACAC(\uB610\uB294 \uBE44\uBB38\uC790\uC5F4)", prompt: null };
       const vars = { ...p.vars && typeof p.vars === "object" ? p.vars : {} };
       const refs = p.refs && typeof p.refs === "object" ? p.refs : {};
       for (const [k, h2] of Object.entries(refs)) {
         if (typeof h2 !== "string") continue;
         const t2 = await store2.getPrompt(h2);
-        if (t2 == null) return { ok: false, error: `ref \uBBF8\uBC1C\uACAC(${k}=${h2.slice(0, 12)})`, prompt: null };
+        if (t2 == null) return { ok: false, code: "NOT_FOUND", message: `ref \uBBF8\uBC1C\uACAC(${k}=${h2.slice(0, 12)})`, prompt: null };
         vars[k] = t2;
       }
       return { ok: true, prompt: bindVars(tmpl, vars) };
@@ -14635,10 +14638,11 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok, nodeId, key }",
     examples: [`sok plugin.soksak-plugin-kanban.node.add '{"title":"\uC0C8 \uC791\uC5C5","parentId":"WMP-100"}'`],
+    message: (d) => `${d.key} \uB178\uB4DC\uB97C \uCD94\uAC00\uD588\uC2B5\uB2C8\uB2E4`,
     handler: async (p) => {
       const nodes = store2.get();
       const par = resolveParent(nodes, p.parentId);
-      if (!par.ok) return { ok: false, error: par.error };
+      if (!par.ok) return par;
       if (par.id != null && p.locked !== true) {
         const parentNode = byId(nodes, par.id);
         if (parentNode && isLockedTree(nodes, parentNode)) return LOCKED;
@@ -14703,6 +14707,7 @@ function registerCommands(ctx, store2) {
       kind: { type: "string", description: "\uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC \uC885\uB958 \uB9C8\uCEE4(chunk/group/item/task \uB4F1)" }
     },
     returns: "{ ok, node }",
+    message: (d) => `${d.node?.key ?? "\uB178\uB4DC"}\uB97C \uC218\uC815\uD588\uC2B5\uB2C8\uB2E4`,
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14751,6 +14756,7 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok, removed }",
     danger: "destructive",
+    message: (d) => `${d.removed}\uAC1C \uB178\uB4DC\uB97C \uC0AD\uC81C\uD588\uC2B5\uB2C8\uB2E4`,
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14768,6 +14774,7 @@ function registerCommands(ctx, store2) {
       withChildren: { type: "boolean", description: "Include direct children in the response" }
     },
     returns: "{ ok, node, children? }",
+    message: (d) => `${d.node?.key ?? "\uB178\uB4DC"} \uB178\uB4DC\uB97C \uC870\uD68C\uD588\uC2B5\uB2C8\uB2E4`,
     handler: (p) => {
       const nodes = store2.get();
       const r = resolve(nodes, p.node);
@@ -14789,11 +14796,12 @@ function registerCommands(ctx, store2) {
       limit: { type: "number", description: "Maximum number of results (default 200)" }
     },
     returns: "{ ok, nodes }",
+    message: (d) => `${(d.nodes ?? []).length}\uAC1C \uB178\uB4DC`,
     handler: (p) => {
       let nodes = store2.get();
       if (p.parentId != null && p.parentId !== "") {
         const par = resolveParent(nodes, p.parentId);
-        if (!par.ok) return { ok: false, error: par.error };
+        if (!par.ok) return par;
         nodes = nodes.filter((n) => n.parentId === par.id);
       }
       if (typeof p.status === "string") nodes = nodes.filter((n) => n.status === p.status);
@@ -14812,6 +14820,7 @@ function registerCommands(ctx, store2) {
     triggers: { ko: "\uB4E4\uC5EC\uC4F0\uAE30 indent \uD558\uC704\uB85C \uC790\uC2DD \uD2B8\uB9AC" },
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
+    message: () => "\uB4E4\uC5EC\uC4F0\uAE30\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14829,6 +14838,7 @@ function registerCommands(ctx, store2) {
     triggers: { ko: "\uB0B4\uC5B4\uC4F0\uAE30 outdent \uC0C1\uC704\uB85C \uBD80\uBAA8 \uC62C\uB9AC\uAE30" },
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
+    message: () => "\uB0B4\uC5B4\uC4F0\uAE30\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14846,13 +14856,14 @@ function registerCommands(ctx, store2) {
       position: { type: "number", description: "0-based position among siblings (omit to append at end)" }
     },
     returns: "{ ok }",
+    message: () => "\uB178\uB4DC\uB97C \uC774\uB3D9\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const nodes = store2.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
       if (isLockedTree(store2.get(), r.node)) return LOCKED;
       const par = resolveParent(nodes, p.parentId);
-      if (!par.ok) return { ok: false, error: par.error };
+      if (!par.ok) return par;
       if (par.id != null) {
         const pn = byId(nodes, par.id);
         if (pn && isLockedTree(nodes, pn)) return LOCKED;
@@ -14869,6 +14880,7 @@ function registerCommands(ctx, store2) {
       position: { type: "number", description: "Target 0-based position among siblings", required: true }
     },
     returns: "{ ok }",
+    message: () => "\uC21C\uC11C\uB97C \uBCC0\uACBD\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14887,11 +14899,12 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok }",
     examples: [`sok plugin.soksak-plugin-kanban.board.move '{"node":"WMP-103","status":"inprogress"}'`],
+    message: () => "\uCE74\uB4DC\uB97C \uB2E4\uB978 \uCEEC\uB7FC\uC73C\uB85C \uC62E\uACBC\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
       if (isLockedTree(store2.get(), r.node)) return LOCKED;
-      if (!STATUS_ENUM.includes(p.status)) return { ok: false, error: `invalid status: '${p.status}'` };
+      if (!STATUS_ENUM.includes(p.status)) return { ok: false, code: "INVALID_INPUT", message: `invalid status: '${p.status}'` };
       await store2.apply((ns) => boardMove(ns, r.node.id, p.status, "me", TODAY, typeof p.position === "number" ? p.position : void 0));
       return { ok: true };
     }
@@ -14904,6 +14917,7 @@ function registerCommands(ctx, store2) {
       position: { type: "number", description: "Target 0-based position within the column", required: true }
     },
     returns: "{ ok }",
+    message: () => "\uCE74\uB4DC \uC21C\uC11C\uB97C \uBCC0\uACBD\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14921,11 +14935,12 @@ function registerCommands(ctx, store2) {
       dir: { type: "string", description: "Sort direction asc or desc (default asc)", enum: ["asc", "desc"] }
     },
     returns: "{ ok, order }",
+    message: (d) => `${(d.order ?? []).length}\uAC1C\uB97C \uC815\uB82C\uD588\uC2B5\uB2C8\uB2E4`,
     handler: async (p) => {
       const nodes = store2.get();
       const par = resolveParent(nodes, p.parentId);
-      if (!par.ok) return { ok: false, error: par.error };
-      if (!SORT_ENUM.includes(p.by)) return { ok: false, error: `invalid sort key: '${p.by}'` };
+      if (!par.ok) return par;
+      if (!SORT_ENUM.includes(p.by)) return { ok: false, code: "INVALID_INPUT", message: `invalid sort key: '${p.by}'` };
       const dir = p.dir === "desc" ? "desc" : "asc";
       await store2.apply((ns) => sortChildren(ns, par.id, p.by, dir));
       return { ok: true, order: childrenOf(store2.get(), par.id).map((n) => n.key) };
@@ -14939,6 +14954,7 @@ function registerCommands(ctx, store2) {
       view: { type: "string", description: "View to switch to simultaneously", enum: VIEW_ENUM }
     },
     returns: "{ ok, focusId, view }",
+    message: (d) => d.focusId ? "\uD3EC\uCEE4\uC2A4\uB97C \uC774\uB3D9\uD588\uC2B5\uB2C8\uB2E4" : "\uCD5C\uC0C1\uC704\uB85C \uC774\uB3D9\uD588\uC2B5\uB2C8\uB2E4",
     handler: (p) => {
       const nodes = store2.get();
       let focusId = null;
@@ -14965,9 +14981,10 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok, view, projection }",
     examples: [`sok plugin.soksak-plugin-kanban.view.get '{"view":"board","focus":"WMP-100"}'`],
+    message: (d) => `${d.view} \uBDF0\uB97C \uD22C\uC601\uD588\uC2B5\uB2C8\uB2E4`,
     handler: (p) => {
       const nodes = store2.get();
-      if (!VIEW_ENUM.includes(p.view)) return { ok: false, error: `invalid view: '${p.view}'` };
+      if (!VIEW_ENUM.includes(p.view)) return { ok: false, code: "INVALID_INPUT", message: `invalid view: '${p.view}'` };
       let focusId = null;
       if (p.focus != null && p.focus !== "" && p.focus !== "root") {
         const r = resolve(nodes, p.focus);
@@ -14988,6 +15005,7 @@ function registerCommands(ctx, store2) {
     triggers: { ko: "\uD1B5\uACC4 \uC9C4\uD589 \uC644\uB8CC\uC728 \uD3EC\uC778\uD2B8 \uBCD1\uBAA9 \uD604\uD669" },
     params: { focus: { type: "string", description: "Root node id or key to scope stats (omit for all nodes)" } },
     returns: "{ ok, stats }",
+    message: (d) => `\uCD1D ${d.stats?.total ?? 0}\uAC1C \uB178\uB4DC \uD604\uD669`,
     handler: (p) => {
       const nodes = store2.get();
       let focusId = null;
@@ -15003,12 +15021,14 @@ function registerCommands(ctx, store2) {
     description: "Return the status-transition timeline grouped by date in descending order. Useful for reviewing recent activity.",
     triggers: { ko: "\uD0C0\uC784\uB77C\uC778 timeline \uD65C\uB3D9 \uD788\uC2A4\uD1A0\uB9AC \uC0C1\uD0DC \uC804\uD658" },
     returns: "{ ok, groups }",
+    message: (d) => `${(d.groups ?? []).length}\uAC1C \uB0A0\uC9DC\uC758 \uD65C\uB3D9`,
     handler: () => ({ ok: true, groups: toTimeline(store2.get()) })
   });
   sub("column.list", {
     description: "List all board columns (statuses) with their metadata and current card count.",
     triggers: { ko: "\uCEEC\uB7FC \uBAA9\uB85D \uBCF4\uB4DC \uC0C1\uD0DC \uCE78 \uD604\uD669" },
     returns: "{ ok, columns }",
+    message: (d) => `${(d.columns ?? []).length}\uAC1C \uCEEC\uB7FC`,
     handler: () => {
       const items = store2.get().filter((n) => n.parentId != null);
       return {
@@ -15028,6 +15048,7 @@ function registerCommands(ctx, store2) {
     triggers: { ko: "\uC2DC\uB4DC \uB370\uBAA8 \uC0D8\uD50C \uCD08\uAE30 \uB370\uC774\uD130 seed" },
     params: { force: { type: "boolean", description: "Replace existing data with the demo tree" } },
     returns: "{ ok, count, skipped? }",
+    message: (d) => d.skipped ? `\uC774\uBBF8 ${d.count}\uAC1C\uAC00 \uC788\uC5B4 \uAC74\uB108\uB700` : `${d.count}\uAC1C \uB178\uB4DC\uB97C \uC0DD\uC131\uD588\uC2B5\uB2C8\uB2E4`,
     handler: async (p) => {
       const cur = store2.get();
       if (cur.length && p.force !== true) return { ok: true, skipped: true, count: cur.length };
@@ -15040,6 +15061,7 @@ function registerCommands(ctx, store2) {
     triggers: { ko: "\uCD08\uAE30\uD654 \uB9AC\uC14B \uC804\uCCB4 \uC0AD\uC81C \uBE44\uC6B0\uAE30" },
     returns: "{ ok, removed }",
     danger: "destructive",
+    message: (d) => `${d.removed}\uAC1C\uB97C \uC0AD\uC81C\uD558\uACE0 \uCD08\uAE30\uD654\uD588\uC2B5\uB2C8\uB2E4`,
     handler: async () => {
       const before = store2.get().length;
       await store2.apply(() => []);
@@ -15051,6 +15073,7 @@ function registerCommands(ctx, store2) {
     triggers: { ko: "\uBE0C\uB808\uB4DC\uD06C\uB7FC \uACBD\uB85C \uC704\uCE58 ancestors \uD0D0\uC0C9" },
     params: { focus: { type: "string", description: "Node id or key to trace ancestors for" } },
     returns: "{ ok, crumbs }",
+    message: (d) => `${d.label ?? "\uC804\uCCB4"} \uACBD\uB85C`,
     handler: (p) => {
       const nodes = store2.get();
       let focusId = null;
@@ -15142,6 +15165,7 @@ var plugin_entry_default = {
       ctx.subscriptions.push(
         app.commands.register("ping", {
           description: "\uD50C\uB7EC\uADF8\uC778 \uC801\uC7AC/\uBC84\uC804 \uD655\uC778(E2E)",
+          message: (d) => `\uCE78\uBC18 \uD50C\uB7EC\uADF8\uC778 v${d.version} \uC815\uC0C1`,
           handler: async () => ({
             ok: true,
             plugin: "soksak-plugin-kanban",
