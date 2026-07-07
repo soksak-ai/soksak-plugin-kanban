@@ -45,6 +45,9 @@ interface CommandSpec {
   examples?: readonly string[];
   // 성공 결과(data)를 한 문장으로 요약 — 코어 message 프로토콜(command.message).
   message?: (d: any) => string;
+  // 후속 명령 제시(코어 hint 와 동형) — 성공 data 를 받아 다음에 둘 만한 명령을 최대 3개 제안.
+  // 지시가 아니라 가능성의 제시(제안 어조) — 마땅한 사이클이 없는 명령엔 안 붙인다.
+  hint?: (d: any, ctx?: unknown) => { cmd: string; why: string }[];
   handler: (params: Record<string, unknown>, ctx?: unknown) => Promise<object> | object;
 }
 interface CommandsApi {
@@ -187,6 +190,10 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     returns: "{ ok, nodeId, key }",
     examples: ['sok plugin.soksak-plugin-kanban.node.add \'{"title":"새 작업","parentId":"WMP-100"}\''],
     message: (d) => `${d.key} 노드를 추가했습니다`,
+    hint: (d) => [
+      { cmd: `sok plugin.soksak-plugin-kanban.outline.indent node=${d.nodeId}`, why: "직전 형제 아래로 들여쓰기해 계층을 만들 수 있습니다" },
+      { cmd: `sok plugin.soksak-plugin-kanban.board.move node=${d.nodeId} status=doing`, why: "보드 컬럼(상태)을 지정할 수 있습니다" },
+    ],
     handler: async (p) => {
       const nodes = store.get();
       const par = resolveParent(nodes, p.parentId);
@@ -377,6 +384,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     message: () => "들여쓰기했습니다",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "변경된 트리 구조를 확인할 수 있습니다" }],
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -396,6 +404,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     message: () => "내어쓰기했습니다",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "변경된 트리 구조를 확인할 수 있습니다" }],
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -414,6 +423,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok }",
     message: () => "노드를 이동했습니다",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "변경된 트리 구조를 확인할 수 있습니다" }],
     handler: async (p) => {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
@@ -439,6 +449,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok }",
     message: () => "순서를 변경했습니다",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "변경된 트리 구조를 확인할 수 있습니다" }],
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -460,6 +471,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     returns: "{ ok }",
     examples: ['sok plugin.soksak-plugin-kanban.board.move \'{"node":"WMP-103","status":"inprogress"}\''],
     message: () => "카드를 다른 컬럼으로 옮겼습니다",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "옮긴 컬럼을 보드에서 확인할 수 있습니다" }],
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -478,6 +490,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok }",
     message: () => "카드 순서를 변경했습니다",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "변경된 순서를 보드에서 확인할 수 있습니다" }],
     handler: async (p) => {
       const r = resolve(store.get(), p.node);
       if (!r.ok) return r;
@@ -496,6 +509,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     },
     returns: "{ ok, order }",
     message: (d) => `${(d.order ?? []).length}개를 정렬했습니다`,
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "정렬된 순서를 보드에서 확인할 수 있습니다" }],
     handler: async (p) => {
       const nodes = store.get();
       const par = resolveParent(nodes, p.parentId);
@@ -618,6 +632,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     params: { force: { type: "boolean", description: "Replace existing data with the demo tree" } },
     returns: "{ ok, count, skipped? }",
     message: (d) => (d.skipped ? `이미 ${d.count}개가 있어 건너뜀` : `${d.count}개 노드를 생성했습니다`),
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "생성된 데모 트리를 보드에서 확인할 수 있습니다" }],
     handler: async (p) => {
       const cur = store.get();
       if (cur.length && p.force !== true) return { ok: true, skipped: true, count: cur.length };

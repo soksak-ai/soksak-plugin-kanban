@@ -14639,6 +14639,10 @@ function registerCommands(ctx, store2) {
     returns: "{ ok, nodeId, key }",
     examples: [`sok plugin.soksak-plugin-kanban.node.add '{"title":"\uC0C8 \uC791\uC5C5","parentId":"WMP-100"}'`],
     message: (d) => `${d.key} \uB178\uB4DC\uB97C \uCD94\uAC00\uD588\uC2B5\uB2C8\uB2E4`,
+    hint: (d) => [
+      { cmd: `sok plugin.soksak-plugin-kanban.outline.indent node=${d.nodeId}`, why: "\uC9C1\uC804 \uD615\uC81C \uC544\uB798\uB85C \uB4E4\uC5EC\uC4F0\uAE30\uD574 \uACC4\uCE35\uC744 \uB9CC\uB4E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4" },
+      { cmd: `sok plugin.soksak-plugin-kanban.board.move node=${d.nodeId} status=doing`, why: "\uBCF4\uB4DC \uCEEC\uB7FC(\uC0C1\uD0DC)\uC744 \uC9C0\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }
+    ],
     handler: async (p) => {
       const nodes = store2.get();
       const par = resolveParent(nodes, p.parentId);
@@ -14821,6 +14825,7 @@ function registerCommands(ctx, store2) {
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     message: () => "\uB4E4\uC5EC\uC4F0\uAE30\uD588\uC2B5\uB2C8\uB2E4",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "\uBCC0\uACBD\uB41C \uD2B8\uB9AC \uAD6C\uC870\uB97C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14839,6 +14844,7 @@ function registerCommands(ctx, store2) {
     params: { node: { type: "string", description: "Node id or key", required: true } },
     returns: "{ ok }",
     message: () => "\uB0B4\uC5B4\uC4F0\uAE30\uD588\uC2B5\uB2C8\uB2E4",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "\uBCC0\uACBD\uB41C \uD2B8\uB9AC \uAD6C\uC870\uB97C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14857,6 +14863,7 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok }",
     message: () => "\uB178\uB4DC\uB97C \uC774\uB3D9\uD588\uC2B5\uB2C8\uB2E4",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "\uBCC0\uACBD\uB41C \uD2B8\uB9AC \uAD6C\uC870\uB97C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const nodes = store2.get();
       const r = resolve(nodes, p.node);
@@ -14881,6 +14888,7 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok }",
     message: () => "\uC21C\uC11C\uB97C \uBCC0\uACBD\uD588\uC2B5\uB2C8\uB2E4",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=outline", why: "\uBCC0\uACBD\uB41C \uD2B8\uB9AC \uAD6C\uC870\uB97C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14900,6 +14908,7 @@ function registerCommands(ctx, store2) {
     returns: "{ ok }",
     examples: [`sok plugin.soksak-plugin-kanban.board.move '{"node":"WMP-103","status":"inprogress"}'`],
     message: () => "\uCE74\uB4DC\uB97C \uB2E4\uB978 \uCEEC\uB7FC\uC73C\uB85C \uC62E\uACBC\uC2B5\uB2C8\uB2E4",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "\uC62E\uAE34 \uCEEC\uB7FC\uC744 \uBCF4\uB4DC\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14918,6 +14927,7 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok }",
     message: () => "\uCE74\uB4DC \uC21C\uC11C\uB97C \uBCC0\uACBD\uD588\uC2B5\uB2C8\uB2E4",
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "\uBCC0\uACBD\uB41C \uC21C\uC11C\uB97C \uBCF4\uB4DC\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const r = resolve(store2.get(), p.node);
       if (!r.ok) return r;
@@ -14936,6 +14946,7 @@ function registerCommands(ctx, store2) {
     },
     returns: "{ ok, order }",
     message: (d) => `${(d.order ?? []).length}\uAC1C\uB97C \uC815\uB82C\uD588\uC2B5\uB2C8\uB2E4`,
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "\uC815\uB82C\uB41C \uC21C\uC11C\uB97C \uBCF4\uB4DC\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const nodes = store2.get();
       const par = resolveParent(nodes, p.parentId);
@@ -15049,6 +15060,7 @@ function registerCommands(ctx, store2) {
     params: { force: { type: "boolean", description: "Replace existing data with the demo tree" } },
     returns: "{ ok, count, skipped? }",
     message: (d) => d.skipped ? `\uC774\uBBF8 ${d.count}\uAC1C\uAC00 \uC788\uC5B4 \uAC74\uB108\uB700` : `${d.count}\uAC1C \uB178\uB4DC\uB97C \uC0DD\uC131\uD588\uC2B5\uB2C8\uB2E4`,
+    hint: () => [{ cmd: "sok plugin.soksak-plugin-kanban.view.get view=board", why: "\uC0DD\uC131\uB41C \uB370\uBAA8 \uD2B8\uB9AC\uB97C \uBCF4\uB4DC\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4" }],
     handler: async (p) => {
       const cur = store2.get();
       if (cur.length && p.force !== true) return { ok: true, skipped: true, count: cur.length };
