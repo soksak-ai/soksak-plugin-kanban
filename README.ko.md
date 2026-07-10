@@ -45,6 +45,21 @@
 | `stats {focus?}` · `timeline` · `column.list` · `breadcrumb {focus?}` | 파생 조회 |
 | `seed {force?}` · `reset` | 데모 트리 적재 / 전체 삭제 |
 
+## DOM 노드 (ui.tree / ui.input.click)
+
+뷰는 조작 가능한 DOM 요소를 `contributes.nodes` 로 선언하고 `data-node` 로 배선한다. `sok ui.tree` 가 절대주소로 나열하고 `sok ui.input.click {address}` 가 진짜 click 을 디스패치한다 — 에이전트·E2E 가 사람과 같은 클릭 경로로 UI 를 조작한다.
+
+| 노드 | 경로 | 요소 |
+|---|---|---|
+| `tab` | `tab/<뷰>` | 상단 뷰 탭 — 클릭=뷰 전환 |
+| `new-issue` | `new-issue` | 새 이슈 버튼 — 클릭=생성 모달 |
+| `card` | `card/<키>` | 보드 카드 — 클릭=자식 있으면 drill, 말단이면 상세 |
+| `row` | `row/<키>` | 아웃라인 행 앵커 — `ui.tree` 로 위치·상태 판독 |
+| `badge` | `badge/<키>/<pending\|o\|x\|f>` | 항목 검증 배지; 마지막 세그먼트가 값 |
+| `audit` | `audit/<키>/p<P>.o<O>.x<X>.f<F>` | 감사 집계; `f>0` 이면 덩어리 폐기 대상 |
+
+노드 경로는 `src/view/nodePaths.ts`(단일진실)에서 조립하고 호스트 `NODE_PATH_RE`(소문자·하이픈·`/` 세그먼트; 키는 소문자화)를 따른다. `nodes.test.ts` 가 선언(`contributes.nodes`) ≡ 배선(`data-node`) 양방향과 빌드 산출물 반영을 강제한다. 항목 개체는 command 표면(`node.*`·`outline.*`·`board.*`·`focus.set`)도 함께 가지므로 헤드리스 조작엔 DOM 주소화가 불필요하다.
+
 ## 개발
 
 ```bash

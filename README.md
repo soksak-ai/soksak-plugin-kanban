@@ -45,6 +45,21 @@ Call as `sok plugin.soksak-plugin-kanban.<command>` or via MCP tool. The `node` 
 | `stats {focus?}` · `timeline` · `column.list` · `breadcrumb {focus?}` | Derived queries |
 | `seed {force?}` · `reset` | Load demo tree / delete everything |
 
+## DOM nodes (ui.tree / ui.input.click)
+
+The view declares its operable DOM elements as `contributes.nodes`, wired with `data-node`. `sok ui.tree` lists them as absolute addresses and `sok ui.input.click {address}` dispatches a real click — so an agent or E2E drives the UI through the same click path a person takes.
+
+| Node | Path | Element |
+|---|---|---|
+| `tab` | `tab/<view>` | Top-bar view tab — click switches view |
+| `new-issue` | `new-issue` | New issue button — click opens the create modal |
+| `card` | `card/<key>` | Board card — click drills in (has children) or opens detail |
+| `row` | `row/<key>` | Outline row anchor — read position/state via `ui.tree` |
+| `badge` | `badge/<key>/<pending\|o\|x\|f>` | Item validation badge; last segment is the value |
+| `audit` | `audit/<key>/p<P>.o<O>.x<X>.f<F>` | Audit tally; `f>0` marks the chunk for discard |
+
+Node paths are constructed in `src/view/nodePaths.ts` (single source) and follow the host `NODE_PATH_RE` (lowercase, hyphen, `/` segments; keys are lowercased). `nodes.test.ts` enforces declaration (`contributes.nodes`) ≡ wiring (`data-node`) both ways and presence in the built bundle. Per-item objects also carry the full command surface (`node.*`, `outline.*`, `board.*`, `focus.set`), so headless operation needs no DOM addressing.
+
 ## Development
 
 ```bash
