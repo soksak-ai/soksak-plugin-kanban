@@ -10,6 +10,7 @@ import { byId } from "@/core/tree";
 import { insertNode, removeNode } from "@/core/algebra";
 import { useNodes } from "@/view/useStore";
 import { rootStyle } from "@/view/ui";
+import { tabNodePath, NEW_ISSUE_NODE } from "@/view/nodePaths";
 import { t, VIEW_TABS } from "@/view/i18n";
 import Outline from "@/view/Outline";
 import Board from "@/view/Board";
@@ -117,7 +118,7 @@ export default function App({ store, app }: AppProps) {
           {VIEW_TABS.map(({ id, en, ko }) => {
             const lbl = lang === "ko" ? ko : en;
             return (
-              <button key={id} onClick={() => setView(id as ViewId)} style={tabStyle(view === id as ViewId)}>
+              <button key={id} data-node={tabNodePath(id)} onClick={() => setView(id as ViewId)} style={tabStyle(view === id as ViewId)}>
                 <span style={{ width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" }} />
                 <span>{lbl}</span>
               </button>
@@ -125,7 +126,7 @@ export default function App({ store, app }: AppProps) {
           })}
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
-          <button onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> {t("newIssueBtn", lang)}</button>
+          <button data-node={NEW_ISSUE_NODE} onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> {t("newIssueBtn", lang)}</button>
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPlaceholder", lang)} style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
         </div>
       </header>

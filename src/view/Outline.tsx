@@ -10,6 +10,7 @@ import { insertNode, indent, outdent, removeNode, setStatus } from "@/core/algeb
 import { toOutlineRows, breadcrumb } from "@/core/projections";
 import { avatar, initials, statusChip, sMeta, hexA } from "@/view/ui";
 import { ItemBadge, AuditBadge } from "@/view/badges";
+import { rowNodePath } from "@/view/nodePaths";
 import ScopeStat from "@/view/ScopeStat";
 import { t } from "@/view/i18n";
 
@@ -158,7 +159,7 @@ export default function Outline({ store, nodes, focusId, setFocusId, onOpen, lan
         {rows.map((row) => {
           const m = sMeta(row.status);
           return (
-            <div key={row.id} data-node={`row/${(row.key || row.id).toLowerCase()}`} style={{ display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }}>
+            <div key={row.id} data-node={rowNodePath(row.key || row.id)} style={{ display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }}>
               {Array.from({ length: row.depth }).map((_, k) => (
                 <span key={k} style={{ width: 22, flex: "none", alignSelf: "stretch", borderRight: "1.5px solid var(--border)" }} />
               ))}

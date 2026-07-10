@@ -13122,6 +13122,15 @@ function rootStyle() {
   };
 }
 
+// src/view/nodePaths.ts
+var tabNodePath = (view) => `tab/${view}`;
+var NEW_ISSUE_NODE = "new-issue";
+var cardNodePath = (key) => `card/${key.toLowerCase()}`;
+var rowNodePath = (key) => `row/${key.toLowerCase()}`;
+var BADGE_LATIN = { "\uAC80\uC218\uC804": "pending", o: "o", x: "x", f: "f" };
+var badgeNodePath = (key, badge) => `badge/${key.toLowerCase()}/${BADGE_LATIN[badge] ?? "pending"}`;
+var auditNodePath = (key, v) => `audit/${key.toLowerCase()}/p${v.pending}.o${v.o}.x${v.x}.f${v.f}`;
+
 // src/view/i18n.ts
 var strings = {
   // App
@@ -13489,11 +13498,6 @@ function projectView(nodes, view, focusId = null, opts = {}) {
   }
 }
 
-// src/view/nodePaths.ts
-var BADGE_LATIN = { "\uAC80\uC218\uC804": "pending", o: "o", x: "x", f: "f" };
-var badgeNodePath = (key, badge) => `badge/${key.toLowerCase()}/${BADGE_LATIN[badge] ?? "pending"}`;
-var auditNodePath = (key, v) => `audit/${key.toLowerCase()}/p${v.pending}.o${v.o}.x${v.x}.f${v.f}`;
-
 // src/view/badges.tsx
 var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
 var bMeta = (id) => BADGES.find((b) => b.id === id);
@@ -13681,7 +13685,7 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen, lang }) {
     /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { ref: containerRef, style: { maxWidth: 760, border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface)", padding: 8, boxShadow: "var(--shadow)" }, children: [
       rows.map((row) => {
         const m = sMeta(row.status);
-        return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { "data-node": `row/${(row.key || row.id).toLowerCase()}`, style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { "data-node": rowNodePath(row.key || row.id), style: { display: "flex", alignItems: "stretch", minHeight: 36, borderRadius: 9 }, children: [
           Array.from({ length: row.depth }).map((_, k) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { width: 22, flex: "none", alignSelf: "stretch", borderRight: "1.5px solid var(--border)" } }, k)),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 9, padding: "0 10px 0 8px" }, children: [
             row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: { width: 20, height: 20, borderRadius: 6, background: "#8b5cf6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flex: "none", cursor: "pointer" }, children: "E" }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: { width: 15, height: 15, borderRadius: 5, background: hexA(m.color, 0.2), border: `1.5px solid ${m.color}`, flex: "none", cursor: "pointer", padding: 0 } }),
@@ -13793,6 +13797,7 @@ function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill 
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
     "div",
     {
+      "data-node": cardNodePath(card.key),
       draggable: true,
       onDragStart,
       onDragEnd,
@@ -14238,13 +14243,13 @@ function App({ store: store2, app }) {
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("header", { style: { display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("nav", { style: { display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }, children: VIEW_TABS.map(({ id, en, ko }) => {
         const lbl = lang === "ko" ? ko : en;
-        return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { onClick: () => setView(id), style: tabStyle(view === id), children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { "data-node": tabNodePath(id), onClick: () => setView(id), style: tabStyle(view === id), children: [
           /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { width: 7, height: 7, borderRadius: 2, background: view === id ? "var(--accent)" : "var(--text-3)", flex: "none" } }),
           /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { children: lbl })
         ] }, id);
       }) }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flex: "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { onClick: () => openCreate("todo"), style: { height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { "data-node": NEW_ISSUE_NODE, onClick: () => openCreate("todo"), style: { height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { fontSize: 17, lineHeight: 1, marginTop: -1 }, children: "+" }),
           " ",
           t("newIssueBtn", lang)

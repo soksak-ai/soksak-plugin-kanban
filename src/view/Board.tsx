@@ -10,6 +10,7 @@ import { setStatus } from "@/core/algebra";
 import { toBoard, type BoardScope, type CardVM } from "@/core/projections";
 import { avatar, initials, typeBadge, typeLetter, prDot, ptsBadge, sMeta } from "@/view/ui";
 import { ItemBadge, AuditBadge } from "@/view/badges";
+import { cardNodePath } from "@/view/nodePaths";
 import ScopeStat from "@/view/ScopeStat";
 import { t } from "@/view/i18n";
 
@@ -100,6 +101,7 @@ export default function Board({ store, nodes, focusId, setFocusId, scope, setSco
 function Card({ card, lang, dragging, onDragStart, onDragEnd, onSelect, onDrill }: { card: CardVM; lang: string; dragging: boolean; onDragStart: () => void; onDragEnd: () => void; onSelect: () => void; onDrill: () => void }) {
   return (
     <div
+      data-node={cardNodePath(card.key)}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
