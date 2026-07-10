@@ -206,6 +206,50 @@
         }
       }
     ],
+    "nodes": [
+      {
+        "id": "tab",
+        "description": {
+          "ko": "상단 뷰 탭 — tab/<뷰>. 클릭하면 그 뷰로 전환합니다",
+          "en": "View tab in the top bar — tab/<view>. Click switches to that view"
+        }
+      },
+      {
+        "id": "new-issue",
+        "description": {
+          "ko": "새 이슈 버튼 — 클릭하면 생성 모달을 엽니다",
+          "en": "New issue button — click opens the create modal"
+        }
+      },
+      {
+        "id": "card",
+        "description": {
+          "ko": "보드 카드 — card/<키>. 클릭하면 자식이 있으면 그 노드로 들어가고 말단이면 상세를 엽니다",
+          "en": "Board card — card/<key>. Click drills in when it has children, else opens detail"
+        }
+      },
+      {
+        "id": "row",
+        "description": {
+          "ko": "아웃라인 행 앵커 — row/<키>. ui.tree 로 위치·상태를 판독합니다",
+          "en": "Outline row anchor — row/<key>. Read position and state via ui.tree"
+        }
+      },
+      {
+        "id": "badge",
+        "description": {
+          "ko": "항목 검증 배지 — badge/<키>/<pending|o|x|f>. 마지막 세그먼트가 배지 값입니다",
+          "en": "Item validation badge — badge/<key>/<pending|o|x|f>. Last segment is the badge value"
+        }
+      },
+      {
+        "id": "audit",
+        "description": {
+          "ko": "감사 집계 배지 — audit/<키>/p<P>.o<O>.x<X>.f<F>. f>0 이면 덩어리 폐기 대상입니다",
+          "en": "Audit tally badge — audit/<key>/p<P>.o<O>.x<X>.f<F>. f>0 marks the chunk for discard"
+        }
+      }
+    ],
     "programs": [
       {
         "id": "kanban",
