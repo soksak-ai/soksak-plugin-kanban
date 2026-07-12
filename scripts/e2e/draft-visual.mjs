@@ -70,10 +70,26 @@ function warnIf(cond, msg, detail) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const add = async (params) => val(await rpc(P + "node.add", params)).nodeId;
 
+// 이 하니스가 만드는 드래프트의 표식 — 회수의 단위다.
+const DRAFT_TITLE = "재고 정합성 SaaS";
+
+// 자기 산출물만 회수한다. 예전에는 여기서 보드를 통째로 reset 했는데, 그 보드는 공유물이다:
+// 워크플로가 계약(soksak-issue-board-spec)으로 투영해 둔 카드까지 지웠다. 남의 것을 지우는
+// 하니스는 누수보다 나쁘다 — 다음 레인은 자기 데이터가 왜 사라졌는지 알 길이 없다.
+// node.remove 는 기본이 subtree 삭제라 덩어리 하나만 지우면 그룹·항목이 함께 회수된다.
+async function reclaimOwnDrafts() {
+  const all = val(await rpc(P + "node.list", { limit: 1000 })).nodes || [];
+  for (const n of all) {
+    if (n.isDraft === true && n.title === DRAFT_TITLE) {
+      await rpc(P + "node.remove", { node: n.id }).catch(() => {});
+    }
+  }
+}
+
 // ── SYNTHETIC 드래프트 — 덩어리(isDraft) > 그룹(category) > 항목(oxf). f≥1 → 폐기 집계 유발.
 async function buildSyntheticDraft() {
-  await rpc(P + "reset");
-  const chunk = await add({ title: "재고 정합성 SaaS", isDraft: true, kind: "chunk" });
+  await reclaimOwnDrafts(); // 이전 실행의 내 잔재만 — 남의 카드는 그대로 둔다
+  const chunk = await add({ title: DRAFT_TITLE, isDraft: true, kind: "chunk" });
   const g1 = await add({ parentId: chunk, title: "재고 관리", kind: "group" });
   const g2 = await add({ parentId: chunk, title: "구매 거래", kind: "group" });
   await add({ parentId: g1, title: "캐니스터 슬롯 재고 동기화", kind: "item", badge: "o" });
@@ -177,10 +193,14 @@ async function main() {
   const shot = val(await rpc("window.snapshot", { path: SHOT_PATH }));
   warnIf(shot && shot.saved, `스냅샷 저장: ${shot && shot.saved}`, shot);
 
-  finish();
+  await finish();
 }
 
-function finish() {
+async function finish() {
+  // teardown — 이 실행이 만든 드래프트를 회수한다. 다음 실행의 reset 에 청소를 떠넘기지 않는다:
+  // 그 reset 이 바로 남의 카드를 지우던 것이었다.
+  if (!USE_EMITTED) await reclaimOwnDrafts();
+
   console.log(`\n${pass} passed, ${fail} failed, ${warn} warned(시각 레이어)`);
   sock.end();
   process.exit(fail ? 1 : 0);
