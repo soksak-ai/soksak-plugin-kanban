@@ -13697,11 +13697,11 @@ function Outline({ store: store2, nodes, focusId, setFocusId, onOpen, lang }) {
                 "data-outline-id": row.id,
                 onBlur: (e) => apply((ns) => commit(ns, row.id, e.target.value)),
                 onKeyDown: (e) => onKey(e, row.id),
-                style: { flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: row.isEpic ? 14 : 13, fontWeight: row.isEpic ? 700 : 500, color: "var(--text)", padding: "4px 0", letterSpacing: "-.01em" }
+                style: { flex: "1 1 auto", minWidth: "26ch", border: "none", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: row.isEpic ? 14 : 13, fontWeight: row.isEpic ? 700 : 500, color: "var(--text)", padding: "4px 0", letterSpacing: "-.01em" }
               },
               row.id
             ),
-            row.description && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { title: row.description, style: { flex: "0 1 auto", minWidth: 0, fontSize: 11.5, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: row.description }),
+            row.description && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { title: row.description, style: { flex: "0 1 auto", minWidth: 0, maxWidth: "30%", fontSize: 11.5, color: "var(--text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: row.description }),
             row.validation ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AuditBadge, { v: row.validation, lang, nodeKey: row.key || row.id }) : row.badge ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ItemBadge, { badge: row.badge, lang, nodeKey: row.key || row.id }) : !row.isEpic ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => cycleStatus(row.id), title: t("statusChangeTitle", lang), style: { cursor: "pointer", ...statusChip(row.status) }, children: resolveLabel(m.label, lang) }) : null,
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { onClick: () => setFocusId(row.id), title: t("drillInTitle", lang), style: drillStyle, children: row.hasChildren ? `\u25A6 ${row.doneCount}/${row.childCount}` : t("drillInBoard", lang) }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { onClick: () => onOpen(row.id), style: { fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", color: "var(--text-3)", cursor: "pointer", flex: "none" }, children: row.key }),
