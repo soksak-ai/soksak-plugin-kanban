@@ -14301,6 +14301,9 @@ var GLOBAL_CSS = `
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 `;
 
+// src/contracts.ts
+var BOARD_CHANGED = "issue-board:changed";
+
 // src/store.ts
 var COLL = "nodes";
 var PROMPTS_COLL = "prompts";
@@ -14398,7 +14401,7 @@ function createStore(app) {
       nodes = next;
       notify();
       await persist(prev, next);
-      bus?.emit?.("kanban:changed", { scope });
+      bus?.emit?.(BOARD_CHANGED, { scope });
     },
     subscribe(cb) {
       subs.add(cb);
@@ -14586,12 +14589,13 @@ function registerCommands(ctx, store2) {
     }
   });
   sub("prompt.get", {
-    description: "hash \uB85C \uC800\uC7A5 \uAC12 \uC870\uD68C(\uB124\uC774\uD2F0\uBE0C JSON \u2014 \uBB38\uC790\uC5F4/\uAC1D\uCCB4). \uC18C\uBE44 \uC2DC\uC810 \uC870\uB9BD\uC6A9.",
+    description: "hash \uB85C \uC800\uC7A5 \uAC12 \uC870\uD68C(\uB124\uC774\uD2F0\uBE0C JSON \u2014 \uBB38\uC790\uC5F4/\uAC1D\uCCB4). \uC18C\uBE44 \uC2DC\uC810 \uC870\uB9BD\uC6A9. \uBBF8\uB4F1\uB85D \uC8FC\uC18C\uB294 NOT_FOUND.",
     params: { hash: { type: "string", description: "\uCF58\uD150\uCE20 \uC8FC\uC18C sha256", required: true } },
     returns: "{ ok, value, text }",
-    message: (d) => d.value == null ? "\uC800\uC7A5\uB41C \uAC12\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" : "\uAC12\uC744 \uC870\uD68C\uD588\uC2B5\uB2C8\uB2E4",
+    message: () => "\uAC12\uC744 \uC870\uD68C\uD588\uC2B5\uB2C8\uB2E4",
     handler: async (p) => {
       const value = typeof p.hash === "string" ? await store2.getPrompt(p.hash) : null;
+      if (value == null) return { ok: false, code: "NOT_FOUND", message: "\uC800\uC7A5\uB41C \uAC12\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", value: null };
       return { ok: true, value, text: typeof value === "string" ? value : void 0 };
     }
   });

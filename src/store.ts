@@ -2,6 +2,7 @@
 // 변이: 순수 op 적용 → 낙관적 미러 갱신·notify → 변경분만 app.data 영속(diff). data.watch 로
 // 다른 창 변경 시 재수화. scope 는 init 시점 프로젝트로 고정(v1; 멀티프로젝트 전환은 범위 외).
 import type { Node, NodeType, StatusId, PriorityId, Badge } from "@/types";
+import { BOARD_CHANGED } from "@/contracts";
 
 export interface DataApi {
   define(coll: string, opts: { indexes?: string[]; fts?: string[] }): Promise<void>;
@@ -142,8 +143,10 @@ export function createStore(app: AppLike): KanbanStore {
       notify(); // 낙관적
       await persist(prev, next);
       // ② 트리거: 변이(영속 완료) → 글로벌 버스 발화. app.data 는 플러그인 ns 한정이라
-      // 워크플로가 직접 watch 못 함 — 글로벌 bus 로만 변경을 알린다(사람 편집·명령 변이 즉시 반영).
-      bus?.emit?.("kanban:changed", { scope });
+      // 소비자가 직접 watch 못 함 — 글로벌 bus 로만 변경을 알린다(사람 편집·명령 변이 즉시 반영).
+      // 토픽은 보드 계약(soksak-issue-board-spec)이 정한다. 구독자는 어느 보드가 도는지
+      // 모른 채 듣는다 — 토픽에 구현체 이름을 박으면 그 자체가 이름-핀이다.
+      bus?.emit?.(BOARD_CHANGED, { scope });
     },
     subscribe(cb) {
       subs.add(cb);

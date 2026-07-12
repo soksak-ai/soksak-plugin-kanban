@@ -271,6 +271,7 @@
     }
   },
   "implements": [
-    "soksak-issue-board-spec"
+    "soksak-issue-board-spec",
+    "soksak-prompt-store-spec"
   ]
 }
