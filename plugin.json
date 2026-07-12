@@ -269,5 +269,8 @@
     "skill": {
       "path": "skill/SKILL.md"
     }
-  }
+  },
+  "implements": [
+    "soksak-issue-board-spec"
+  ]
 }
