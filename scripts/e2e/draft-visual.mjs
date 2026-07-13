@@ -48,16 +48,38 @@ function connect() {
   });
 }
 
-function rpc(method, params = {}) {
+// 창을 고정한다. 안 그러면 코어의 기본 라우팅이 그때그때 다른 창을 고르고, 그 창은 패널이 없을 수도
+// 있으며(→ view.open 이 "패널 없음"), 무엇보다 **보드가 달라진다** — 칸반 저장소는 창의 현재 프로젝트로
+// 스코프되므로, 어느 창에 썼는지 모르는 하니스는 자기가 무엇을 회수하는지도 모른다.
+let WINDOW = process.env.SOKSAK_WINDOW || null;
+
+function rpc(method, params = {}, withWindow = true) {
   const id = nextId++;
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => { pending.delete(id); reject(new Error("timeout: " + method)); }, 8000);
     pending.set(id, (msg) => { clearTimeout(timer); resolve(msg); });
-    sock.write(JSON.stringify({ id, method, params }) + "\n");
+    sock.write(JSON.stringify({ id, method, params, ...(withWindow && WINDOW ? { window: WINDOW } : {}) }) + "\n");
   });
 }
 
-const val = (m) => (m && m.result !== undefined ? m.result : m);
+/** 워크스페이스 창 발견 — 플러그인 호스트다. window.projects 자체는 제어판 대상이라 창을 싣지 않는다. */
+async function discoverWindow() {
+  const r = await rpc("window.projects", {}, false);
+  const projects = data(r, "window.projects").projects || [];
+  if (projects.length === 0) throw new Error("워크스페이스 창 없음 — 프로젝트를 연 창이 필요하다");
+  WINDOW = projects[0].window;
+  return WINDOW;
+}
+
+// 응답 봉투는 { ok, code, message, data, window } 이고, 알맹이는 data 안에 있다.
+// 옛 val() 은 JSON-RPC 의 `result` 를 찾다가 못 찾으면 봉투를 통째로 돌려줬다 — 그래서
+// `envelope.nodeId` 는 언제나 undefined 였고, 노드는 만들어지는데 하니스는 그 id 를 몰랐다.
+// 그 결과 자식들이 parentId=undefined 로 루트에 흩뿌려졌고, 회수는 그것들을 찾지 못했다.
+// 거절은 던진다 — 실패를 undefined 로 들고 다니면 그 다음 줄에서야 엉뚱한 이름으로 터진다.
+function data(m, what) {
+  if (!m || m.ok !== true) throw new Error(`${what}: ${(m && m.code) || "NO_RESPONSE"} — ${(m && m.message) || ""}`);
+  return m.data ?? {};
+}
 let pass = 0, fail = 0, warn = 0;
 function ok(cond, msg, detail) {
   if (cond) { pass++; console.log("  ✓ " + msg); }
@@ -68,19 +90,48 @@ function warnIf(cond, msg, detail) {
   else { warn++; console.log("  ⚠ " + msg + " (시각 레이어 — 뷰가 열려 있어야 함)", detail !== undefined ? JSON.stringify(detail) : ""); }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const add = async (params) => val(await rpc(P + "node.add", params)).nodeId;
+
+// 이 실행이 만든 노드 — 실패하든 성공하든 이것만은 반드시 걷는다(teardown 은 finally 다).
+const created = [];
+// 이 실행이 연 뷰 — 표면도 회수 대상이다. 남겨 두면 다음 실행·다음 레인이 남의 탭을 물려받는다.
+let openedViewId = null;
+const add = async (params) => {
+  const d = data(await rpc(P + "node.add", params), "node.add");
+  created.push(d.nodeId);
+  return d.nodeId;
+};
+const listNodes = async (params = { limit: 1000 }) => data(await rpc(P + "node.list", params), "node.list").nodes || [];
 
 // 이 하니스가 만드는 드래프트의 표식 — 회수의 단위다.
 const DRAFT_TITLE = "재고 정합성 SaaS";
+// SYNTHETIC 트리가 쓰는 제목 전부. 앞선 실행이 중간에 죽어 부모를 잃은 고아까지 이 표식으로 걷는다
+// (제대로 붙은 트리는 덩어리 하나만 지워도 subtree 로 따라온다).
+const SYNTHETIC_TITLES = new Set([
+  DRAFT_TITLE, "재고 관리", "구매 거래",
+  "캐니스터 슬롯 재고 동기화", "창고-캐니스터 동일약 합산", "비급여 가격 미지 재구매 학습",
+  "거래처 알림톡 발송", "대체의약품 불허 시 주문취소",
+]);
 
 // 자기 산출물만 회수한다. 예전에는 여기서 보드를 통째로 reset 했는데, 그 보드는 공유물이다:
 // 워크플로가 계약(soksak-issue-board-spec)으로 투영해 둔 카드까지 지웠다. 남의 것을 지우는
 // 하니스는 누수보다 나쁘다 — 다음 레인은 자기 데이터가 왜 사라졌는지 알 길이 없다.
-// node.remove 는 기본이 subtree 삭제라 덩어리 하나만 지우면 그룹·항목이 함께 회수된다.
-async function reclaimOwnDrafts() {
-  const all = val(await rpc(P + "node.list", { limit: 1000 })).nodes || [];
+//
+// 두 축으로 걷는다:
+//   (1) 이번 실행이 만든 id — 실패해도 이건 확실히 안다(생성 순 역순 = 자식 먼저).
+//   (2) 표식이 남은 잔재 — 앞선 실행이 죽어 남긴 것. node.remove 는 기본이 subtree 라 덩어리를
+//       지우면 그 아래가 함께 걷히고, 부모를 잃은 고아는 제목 표식으로 개별 회수된다.
+async function reclaim() {
+  if (openedViewId) {
+    await rpc("view.close", { view: openedViewId }).catch(() => {});
+    openedViewId = null;
+  }
+  for (const id of [...created].reverse()) {
+    await rpc(P + "node.remove", { node: id }).catch(() => {});
+  }
+  created.length = 0;
+  const all = await listNodes().catch(() => []);
   for (const n of all) {
-    if (n.isDraft === true && n.title === DRAFT_TITLE) {
+    if (SYNTHETIC_TITLES.has(n.title)) {
       await rpc(P + "node.remove", { node: n.id }).catch(() => {});
     }
   }
@@ -88,7 +139,7 @@ async function reclaimOwnDrafts() {
 
 // ── SYNTHETIC 드래프트 — 덩어리(isDraft) > 그룹(category) > 항목(oxf). f≥1 → 폐기 집계 유발.
 async function buildSyntheticDraft() {
-  await reclaimOwnDrafts(); // 이전 실행의 내 잔재만 — 남의 카드는 그대로 둔다
+  await reclaim(); // 이전 실행의 내 잔재만 — 남의 카드는 그대로 둔다
   const chunk = await add({ title: DRAFT_TITLE, isDraft: true, kind: "chunk" });
   const g1 = await add({ parentId: chunk, title: "재고 관리", kind: "group" });
   const g2 = await add({ parentId: chunk, title: "구매 거래", kind: "group" });
@@ -102,7 +153,7 @@ async function buildSyntheticDraft() {
 
 // ── 발행된 드래프트 찾기(Phase 5 실통합) — isDraft 최상위 노드 1개.
 async function findEmittedDraft() {
-  const all = val(await rpc(P + "node.list", { limit: 1000 })).nodes;
+  const all = await listNodes();
   const chunk = all.find((n) => n.isDraft === true);
   // TODO(Phase 5): 워크플로가 여러 덩어리(복제 계보)를 발행하면 parentDraftId 최신 유효본 선택.
   return chunk ? chunk.id : null;
@@ -111,16 +162,19 @@ async function findEmittedDraft() {
 async function main() {
   console.log("socket:", SOCKET, USE_EMITTED ? "(발행 트리 검증)" : "(SYNTHETIC)");
   await connect();
+  if (!WINDOW) await discoverWindow();
+  console.log("window:", WINDOW);
+  // 작업본을 겨눈다. 전체 plugin.reload 는 치지 않는다 — 공유 앱의 모든 플러그인을 재스캔·재활성화하고,
+  // 다른 레인이 dev.load 로 걸어 둔 작업본까지 설치본으로 되돌린다. 하니스는 자기 플러그인만 건드린다.
   await rpc("plugin.dev.load", { path: PLUGIN_DIR }).catch(() => {});
   await rpc("plugin.enable", { id: PLUGIN_ID }).catch(() => {});
-  await rpc("plugin.reload").catch(() => {});
   await sleep(800);
 
   let chunkId;
   if (USE_EMITTED) {
     chunkId = await findEmittedDraft();
     ok(!!chunkId, "발행된 드래프트(isDraft) 노드 존재", chunkId);
-    if (!chunkId) return finish();
+    if (!chunkId) return; // 판정·회수·종료코드는 run() 이 소유한다
   } else {
     ({ chunk: chunkId } = await buildSyntheticDraft());
     ok(!!chunkId, "SYNTHETIC 드래프트 생성", chunkId);
@@ -128,19 +182,19 @@ async function main() {
 
   // ── (1) 헤드리스 데이터: 모델 마커(isDraft/kind/badge) ──
   console.log("\n[1] 모델 마커 — node.list/get");
-  const chunkNode = val(await rpc(P + "node.get", { node: chunkId })).node;
+  const chunkNode = data(await rpc(P + "node.get", { node: chunkId }), "node.get").node;
   ok(chunkNode.isDraft === true, "덩어리 isDraft=true", chunkNode.isDraft);
   ok(chunkNode.kind === "chunk", "덩어리 kind=chunk", chunkNode.kind);
-  const groups = val(await rpc(P + "node.list", { parentId: chunkId })).nodes;
+  const groups = await listNodes({ parentId: chunkId });
   ok(groups.length >= 1 && groups.every((g) => g.kind === "group"), "그룹들 kind=group", groups.map((g) => g.kind));
   const items = [];
-  for (const g of groups) items.push(...val(await rpc(P + "node.list", { parentId: g.id })).nodes);
+  for (const g of groups) items.push(...(await listNodes({ parentId: g.id })));
   ok(items.length >= 1 && items.every((i) => i.kind === "item"), "항목들 kind=item", items.map((i) => i.kind));
   ok(items.every((i) => ["검수전", "o", "x", "f"].includes(i.badge)), "항목 badge ∈ {검수전,o,x,f}", items.map((i) => i.badge));
 
   // ── (1b) 투영: 항목 자기 배지 + 덩어리 감사 집계(f≥1 → discard) ──
   console.log("\n[1b] 투영 — view.get(outline)");
-  const proj = val(await rpc(P + "view.get", { view: "outline", focus: "root" })).projection;
+  const proj = data(await rpc(P + "view.get", { view: "outline", focus: "root" }), "view.get").projection;
   const rowOf = (id) => proj.rows.find((r) => r.id === id);
   const chunkRow = rowOf(chunkId);
   ok(chunkRow && chunkRow.validation, "덩어리 행에 감사 집계(validation) 존재", chunkRow && chunkRow.validation);
@@ -158,13 +212,16 @@ async function main() {
   ok(chunkRow && chunkRow.depth === 0, "덩어리 depth=0", chunkRow && chunkRow.depth);
   ok(itemRow && itemRow.depth >= 2, "항목 depth≥2(덩어리>그룹>항목)", itemRow && itemRow.depth);
 
-  // ── (2) DOM 노출: ui.tree 로 행이 실제 렌더됐는지(시각 레이어 — 뷰 열림 필요) ──
+  // ── (2) DOM 노출: ui.tree 로 행이 실제 렌더됐는지 ──
   console.log("\n[2] DOM 노출 — ui.tree (data-node 'row/<key>')");
-  // TODO(Phase 5): 칸반 뷰가 패널에 열려 있고 Outline 탭·focus=root 여야 행이 노출된다.
-  //   앱 구동 시 사람이 열거나, 패널 오픈 커맨드로 보장. 닫혀 있으면 kanban 행 0 → ⚠(hard-fail 아님).
+  // 검증에 필요한 노출면은 하니스가 만든다. 예전에는 "뷰가 닫혀 있으면 ⚠" 로 넘어갔는데, 그건
+  // 아무도 뷰를 열지 않는 자동 실행에서 시각 레이어 전체가 조용히 통과한다는 뜻이었다 — 검사가
+  // 아니라 장식이다. 뷰는 우리가 열고, 우리가 닫는다(teardown 의 표면 축).
+  openedViewId = data(await rpc("view.open", { program: "kanban" }), "view.open").viewId;
+  await sleep(600);
   await rpc(P + "focus.set", { node: "root", view: "outline" }).catch(() => {});
-  await sleep(300);
-  const tree = val(await rpc("ui.tree"));
+  await sleep(400);
+  const tree = data(await rpc("ui.tree"), "ui.tree");
   const addrs = (tree.nodes || []).map((n) => n.address);
   const kanbanRows = addrs.filter((a) => /soksak-plugin-kanban.*\/node\/row\//.test(a));
   warnIf(kanbanRows.length > 0, `ui.tree 에 칸반 행 노출 (${kanbanRows.length}개)`, tree.count);
@@ -190,23 +247,25 @@ async function main() {
 
   // ── (3) 시각 캡처: window.snapshot → PNG(사람 눈검사·회귀) ──
   console.log("\n[3] 시각 — window.snapshot");
-  const shot = val(await rpc("window.snapshot", { path: SHOT_PATH }));
+  const shot = data(await rpc("window.snapshot", { path: SHOT_PATH }), "window.snapshot");
   warnIf(shot && shot.saved, `스냅샷 저장: ${shot && shot.saved}`, shot);
-
-  await finish();
 }
 
-async function finish() {
-  // teardown — 이 실행이 만든 드래프트를 회수한다. 다음 실행의 reset 에 청소를 떠넘기지 않는다:
-  // 그 reset 이 바로 남의 카드를 지우던 것이었다.
-  if (!USE_EMITTED) await reclaimOwnDrafts();
-
+// 실패해도 자기 산출물은 걷는다 — teardown 은 finally 다. 예전에는 회수가 성공 경로에만 있어서,
+// 검사 하나가 터지면 그 실행이 만든 노드가 공유 보드에 그대로 남았다(두 회차가 16개를 남겼다).
+// 그리고 판정은 종료코드에 실린다: 실패를 0 으로 끝내는 게이트는 게이트가 아니라 장식이다.
+async function run() {
+  try {
+    await main();
+  } catch (e) {
+    fail++;
+    console.error("\n드래프트 시각검증 오류:", e.message);
+  } finally {
+    if (!USE_EMITTED) await reclaim().catch((e) => console.error("회수 실패:", e.message));
+  }
   console.log(`\n${pass} passed, ${fail} failed, ${warn} warned(시각 레이어)`);
-  sock.end();
+  if (sock) sock.end();
   process.exit(fail ? 1 : 0);
 }
 
-main().catch((e) => {
-  console.error("드래프트 시각검증 오류:", e.message);
-  process.exit(1);
-});
+run();
