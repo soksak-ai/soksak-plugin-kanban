@@ -144,7 +144,7 @@ export function createStore(app: AppLike): KanbanStore {
       await persist(prev, next);
       // ② 트리거: 변이(영속 완료) → 글로벌 버스 발화. app.data 는 플러그인 ns 한정이라
       // 소비자가 직접 watch 못 함 — 글로벌 bus 로만 변경을 알린다(사람 편집·명령 변이 즉시 반영).
-      // 토픽은 보드 계약(soksak-issue-board-spec)이 정한다. 구독자는 어느 보드가 도는지
+      // 토픽은 보드 계약(soksak-spec-plugin-issue-board)이 정한다. 구독자는 어느 보드가 도는지
       // 모른 채 듣는다 — 토픽에 구현체 이름을 박으면 그 자체가 이름-핀이다.
       bus?.emit?.(BOARD_CHANGED, { scope });
     },

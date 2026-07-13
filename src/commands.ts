@@ -135,7 +135,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
     message: () => "값을 조회했습니다",
     handler: async (p) => {
       // 미발견은 거절이다. ok:true+value:null 로 답하면 "조회는 됐고 값이 비었다"를 말한 것이 되는데,
-      // 그건 "없다" 와 다른 사실이라 소비자를 엉뚱한 수리로 보낸다(soksak-prompt-store-spec).
+      // 그건 "없다" 와 다른 사실이라 소비자를 엉뚱한 수리로 보낸다(soksak-spec-plugin-prompt-store).
       const value = typeof p.hash === "string" ? await store.getPrompt(p.hash) : null;
       if (value == null) return { ok: false, code: "NOT_FOUND", message: "저장된 값이 없습니다", value: null };
       return { ok: true, value, text: typeof value === "string" ? value : undefined };

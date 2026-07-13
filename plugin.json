@@ -271,7 +271,13 @@
     }
   },
   "implements": [
-    "soksak-issue-board-spec",
-    "soksak-prompt-store-spec"
+    {
+      "id": "soksak-spec-plugin-issue-board",
+      "version": "0.0.1"
+    },
+    {
+      "id": "soksak-spec-plugin-prompt-store",
+      "version": "0.0.1"
+    }
   ]
 }
