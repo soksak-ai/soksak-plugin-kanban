@@ -6,7 +6,6 @@
     "en": "Kanban"
   },
   "version": "0.0.1",
-  "repo": "https://github.com/soksak-ai/soksak-plugin-kanban.git",
   "description": {
     "ko": "트리(아웃라이너) 기반 이슈 추적 — 한 트리를 칸반·간트·타임라인·트리·테이블·캘린더 여섯 뷰로. 노드는 parentId+order 로 무한 깊이. CLI/MCP 로 조작.",
     "en": "Tree (outliner) based issue tracking — one tree projected as kanban, gantt, timeline, tree, table, and calendar. Nodes have infinite depth via parentId+order. Operated via CLI/MCP."
