@@ -28,6 +28,9 @@
     "soksak-plugin-doctor": "github:soksak-ai/soksak-plugin-doctor"
   },
   "soksakRelease": {
-    "repository": "https://github.com/soksak-ai/soksak-plugin-kanban"
+    "kind": "plugin",
+    "id": "soksak-plugin-kanban",
+    "repository": "https://github.com/soksak-ai/soksak-plugin-kanban",
+    "manifest": "release.json"
   }
 }
