@@ -26,5 +26,8 @@
     "typescript": "~5.9.3",
     "vitest": "^2.1.8",
     "soksak-plugin-doctor": "github:soksak-ai/soksak-plugin-doctor"
+  },
+  "soksakRelease": {
+    "repository": "https://github.com/soksak-ai/soksak-plugin-kanban"
   }
 }
