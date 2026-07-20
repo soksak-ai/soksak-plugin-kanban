@@ -14686,7 +14686,7 @@ function registerCommands(ctx, store2) {
         points: typeof p.points === "number" ? p.points : par.id == null ? 0 : 3,
         start: TODAY,
         due: RANGE_END,
-        collapsed: false,
+        collapsed: p.collapsed === true,
         history: [],
         created: now,
         updated: now
@@ -14792,7 +14792,7 @@ function registerCommands(ctx, store2) {
       const nodes = store2.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
-      const out = { ok: true, node: { ...compact(r.node), body: r.node.body, result: r.node.result ?? "", history: r.node.history } };
+      const out = { ok: true, node: { ...compact(r.node), body: r.node.body, result: r.node.result ?? "", collapsed: r.node.collapsed, history: r.node.history } };
       if (p.withChildren === true) out.children = childrenOf(nodes, r.node.id).map(compact);
       return out;
     }

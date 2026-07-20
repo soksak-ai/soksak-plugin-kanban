@@ -232,7 +232,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
         points: typeof p.points === "number" ? p.points : par.id == null ? 0 : 3,
         start: TODAY,
         due: RANGE_END,
-        collapsed: false,
+        collapsed: p.collapsed === true,
         history: [],
         created: now,
         updated: now,
@@ -342,7 +342,7 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
       const nodes = store.get();
       const r = resolve(nodes, p.node);
       if (!r.ok) return r;
-      const out: Record<string, unknown> = { ok: true, node: { ...compact(r.node), body: r.node.body, result: r.node.result ?? "", history: r.node.history } };
+      const out: Record<string, unknown> = { ok: true, node: { ...compact(r.node), body: r.node.body, result: r.node.result ?? "", collapsed: r.node.collapsed, history: r.node.history } };
       if (p.withChildren === true) out.children = childrenOf(nodes, r.node.id).map(compact);
       return out;
     },
