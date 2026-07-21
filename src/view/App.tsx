@@ -1,7 +1,8 @@
 // 반응 셸 — 헤더(뷰 탭·검색·테마) + stats strip(스킨·진행률·병목) + 뷰 스위치 + 모달.
 // UI 상태(view·theme·skin·focus·search·modal)는 창-로컬. 데이터는 store(useNodes) 단일 진실.
 // 편집은 store.apply(순수 op) — 명령과 같은 데이터 경로 → 교차뷰 일관성.
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 import type { Node, StatusId, ViewId } from "@/types";
 import type { KanbanStore } from "@/store";
@@ -20,6 +21,7 @@ import Timeline from "@/view/Timeline";
 import Table from "@/view/Table";
 import Calendar from "@/view/Calendar";
 import Modal, { type Draft, type ModalMode } from "@/view/Modal";
+import { railContainer, subscribeRail } from "@/view/railBridge";
 
 type Disp = { dispose(): void } | (() => void);
 interface AppProps {
@@ -30,6 +32,8 @@ interface AppProps {
     locale?: () => string;
     on?: (event: string, cb: (p: { language: string }) => void) => Disp;
   };
+  // 이 칸반 인스턴스의 콘텐츠 뷰 id — 레일 브리지 키. null=레일 없는 호스트(구코어 — 기존 배치).
+  viewId?: string | null;
 }
 
 const dispose = (d: Disp | undefined) => {
@@ -39,7 +43,7 @@ const dispose = (d: Disp | undefined) => {
 
 const blankDraft = (): Draft => ({ title: "", body: "", type: "task", status: "todo", assignee: "me", priority: "medium", points: 3, start: TODAY, due: RANGE_END });
 
-export default function App({ store, app }: AppProps) {
+export default function App({ store, app, viewId = null }: AppProps) {
   const nodes = useNodes(store);
   const [view, setView] = useState<ViewId>("outline");
   const [search, setSearch] = useState("");
@@ -65,6 +69,18 @@ export default function App({ store, app }: AppProps) {
     const d = app?.on?.("locale.changed", (p) => setLang(p.language));
     return () => dispose(d);
   }, [app]);
+
+  // 사이드바 방출(rail) — 레일 컨테이너가 등록되어 있으면 트리를 좌 레일에 포털로 그리고,
+  // 이슈 상세는 모달 대신 우 레일 패널로 연다(상태는 전부 여기 그대로 — 이중 진실 0).
+  // 등록이 없으면(구코어·레일 없는 호스트) 기존 배치: 트리 없음, 상세=중앙 모달.
+  const railTree = useSyncExternalStore(
+    (fn) => subscribeRail(viewId, fn),
+    () => railContainer(viewId, "tree"),
+  );
+  const railDetail = useSyncExternalStore(
+    (fn) => subscribeRail(viewId, fn),
+    () => railContainer(viewId, "detail"),
+  );
 
   if (!store) return <div style={{ padding: 24, color: "#888" }}>store 준비 중…</div>;
   const apply = (fn: (ns: Node[]) => Node[]) => void store.apply(fn);
@@ -142,7 +158,19 @@ export default function App({ store, app }: AppProps) {
         {view === "calendar" && <Calendar nodes={nodes} onOpen={openDetail} lang={lang} />}
       </main>
 
-      {modalOpen && <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} lang={lang} />}
+      {/* 좌 레일 — 이슈 트리(같은 Tree 컴포넌트를 포털로, 상태 공유) */}
+      {railTree ? createPortal(<Tree nodes={nodes} focusId={focusId} setFocusId={setFocusId} onOpen={openDetail} lang={lang} />, railTree) : null}
+
+      {/* 우 레일 — 이슈 상세(모달 → 레일 패널 이관). 레일 없으면 기존 중앙 모달. */}
+      {railDetail && !modalOpen
+        ? createPortal(<div style={{ padding: "14px 16px", fontSize: 12, color: "var(--text-3)" }}>{t("railDetailEmpty", lang)}</div>, railDetail)
+        : null}
+      {modalOpen && (() => {
+        const modal = (frame: "overlay" | "rail") => (
+          <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} lang={lang} frame={frame} />
+        );
+        return railDetail ? createPortal(modal("rail"), railDetail) : modal("overlay");
+      })()}
     </div>
   );
 }

@@ -30,23 +30,30 @@ interface Props {
   onEnterEdit: () => void;
   onBackToView: () => void;
   lang: string;
+  // overlay(기본) = 기존 중앙 모달. rail = 우 레일 컨테이너를 채우는 패널(백드롭·고정폭 없음) —
+  // 같은 본문·같은 상태, 프레임만 다르다.
+  frame?: "overlay" | "rail";
 }
 
 const label = (t: string) => <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 6 }}>{t}</label>;
 const field: CSSProperties = { width: "100%", height: 38, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" };
 
-export default function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView, lang }: Props) {
+export default function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView, lang, frame = "overlay" }: Props) {
   const isCreate = mode === "create";
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const isForm = isCreate || isEdit;
+  const isRail = frame === "rail";
   const title = isCreate ? t("modalTitleCreate", lang) : isEdit ? t("modalTitleEdit", lang) : t("modalTitleDetail", lang);
   const canSave = draft.title.trim().length > 0;
   const hist = editing ? histItems(editing) : [];
 
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,12,18,.42)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .15s ease" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 480, maxWidth: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-lg)", maxHeight: "88vh", display: "flex", flexDirection: "column", animation: "drawerIn .18s cubic-bezier(.2,.8,.2,1)" }}>
+  const panelStyle: CSSProperties = isRail
+    ? { width: "100%", height: "100%", maxHeight: "100%", background: "var(--surface)", display: "flex", flexDirection: "column", minHeight: 0 }
+    : { width: 480, maxWidth: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-lg)", maxHeight: "88vh", display: "flex", flexDirection: "column", animation: "drawerIn .18s cubic-bezier(.2,.8,.2,1)" };
+
+  const panel = (
+    <div onClick={(e) => e.stopPropagation()} style={panelStyle}>
         <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid var(--border)", flex: "none" }}>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{title}</h2>
           {editing && <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-2)", marginLeft: 9 }}>{editing.key}</span>}
@@ -146,6 +153,12 @@ export default function Modal({ mode, draft, editing, setField, onClose, onSave,
           </div>
         </div>
       </div>
+  );
+
+  if (isRail) return panel;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,12,18,.42)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .15s ease" }}>
+      {panel}
     </div>
   );
 }

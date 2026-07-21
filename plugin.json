@@ -31,7 +31,43 @@
           "content"
         ],
         "status": [],
-        "defaultPlacement": "content"
+        "defaultPlacement": "content",
+        "sidebar": {
+          "left": [
+            {
+              "ref": "self.tree",
+              "instance": "per-view"
+            }
+          ],
+          "right": [
+            {
+              "ref": "self.detail",
+              "instance": "per-view"
+            }
+          ]
+        }
+      },
+      {
+        "id": "tree",
+        "title": {
+          "ko": "이슈 트리",
+          "en": "Tree"
+        },
+        "icon": "▤",
+        "placements": [
+          "rail"
+        ]
+      },
+      {
+        "id": "detail",
+        "title": {
+          "ko": "이슈 상세",
+          "en": "Detail"
+        },
+        "icon": "▧",
+        "placements": [
+          "rail"
+        ]
       }
     ],
     "commands": [

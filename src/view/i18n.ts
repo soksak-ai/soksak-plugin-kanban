@@ -35,6 +35,9 @@ const strings = {
   modalTitleCreate: { en: "New issue", ko: "새 이슈" },
   modalTitleEdit: { en: "Edit issue", ko: "이슈 편집" },
   modalTitleDetail: { en: "Issue detail", ko: "이슈 상세" },
+  // Rail (사이드바 방출)
+  railDetailEmpty: { en: "Select an issue to open its detail here", ko: "이슈를 선택하면 상세가 여기 열립니다" },
+  railNoBinding: { en: "No kanban view bound", ko: "결부된 칸반 뷰 없음" },
   // Modal — field labels
   fieldTitle: { en: "Title", ko: "제목" },
   fieldDesc: { en: "Description", ko: "설명" },

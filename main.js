@@ -12756,6 +12756,7 @@ var import_client = __toESM(require_client(), 1);
 
 // src/view/App.tsx
 var import_react5 = __toESM(require_react(), 1);
+var import_react_dom = __toESM(require_react_dom(), 1);
 
 // src/refs.ts
 function resolveLabel(label2, lang) {
@@ -13168,6 +13169,9 @@ var strings = {
   modalTitleCreate: { en: "New issue", ko: "\uC0C8 \uC774\uC288" },
   modalTitleEdit: { en: "Edit issue", ko: "\uC774\uC288 \uD3B8\uC9D1" },
   modalTitleDetail: { en: "Issue detail", ko: "\uC774\uC288 \uC0C1\uC138" },
+  // Rail (사이드바 방출)
+  railDetailEmpty: { en: "Select an issue to open its detail here", ko: "\uC774\uC288\uB97C \uC120\uD0DD\uD558\uBA74 \uC0C1\uC138\uAC00 \uC5EC\uAE30 \uC5F4\uB9BD\uB2C8\uB2E4" },
+  railNoBinding: { en: "No kanban view bound", ko: "\uACB0\uBD80\uB41C \uCE78\uBC18 \uBDF0 \uC5C6\uC74C" },
   // Modal — field labels
   fieldTitle: { en: "Title", ko: "\uC81C\uBAA9" },
   fieldDesc: { en: "Description", ko: "\uC124\uBA85" },
@@ -14037,15 +14041,17 @@ function Calendar({ nodes, onOpen, lang }) {
 var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
 var label = (t2) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("label", { style: { display: "block", fontSize: 11, fontWeight: 600, color: "var(--text-3)", marginBottom: 6 }, children: t2 });
 var field = { width: "100%", height: 38, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" };
-function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView, lang }) {
+function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDelete, onEnterEdit, onBackToView, lang, frame = "overlay" }) {
   const isCreate = mode === "create";
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const isForm = isCreate || isEdit;
+  const isRail = frame === "rail";
   const title = isCreate ? t("modalTitleCreate", lang) : isEdit ? t("modalTitleEdit", lang) : t("modalTitleDetail", lang);
   const canSave = draft.title.trim().length > 0;
   const hist = editing ? histItems(editing) : [];
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(10,12,18,.42)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .15s ease" }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { onClick: (e) => e.stopPropagation(), style: { width: 480, maxWidth: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-lg)", maxHeight: "88vh", display: "flex", flexDirection: "column", animation: "drawerIn .18s cubic-bezier(.2,.8,.2,1)" }, children: [
+  const panelStyle = isRail ? { width: "100%", height: "100%", maxHeight: "100%", background: "var(--surface)", display: "flex", flexDirection: "column", minHeight: 0 } : { width: 480, maxWidth: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-lg)", maxHeight: "88vh", display: "flex", flexDirection: "column", animation: "drawerIn .18s cubic-bezier(.2,.8,.2,1)" };
+  const panel = /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { onClick: (e) => e.stopPropagation(), style: panelStyle, children: [
     /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { style: { display: "flex", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid var(--border)", flex: "none" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: title }),
       editing && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { style: { fontSize: 12, fontFamily: "var(--mono)", color: "var(--text-2)", marginLeft: 9 }, children: editing.key }),
@@ -14152,7 +14158,9 @@ function Modal({ mode, draft, editing, setField, onClose, onSave, onCreate, onDe
         ] })
       ] })
     ] })
-  ] }) });
+  ] });
+  if (isRail) return panel;
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(10,12,18,.42)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .15s ease" }, children: panel });
 }
 function Meta({ k, children }) {
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { children: [
@@ -14168,6 +14176,46 @@ function histItems(n) {
 var btnGhost = { padding: "8px 16px", border: "1px solid var(--border)", borderRadius: 8, background: "transparent", color: "var(--text-2)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" };
 var btnPrimary = { padding: "8px 18px", border: "none", borderRadius: 8, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" };
 
+// src/view/railBridge.ts
+var containers = /* @__PURE__ */ new Map();
+var subs = /* @__PURE__ */ new Map();
+function notify(viewId) {
+  for (const fn of subs.get(viewId) ?? []) fn();
+}
+function registerRailContainer(viewId, slot, el) {
+  const entry = containers.get(viewId) ?? {};
+  entry[slot] = el;
+  containers.set(viewId, entry);
+  notify(viewId);
+  return () => {
+    const cur = containers.get(viewId);
+    if (!cur || cur[slot] !== el) return;
+    delete cur[slot];
+    if (!cur.tree && !cur.detail) containers.delete(viewId);
+    notify(viewId);
+  };
+}
+function railContainer(viewId, slot) {
+  if (!viewId) return null;
+  return containers.get(viewId)?.[slot] ?? null;
+}
+function subscribeRail(viewId, fn) {
+  if (!viewId) return () => {
+  };
+  let set = subs.get(viewId);
+  if (!set) {
+    set = /* @__PURE__ */ new Set();
+    subs.set(viewId, set);
+  }
+  set.add(fn);
+  return () => {
+    const s = subs.get(viewId);
+    if (!s) return;
+    s.delete(fn);
+    if (s.size === 0) subs.delete(viewId);
+  };
+}
+
 // src/view/App.tsx
 var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
 var dispose = (d) => {
@@ -14175,7 +14223,7 @@ var dispose = (d) => {
   else d?.dispose?.();
 };
 var blankDraft = () => ({ title: "", body: "", type: "task", status: "todo", assignee: "me", priority: "medium", points: 3, start: TODAY, due: RANGE_END });
-function App({ store: store2, app }) {
+function App({ store: store2, app, viewId = null }) {
   const nodes = useNodes(store2);
   const [view, setView] = (0, import_react5.useState)("outline");
   const [search, setSearch] = (0, import_react5.useState)("");
@@ -14197,6 +14245,14 @@ function App({ store: store2, app }) {
     const d = app?.on?.("locale.changed", (p) => setLang(p.language));
     return () => dispose(d);
   }, [app]);
+  const railTree = (0, import_react5.useSyncExternalStore)(
+    (fn) => subscribeRail(viewId, fn),
+    () => railContainer(viewId, "tree")
+  );
+  const railDetail = (0, import_react5.useSyncExternalStore)(
+    (fn) => subscribeRail(viewId, fn),
+    () => railContainer(viewId, "detail")
+  );
   if (!store2) return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { padding: 24, color: "#888" }, children: "store \uC900\uBE44 \uC911\u2026" });
   const apply = (fn) => void store2.apply(fn);
   const editing = editingId ? byId(nodes, editingId) : null;
@@ -14266,7 +14322,12 @@ function App({ store: store2, app }) {
       view === "table" && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Table, { nodes, onOpen: openDetail, lang }),
       view === "calendar" && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Calendar, { nodes, onOpen: openDetail, lang })
     ] }),
-    modalOpen && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Modal, { mode, draft, editing, setField, onClose: () => setModalOpen(false), onSave: saveEdit, onCreate: createIssue, onDelete: del, onEnterEdit: enterEdit, onBackToView: () => setMode("view"), lang })
+    railTree ? (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Tree, { nodes, focusId, setFocusId, onOpen: openDetail, lang }), railTree) : null,
+    railDetail && !modalOpen ? (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { padding: "14px 16px", fontSize: 12, color: "var(--text-3)" }, children: t("railDetailEmpty", lang) }), railDetail) : null,
+    modalOpen && (() => {
+      const modal = (frame) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Modal, { mode, draft, editing, setField, onClose: () => setModalOpen(false), onSave: saveEdit, onCreate: createIssue, onDelete: del, onEnterEdit: enterEdit, onBackToView: () => setMode("view"), lang, frame });
+      return railDetail ? (0, import_react_dom.createPortal)(modal("rail"), railDetail) : modal("overlay");
+    })()
   ] });
 }
 var tabStyle = (active) => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
@@ -14364,16 +14425,16 @@ function createStore(app) {
   const scope = app.project?.current?.()?.id ?? "default";
   let nodes = [];
   let writing = 0;
-  const subs = /* @__PURE__ */ new Set();
+  const subs2 = /* @__PURE__ */ new Set();
   let watchSub = null;
-  const notify = () => {
-    for (const cb of subs) cb();
+  const notify2 = () => {
+    for (const cb of subs2) cb();
   };
   async function hydrate() {
     if (!data) return;
     const rows = await data.query(COLL, { scope, limit: 1e5 });
     nodes = rows.map(rowToNode).filter((n) => n != null);
-    notify();
+    notify2();
   }
   async function persist(prev, next) {
     if (!data) return;
@@ -14399,13 +14460,13 @@ function createStore(app) {
       const next = fn(prev);
       if (next === prev) return;
       nodes = next;
-      notify();
+      notify2();
       await persist(prev, next);
       bus?.emit?.(BOARD_CHANGED, { scope });
     },
     subscribe(cb) {
-      subs.add(cb);
-      return () => subs.delete(cb);
+      subs2.add(cb);
+      return () => subs2.delete(cb);
     },
     nextKey() {
       const nums = nodes.map((n) => parseInt(n.key.split("-")[1], 10) || 0);
@@ -14444,7 +14505,7 @@ function createStore(app) {
     dispose() {
       if (watchSub) disposeOf(watchSub);
       watchSub = null;
-      subs.clear();
+      subs2.clear();
     }
   };
 }
@@ -15133,7 +15194,7 @@ var ErrBoundary = class extends import_react6.Component {
 var mounts = /* @__PURE__ */ new WeakMap();
 var store = null;
 var pluginApp = null;
-function mountApp(container) {
+function mountApp(container, viewId) {
   unmountApp(container);
   container.style.position = "relative";
   const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
@@ -15150,7 +15211,7 @@ function mountApp(container) {
   try {
     const root = (0, import_client.createRoot)(host);
     root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(ErrBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(App, { store, app: pluginApp }) })
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(ErrBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(App, { store, app: pluginApp, viewId }) })
     );
     mounts.set(container, { root, shadow });
   } catch (e) {
@@ -15167,6 +15228,43 @@ function unmountApp(container) {
   state.root.unmount();
   mounts.delete(container);
 }
+var railCleanups = /* @__PURE__ */ new WeakMap();
+function railView(slot) {
+  return {
+    mount(container, vctx) {
+      railCleanups.get(container)?.();
+      const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
+      shadow.replaceChildren();
+      const style = document.createElement("style");
+      style.textContent = GLOBAL_CSS;
+      shadow.appendChild(style);
+      const host = document.createElement("div");
+      host.className = "kanban-root";
+      host.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--bg);color:var(--text)";
+      container.style.position = "relative";
+      shadow.appendChild(host);
+      const bound = typeof vctx?.boundViewId === "string" && vctx.boundViewId ? vctx.boundViewId : null;
+      if (!bound) {
+        const note = document.createElement("div");
+        note.style.cssText = "padding:12px 14px;font-size:11px;color:var(--text-3)";
+        const lang = pluginApp?.locale?.() ?? "ko";
+        note.textContent = t("railNoBinding", lang);
+        host.appendChild(note);
+        railCleanups.set(container, () => shadow.replaceChildren());
+        return;
+      }
+      const off = registerRailContainer(bound, slot, host);
+      railCleanups.set(container, () => {
+        off();
+        shadow.replaceChildren();
+      });
+    },
+    unmount(container) {
+      railCleanups.get(container)?.();
+      railCleanups.delete(container);
+    }
+  };
+}
 var plugin_entry_default = {
   activate(ctx) {
     const app = ctx.app;
@@ -15176,14 +15274,16 @@ var plugin_entry_default = {
     ctx.subscriptions.push({ dispose: () => store?.dispose() });
     ctx.subscriptions.push(
       app.ui.registerView("kanban", {
-        mount(container) {
-          mountApp(container);
+        mount(container, vctx) {
+          mountApp(container, typeof vctx?.viewId === "string" && vctx.viewId ? vctx.viewId : null);
         },
         unmount(container) {
           unmountApp(container);
         }
       })
     );
+    ctx.subscriptions.push(app.ui.registerView("tree", railView("tree")));
+    ctx.subscriptions.push(app.ui.registerView("detail", railView("detail")));
     if (app.commands?.register) {
       ctx.subscriptions.push(
         app.commands.register("ping", {

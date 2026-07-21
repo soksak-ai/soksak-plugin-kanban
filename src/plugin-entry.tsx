@@ -7,6 +7,8 @@ import App from "@/view/App";
 import { GLOBAL_CSS } from "@/styles";
 import { createStore, type KanbanStore } from "@/store";
 import { registerCommands } from "@/commands";
+import { registerRailContainer, type RailSlot } from "@/view/railBridge";
+import { t } from "@/view/i18n";
 
 class ErrBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
   state: { err: Error | null } = { err: null };
@@ -32,7 +34,7 @@ const mounts = new WeakMap<HTMLElement, { root: Root; shadow: ShadowRoot }>();
 let store: KanbanStore | null = null;
 let pluginApp: unknown = null;
 
-function mountApp(container: HTMLElement) {
+function mountApp(container: HTMLElement, viewId: string | null) {
   unmountApp(container);
   // 컨테이너를 위치 기준으로 — host 를 absolute inset:0 로 채워 컨테이너 높이가 indefinite
   // (예: 터미널과 한 패널 공유)여도 패널 박스를 꽉 채운다.
@@ -57,7 +59,7 @@ function mountApp(container: HTMLElement) {
     const root = createRoot(host);
     root.render(
       <ErrBoundary>
-        <App store={store} app={pluginApp as never} />
+        <App store={store} app={pluginApp as never} viewId={viewId} />
       </ErrBoundary>,
     );
     mounts.set(container, { root, shadow });
@@ -77,6 +79,48 @@ function unmountApp(container: HTMLElement) {
   mounts.delete(container);
 }
 
+// 방출된 사이드바(rail) — 컨테이너만 소유하고 내용은 결부된 칸반 App 이 포털로 그린다
+// (상태 단일 소유·이중 진실 0). Shadow DOM + GLOBAL_CSS 로 콘텐츠 뷰와 같은 토큰을 쓴다.
+// 미결부(칸반 콘텐츠 뷰 없음)면 정적 안내.
+const railCleanups = new WeakMap<HTMLElement, () => void>();
+function railView(slot: RailSlot) {
+  return {
+    mount(container: HTMLElement, vctx?: { boundViewId?: string | null }) {
+      railCleanups.get(container)?.();
+      const shadow = container.shadowRoot ?? container.attachShadow({ mode: "open" });
+      shadow.replaceChildren();
+      const style = document.createElement("style");
+      style.textContent = GLOBAL_CSS;
+      shadow.appendChild(style);
+      const host = document.createElement("div");
+      host.className = "kanban-root";
+      host.style.cssText =
+        "position:absolute;inset:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--bg);color:var(--text)";
+      container.style.position = "relative";
+      shadow.appendChild(host);
+      const bound = typeof vctx?.boundViewId === "string" && vctx.boundViewId ? vctx.boundViewId : null;
+      if (!bound) {
+        const note = document.createElement("div");
+        note.style.cssText = "padding:12px 14px;font-size:11px;color:var(--text-3)";
+        const lang = (pluginApp as { locale?: () => string } | null)?.locale?.() ?? "ko";
+        note.textContent = t("railNoBinding", lang);
+        host.appendChild(note);
+        railCleanups.set(container, () => shadow.replaceChildren());
+        return;
+      }
+      const off = registerRailContainer(bound, slot, host);
+      railCleanups.set(container, () => {
+        off();
+        shadow.replaceChildren();
+      });
+    },
+    unmount(container: HTMLElement) {
+      railCleanups.get(container)?.();
+      railCleanups.delete(container);
+    },
+  };
+}
+
 export default {
   activate(ctx: any) {
     const app = ctx.app;
@@ -89,14 +133,16 @@ export default {
 
     ctx.subscriptions.push(
       app.ui.registerView("kanban", {
-        mount(container: HTMLElement) {
-          mountApp(container);
+        mount(container: HTMLElement, vctx?: { viewId?: string | null }) {
+          mountApp(container, typeof vctx?.viewId === "string" && vctx.viewId ? vctx.viewId : null);
         },
         unmount(container: HTMLElement) {
           unmountApp(container);
         },
       }),
     );
+    ctx.subscriptions.push(app.ui.registerView("tree", railView("tree")));
+    ctx.subscriptions.push(app.ui.registerView("detail", railView("detail")));
 
     if (app.commands?.register) {
       ctx.subscriptions.push(
