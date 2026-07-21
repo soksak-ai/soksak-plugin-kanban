@@ -85,7 +85,7 @@ function resolveParent(nodes: Node[], ref: unknown): { ok: true; id: string | nu
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, code: r.code, message: r.message };
 }
 
-const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+const compact = (n: Node) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, collapsed: n.collapsed === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 // 워크플로 파생 노드는 사람의 드래그 이동·트리 분리·삭제 금지(스케줄러 충돌·그룹 게이트 깨짐 방지). node.edit(명시적)는 허용.
 const LOCKED = { ok: false as const, code: "LOCKED", message: "locked: 워크플로 노드는 드래그 이동·트리 분리·삭제 불가(스케줄러 전용)" };
 // lock 은 조상으로 상속 — 노드 또는 조상 중 하나라도 locked 면 보호(부모 컨테이너 lock 이 자식 트리 전체 보호 → 그룹 게이트 보존).
@@ -299,6 +299,8 @@ export function registerCommands(ctx: AppCtx, store: KanbanStore): void {
             points: typeof p.points === "number" ? p.points : n.points,
             start: typeof p.start === "string" ? p.start : n.start,
             due: typeof p.due === "string" ? p.due : n.due,
+            locked: typeof p.locked === "boolean" ? p.locked === true : n.locked === true,
+            collapsed: typeof p.collapsed === "boolean" ? p.collapsed === true : n.collapsed === true,
             history,
             updated: Date.now(),
           };

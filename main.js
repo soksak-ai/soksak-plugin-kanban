@@ -14551,7 +14551,7 @@ function resolveParent(nodes, ref) {
   const r = resolve(nodes, ref);
   return r.ok ? { ok: true, id: r.node.id } : { ok: false, code: r.code, message: r.message };
 }
-var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
+var compact = (n) => ({ id: n.id, key: n.key, title: n.title, description: n.description, type: n.type, status: n.status, parentId: n.parentId, order: n.order, assignee: n.assignee, priority: n.priority, points: n.points, start: n.start, due: n.due, blockedBy: n.blockedBy ?? [], locked: n.locked === true, collapsed: n.collapsed === true, badge: n.badge, origin: n.origin, category: n.category, isDraft: n.isDraft, parentDraftId: n.parentDraftId, kind: n.kind });
 var LOCKED = { ok: false, code: "LOCKED", message: "locked: \uC6CC\uD06C\uD50C\uB85C \uB178\uB4DC\uB294 \uB4DC\uB798\uADF8 \uC774\uB3D9\xB7\uD2B8\uB9AC \uBD84\uB9AC\xB7\uC0AD\uC81C \uBD88\uAC00(\uC2A4\uCF00\uC904\uB7EC \uC804\uC6A9)" };
 var isLockedTree = (nodes, n) => {
   let cur = n;
@@ -14751,6 +14751,8 @@ function registerCommands(ctx, store2) {
             points: typeof p.points === "number" ? p.points : n.points,
             start: typeof p.start === "string" ? p.start : n.start,
             due: typeof p.due === "string" ? p.due : n.due,
+            locked: typeof p.locked === "boolean" ? p.locked === true : n.locked === true,
+            collapsed: typeof p.collapsed === "boolean" ? p.collapsed === true : n.collapsed === true,
             history,
             updated: Date.now()
           };
