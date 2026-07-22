@@ -72,7 +72,7 @@ export default function App({ store, app, viewId = null }: AppProps) {
 
   // 사이드바 방출(rail) — 레일 컨테이너가 등록되어 있으면 트리를 좌 레일에 포털로 그리고,
   // 이슈 상세는 모달 대신 우 레일 패널로 연다(상태는 전부 여기 그대로 — 이중 진실 0).
-  // 등록이 없으면(구코어·레일 없는 호스트) 기존 배치: 트리 없음, 상세=중앙 모달.
+  // 레일 등록이 없으면(비결부) 아무것도 그리지 않는다 — 내부 폴백 없음(투영 공리).
   const railTree = useSyncExternalStore(
     (fn) => subscribeRail(viewId, fn),
     () => railContainer(viewId, "tree"),
@@ -169,7 +169,7 @@ export default function App({ store, app, viewId = null }: AppProps) {
         const modal = (frame: "overlay" | "rail") => (
           <Modal mode={mode} draft={draft} editing={editing} setField={setField} onClose={() => setModalOpen(false)} onSave={saveEdit} onCreate={createIssue} onDelete={del} onEnterEdit={enterEdit} onBackToView={() => setMode("view")} lang={lang} frame={frame} />
         );
-        return railDetail ? createPortal(modal("rail"), railDetail) : modal("overlay");
+        return railDetail ? createPortal(modal("rail"), railDetail) : null; // 레일 전용 — 내부 오버레이 폴백 없음
       })()}
     </div>
   );
