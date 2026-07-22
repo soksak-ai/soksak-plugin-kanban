@@ -14326,7 +14326,7 @@ function App({ store: store2, app, viewId = null }) {
     railDetail && !modalOpen ? (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { padding: "14px 16px", fontSize: 12, color: "var(--text-3)" }, children: t("railDetailEmpty", lang) }), railDetail) : null,
     modalOpen && (() => {
       const modal = (frame) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Modal, { mode, draft, editing, setField, onClose: () => setModalOpen(false), onSave: saveEdit, onCreate: createIssue, onDelete: del, onEnterEdit: enterEdit, onBackToView: () => setMode("view"), lang, frame });
-      return railDetail ? (0, import_react_dom.createPortal)(modal("rail"), railDetail) : modal("overlay");
+      return railDetail ? (0, import_react_dom.createPortal)(modal("rail"), railDetail) : null;
     })()
   ] });
 }
