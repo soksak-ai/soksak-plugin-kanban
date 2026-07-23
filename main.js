@@ -12754,6 +12754,20 @@ var require_jsx_runtime = __commonJS({
 var import_react6 = __toESM(require_react(), 1);
 var import_client = __toESM(require_client(), 1);
 
+// src/view/toolbarContract.ts
+var TOOLBAR_BAR = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  height: "var(--toolbar-h, 28px)",
+  padding: "0 var(--toolbar-pad-x, 8px)",
+  borderBottom: "1px solid var(--border)",
+  background: "var(--surface)",
+  position: "sticky",
+  top: 0,
+  zIndex: 30
+};
+
 // src/view/App.tsx
 var import_react5 = __toESM(require_react(), 1);
 var import_react_dom = __toESM(require_react_dom(), 1);
@@ -14296,7 +14310,7 @@ function App({ store: store2, app, viewId = null }) {
     setModalOpen(false);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "kanban-root", style: rootStyle(), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("header", { style: { display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("header", { style: TOOLBAR_BAR, children: [
       /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("nav", { style: { display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }, children: VIEW_TABS.map(({ id, en, ko }) => {
         const lbl = lang === "ko" ? ko : en;
         return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { "data-node": tabNodePath(id), onClick: () => setView(id), style: tabStyle(view === id), children: [
@@ -14330,7 +14344,7 @@ function App({ store: store2, app, viewId = null }) {
     })()
   ] });
 }
-var tabStyle = (active) => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
+var tabStyle = (active) => ({ display: "flex", alignItems: "center", gap: 6, padding: "3px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
 
 // src/styles.ts
 var GLOBAL_CSS = `

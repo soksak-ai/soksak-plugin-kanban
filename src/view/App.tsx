@@ -1,6 +1,7 @@
 // 반응 셸 — 헤더(뷰 탭·검색·테마) + stats strip(스킨·진행률·병목) + 뷰 스위치 + 모달.
 // UI 상태(view·theme·skin·focus·search·modal)는 창-로컬. 데이터는 store(useNodes) 단일 진실.
 // 편집은 store.apply(순수 op) — 명령과 같은 데이터 경로 → 교차뷰 일관성.
+import { TOOLBAR_BAR } from "./toolbarContract";
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
@@ -129,7 +130,7 @@ export default function App({ store, app, viewId = null }: AppProps) {
   return (
     <div className="kanban-root" style={rootStyle()}>
       {/* TOP BAR */}
-      <header style={{ display: "flex", alignItems: "center", gap: 18, padding: "12px 22px", borderBottom: "1px solid var(--border)", background: "var(--surface)", position: "sticky", top: 0, zIndex: 30 }}>
+      <header style={TOOLBAR_BAR}>
         <nav style={{ display: "flex", gap: 3, background: "var(--surface-2)", padding: 3, borderRadius: 11, marginRight: "auto" }}>
           {VIEW_TABS.map(({ id, en, ko }) => {
             const lbl = lang === "ko" ? ko : en;
@@ -175,4 +176,4 @@ export default function App({ store, app, viewId = null }: AppProps) {
   );
 }
 
-const tabStyle = (active: boolean): CSSProperties => ({ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
+const tabStyle = (active: boolean): CSSProperties => ({ display: "flex", alignItems: "center", gap: 6, padding: "3px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap", background: active ? "var(--surface)" : "transparent", color: active ? "var(--text)" : "var(--text-2)", boxShadow: active ? "var(--shadow)" : "none" });
