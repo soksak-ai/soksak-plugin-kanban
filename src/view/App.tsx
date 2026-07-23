@@ -143,8 +143,8 @@ export default function App({ store, app, viewId = null }: AppProps) {
           })}
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
-          <button data-node={NEW_ISSUE_NODE} onClick={() => openCreate("todo")} style={{ height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span> {t("newIssueBtn", lang)}</button>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPlaceholder", lang)} style={{ height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" }} />
+          <button data-node={NEW_ISSUE_NODE} onClick={() => openCreate("todo")} style={{ height: 22, padding: "0 10px", border: "none", borderRadius: 7, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }}><span style={{ fontSize: 15, lineHeight: 1, marginTop: -1 }}>+</span> {t("newIssueBtn", lang)}</button>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPlaceholder", lang)} style={{ height: 22, width: 170, boxSizing: "border-box", padding: "0 10px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg)", color: "var(--text)", fontSize: 12, outline: "none" }} />
         </div>
       </header>
 

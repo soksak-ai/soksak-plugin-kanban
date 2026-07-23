@@ -14319,12 +14319,12 @@ function App({ store: store2, app, viewId = null }) {
         ] }, id);
       }) }),
       /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flex: "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { "data-node": NEW_ISSUE_NODE, onClick: () => openCreate("todo"), style: { height: 34, padding: "0 13px", border: "none", borderRadius: 9, background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { fontSize: 17, lineHeight: 1, marginTop: -1 }, children: "+" }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("button", { "data-node": NEW_ISSUE_NODE, onClick: () => openCreate("todo"), style: { height: 22, padding: "0 10px", border: "none", borderRadius: 7, background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", fontFamily: "inherit" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { style: { fontSize: 15, lineHeight: 1, marginTop: -1 }, children: "+" }),
           " ",
           t("newIssueBtn", lang)
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: t("searchPlaceholder", lang), style: { height: 34, width: 170, padding: "0 12px", border: "1px solid var(--border)", borderRadius: 9, background: "var(--bg)", color: "var(--text)", fontSize: 13, outline: "none" } })
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: t("searchPlaceholder", lang), style: { height: 22, width: 170, boxSizing: "border-box", padding: "0 10px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg)", color: "var(--text)", fontSize: 12, outline: "none" } })
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("main", { style: { flex: 1, minHeight: 0, position: "relative" }, children: [
